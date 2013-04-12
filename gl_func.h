@@ -172,13 +172,13 @@ typedef struct
     //! код объекта
     int code;
     //! угол атаки
-    double alfa;
+    float alfa;
     //! воздушная скорости
-    double vc;
+    float vc;
 
     //! углы ориентации вектора скорости в траекторной СК
-    double fi;
-    double unt;
+    float fi;
+    float unt;
 
     //! координаты носителя в географической СК
     double fi_geo;
@@ -189,37 +189,37 @@ typedef struct
     double lam0_geo;
 
     //! координаты в земной СК
-    double xg;
-    double yg;
-    double zg;
+    float xg;
+    float yg;
+    float zg;
 
     //! компоненты вектора скорости относительной земной СК
-    double vxg;
-    double vyg;
-    double vzg;
+    float vxg;
+    float vyg;
+    float vzg;
 
     //! компоненты ускорений
-    double axg;
-    double ayg;
-    double azg;
+    float axg;
+    float ayg;
+    float azg;
 
     //! угловые скорости вращения носителя
-    double omega_x;
-    double omega_y;
-    double omega_z;
+    float omega_x;
+    float omega_y;
+    float omega_z;
 
     //! ориентация носителя в связанной СК
-    double psi;
-    double gamma;
-    double tan;
+    float psi;
+    float gamma;
+    float tan;
     //! число Маха
-    double m;
+    float m;
     //!
-    double nya;
+    float nya;
     //!
-    double ny;
+    float ny;
     //!
-    double nx;
+    float nx;
 
     int idManevr;
 }TVis;

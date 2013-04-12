@@ -14,7 +14,7 @@
 #include <math.h>
 
 #include "view3dTerrain.h"
-#include "AligmentForm.h"
+
 #include "Matrix3D_D.h"
 #include "Vector3D_D.h"
 #include "visudp.h"
@@ -157,7 +157,7 @@ private:
     int indexCamForTarget;
 
 
-    AligmentForm *alignmentForm;
+
 
     QVector<T3DObject> list3DObj;
 //    //! 3D объект нашего самолета

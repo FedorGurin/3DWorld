@@ -20,6 +20,8 @@ typedef struct THeadRequest_
     //              1 - запись,
     //              2 - маска
     TTypeHead type;
+    //! идентификатор пользователя
+    unsigned int uid_user;
     //! размер пакета
     unsigned long size;
 }THeadRequest;
@@ -53,6 +55,8 @@ public:
     //void sendData(int id,int command);
     void sendData(int idObject,TCommand command, QByteArray array);
 
+    //! проверка наличия буфера для адаптера
+    bool testObjInList(unsigned uid);
     void addToFlightObjList(TVis body);
 private slots:
     void processPendingDatagrams();
@@ -66,7 +70,7 @@ private:
     QUdpSocket udpSocketRecive;
     QUdpSocket udpSocketSend;
 
-    TRec_Flight_Obj flightObj;
+    THeadRequest head;
     //! прием объекта
     //TRec_UDP rec_udp;
     //! отправка объекта

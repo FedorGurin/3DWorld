@@ -42,7 +42,7 @@ View3DTerrain::~View3DTerrain()
 }
 ThreadParser::ThreadParser()
 {
-    statusLoading=new FormStatusExitProgram;
+
 }
 void ThreadParser::setParserFile(QTextStream *out_,TASCII_MAP *mapH_)
 {

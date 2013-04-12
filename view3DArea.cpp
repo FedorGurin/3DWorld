@@ -48,7 +48,7 @@ view3DArea::view3DArea():QGLViewer()
     camera_name=0;
 
     terrain=new View3DTerrain;
-    alignmentForm=new AligmentForm;
+
     limit=new LimitPositionKAI;
     //viewILS=new ViewILS(&net);
 
@@ -106,20 +106,7 @@ void view3DArea::draw()
 {
     double d=20000.0;
 
-    drawText(10,120,"HorFilter="+QString::number(horFilter->curValue()));
-    drawText(10,140,"VerFilter="+QString::number(verFilter->curValue()));
 
-    if(cameraToThisObj!=0)
-    {
-        drawText(width()-100,
-                 10,
-                 QString("camera to:")+QString::number(cameraToObjIndex));
-    }else
-    {
-        drawText(width()-100,
-                 10,
-                 QString("camera to: no object"));
-    }
 
     if(cameraToThisObj!=0)
     {
@@ -246,6 +233,21 @@ void view3DArea::draw()
     drawText(10,310,"fi="+QString::number(curFi));
     drawText(10,330,"unt="+QString::number(curUnt));
 
+    drawText(10,120,"HorFilter="+QString::number(horFilter->curValue()));
+    drawText(10,140,"VerFilter="+QString::number(verFilter->curValue()));
+
+//    if(cameraToThisObj!=0)
+//    {
+//        drawText(width()-100,
+//                 10,
+//                 QString("camera to:")+QString::number(cameraToObjIndex));
+//    }else
+//    {
+//        drawText(width()-100,
+//                 10,
+//                 QString("camera to: no obj"));
+//    }
+
     QString nameMan="Unknown";
     switch(curIdMan)
     {
@@ -290,62 +292,6 @@ void view3DArea::animate()
     }
 }
 
-
-/*
-//! отрисовка сетки
-void view3DArea::drawGrid()
-{
-    /////////////////////////////////////////
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-    glShadeModel(GL_FLAT);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_TEXTURE_2D);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    //gluOrtho2D(0, width(), height(), 0);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    /////////////////////////////////////////
-    //! отрисовка ИЛС линий
-    qglColor(QColor(Qt::darkGray));
-    glLineWidth(1.0);
-    glDisable(GL_BLEND);//Уберем прозрачность
-    //glTranslatef(width()/2.0,height()/2.0,0);
-    //glRotated(-aircraft.gamma,0.0,0.0,1.0);
-
-    //! горизонтальные линии
-    for(int i=0;i<100;i++)
-    {
-        glBegin(GL_LINES);
-        glVertex2i((width()/100)*i,height()/100);
-        glVertex2i((width()/100)*i,height());
-        glEnd();
-    }
-    /////////////////////////////////////////
-    //! вертикальные линии
-    //! горизонтальные линии
-    for(int i=0;i<100;i++)
-    {
-        glBegin(GL_LINES);
-        glVertex2i(width()/100,(height()/100)*i);
-        glVertex2i(width(),(height()/100)*i);
-        glEnd();
-    }
-
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glPopAttrib();
-    /////////////////////////////////////////
-}*/
 T3DObject* view3DArea::findObjByCode(int code)
 {
     for(int i=0;i<list3DObj.size();i++)
@@ -512,10 +458,12 @@ void view3DArea::drawCircle(TAngle *angle,int radius_)
 {
     int x=0;
     int y=radius_;
-    int delta=2-2*radius_;
+    int delta=1-1*radius_;
     int error=0;
     //! координаты центра
-    int xCenter=0,yCenter=0;
+    int xCenter=0;
+    int yCenter=0;
+    glPointSize(2);
     //! перевод
     TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
     //! перевод градусов в пиксели
@@ -526,12 +474,11 @@ void view3DArea::drawCircle(TAngle *angle,int radius_)
     qglColor(Qt::red);//цвет окружности
     //! отрисовка точки в центре окружности
     glBegin(GL_POINTS);
-    glPointSize(5);
         glVertex2i(xCenter,yCenter);
     glEnd;
     //! толщина пикселей окружности
     glBegin(GL_POINTS);
-    glPointSize(1);
+
     while(y>=0)
     {
         glVertex2i(xCenter+x,yCenter+y);
@@ -590,7 +537,7 @@ void view3DArea::drawTerra()
         glPopMatrix();
 
         glPushMatrix();
-       // glEnable(GL_BLEND);
+        //glEnable(GL_BLEND);
         //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
         qglColor(QColor(229,210,175,220));
         //glPointSize(1.0);
@@ -815,7 +762,7 @@ void view3DArea::slotFov(double value)
 void view3DArea::slotReadRes()
 {
     QSize s=this->size();
-    alignmentForm->setCurrentResolution(s.width(),s.height());
+
 }
 Matrix3D_D view3DArea::signleCalcMatrix(TVis *solid)
 {

@@ -12,7 +12,7 @@
 #include <QString>
 #include <QTextStream>
 
-#include "FormStatusExitProgram.h"
+
 #include "gl_func.h"
 typedef struct
 {
@@ -51,7 +51,7 @@ class ThreadParser : public QThread
     void setParserFile(QTextStream *out,TASCII_MAP *mapH_);
     void run();
  private:
-    FormStatusExitProgram *statusLoading;
+
     TASCII_MAP *mapH;
     QTextStream *out;
  };
