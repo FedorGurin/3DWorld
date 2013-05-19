@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 
-CONFIG +=thread console
+CONFIG +=thread
 TARGET = 3DWorld
 TEMPLATE = app
 
@@ -25,7 +25,7 @@ unix {
 }
 win32 {
 
-    #QMAKE_CXXFLAGS_RELEASE += -mno-align-double
+    QMAKE_CXXFLAGS_RELEASE += -mno-align-double
     QGLVIEWER2 = QGLViewer2
     win32-g++:LIBS += -l$${3DSLIB}
     win32-g++:LIBS += -l$${QGLVIEWER2}
@@ -39,7 +39,9 @@ SOURCES += main.cpp\
     gl_func.cpp \
     visudp.cpp \
     Vector3D_D.cpp \
-    Matrix3D_D.cpp
+    Matrix3D_D.cpp \
+    formsettings.cpp \
+    TemplateNASP.cpp
 
 HEADERS  += \
     view3dterrain.h \
@@ -48,9 +50,13 @@ HEADERS  += \
     gl_func.h \
     visudp.h \
     Vector3D_D.h \
-    Matrix3D_D.h
+    Matrix3D_D.h \
+    formsettings.h \
+    globalData.h \
+    TemplateNASP.hpp
 
-FORMS    +=
+FORMS    += \
+    formsettings.ui
 
 
 

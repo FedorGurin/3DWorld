@@ -61,9 +61,11 @@ class View3DTerrain : public QGLWidget
     Q_OBJECT;
 public:
     View3DTerrain(QWidget *parent=0);
-    void openFileWithTerrain();
+    //! открыть файл с катрой цветов
+    void openFileWithMapColor();
+
     //! открыть ранее сохраненную карту
-    void openDefaultTerrain(){}
+    bool openTerrainMap(QString nameFile);
     //! процесс загрузки карты высот в реальном времени
     void processLoading();
     bool loadCompleate;
@@ -78,7 +80,10 @@ private:
 
 public slots:
     void slotAccepted();
+    //! загрузка потока
     void slotThreadFinished();
+    //! открыть файл с ландшафтом
+    void openFileWithTerrain();
 };
 
 #endif // VIEW3DTERRAIN_H

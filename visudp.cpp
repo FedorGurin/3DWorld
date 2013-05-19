@@ -2,10 +2,42 @@
 
 VisUDP::VisUDP()
 {
-    flightObjects.clear();
+    flightObjects.clear();    
     udpSocketRecive.bind(4801);
-    connect(&udpSocketRecive, SIGNAL(readyRead()),this, SLOT(processPendingDatagrams()));
+    datagram.resize(sizeof(TRec_Flight_Obj));
+    //connect(&udpSocketRecive, SIGNAL(readyRead()),this, SLOT(processPendingDatagrams()));
 }
+void VisUDP::checkDatagrams()
+{
+    while(udpSocketRecive.pendingDatagramSize()==sizeof(TRec_Flight_Obj))
+    {
+        udpSocketRecive.readDatagram(datagram.data(), datagram.size());
+
+        //! чтение заголовка
+        QDataStream outHead(&datagram,QIODevice::ReadOnly);
+        outHead.setVersion(QDataStream::Qt_4_2);
+        outHead.readRawData((char*)&head,sizeof(THeadRequest));
+
+        qDebug("sizeof(TRec_Flight_Obj)=%d,\t datagram.size()=%d\n",
+               sizeof(TRec_Flight_Obj),
+               datagram.size());
+
+        qDebug("head_user_id=%d\n",head.uid_user);
+        //! проверка есть ли объект уже в списке
+        if(testObjInList(head.uid_user)==true)
+        {
+            outHead.readRawData((char*)&flightObjects[head.uid_user],sizeof(TVis));
+            qDebug("yg=%f\n",flightObjects[head.uid_user].yg);
+        }
+        else
+        {
+            qDebug("new param\n");
+            flightObjects.resize(flightObjects.size()+1);
+            outHead.readRawData((char*)&(flightObjects.back()),sizeof(TVis));
+        }
+    }
+}
+
 void VisUDP::processPendingDatagrams()
 {
     QByteArray datagram;
@@ -15,32 +47,25 @@ void VisUDP::processPendingDatagrams()
         udpSocketRecive.readDatagram(datagram.data(), datagram.size());
     }while (udpSocketRecive.hasPendingDatagrams());
 
+    //! чтение заголовка
     QDataStream outHead(&datagram,QIODevice::ReadOnly);
+    outHead.setVersion(QDataStream::Qt_4_2);
     outHead.readRawData((char*)&head,sizeof(THeadRequest));
 
-    QDataStream out(&datagram,QIODevice::ReadOnly);
+    printf("sizeof(TRec_Flight_Obj)=%d,\t datagram.size()=%d\n",
+           sizeof(TRec_Flight_Obj),
+           datagram.size());
     if(testObjInList(head.uid_user)==true)
     {
-        out.readRawData((char*)&flightObjects[head.uid_user],sizeof(TVis));
-    }else
-    {
-       TVis body;
-       out.readRawData((char*)&body,sizeof(TVis));
-       flightObjects.push_back(body);
+        qDebug("refresh param\n");
+        outHead.readRawData((char*)&flightObjects[head.uid_user],sizeof(TVis));
     }
-
-//    if(head.type==MODULE)
-//        out.readRawData((char*)&answerModuleReq,answerHReq.size);
-//    else if(answerHReq.type==SELECTED)
-//        out.readRawData((char*)&answerSReq,     answerHReq.size);
-//    else if(answerHReq.type==LISTPM)
-//        out.readRawData((char*)&answerMemReq,   answerHReq.size);
-
-
-
-    //addToFlightObjList(flightObj.object);
-
-    //emit flightObjChanged();
+    else
+    {
+       qDebug("new param\n");
+       flightObjects.resize(flightObjects.size()+1);
+       outHead.readRawData((char*)&(flightObjects.back()),sizeof(TVis));
+    }
 }
 bool VisUDP::testObjInList(unsigned uid)
 {

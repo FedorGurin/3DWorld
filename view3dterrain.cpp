@@ -1,10 +1,11 @@
 #include "view3DTerrain.h"
-
+#include <QApplication>
 View3DTerrain::View3DTerrain(QWidget *parent):QGLWidget(parent)
 {
     dialog=new QFileDialog(this);
     dialog->setFileMode(QFileDialog::AnyFile);
     dialog->setNameFilter(("File with Height (*.asc)"));
+    dialog->setDirectory(qApp->applicationDirPath());
     file=new QFile;
     mapH=new TASCII_MAP;
     stream=new QTextStream(file);
@@ -17,6 +18,17 @@ void View3DTerrain::openFileWithTerrain()
 {
     dialog->exec();
 }
+void openFileWithMapColor()
+{
+
+}
+bool View3DTerrain::openTerrainMap(QString nameFile)
+{
+    dialog->selectFile(qApp->applicationDirPath()+nameFile);
+    slotAccepted();
+    return true;
+}
+
 void View3DTerrain::slotAccepted()
 {
     QStringList list=dialog->selectedFiles();
@@ -27,6 +39,9 @@ void View3DTerrain::slotAccepted()
         file->setFileName(fileName);
         if (!file->open(QIODevice::ReadOnly | QIODevice::Text))   return;
         threadParser->setParserFile(stream,mapH);
+        //! загружаем карту цветов
+
+
         loadCompleate=false;
         threadParser->start(QThread::IdlePriority);
     }
@@ -56,11 +71,10 @@ void ThreadParser::run()
 
     QStringList tempList;
     tempList=list[0].split(" ",QString::SkipEmptyParts);
-    mapH->ncols=tempList[1].toDouble();
+    mapH->ncols=tempList[1].toDouble()/2;
 
     tempList=list[1].split(" ",QString::SkipEmptyParts);
-    mapH->nrows=tempList[1].toDouble();
-
+    mapH->nrows=tempList[1].toDouble()/2;
 
     tempList=list[2].split(" ",QString::SkipEmptyParts);
     mapH->xllcorner=tempList[1].toDouble();
@@ -87,13 +101,12 @@ void ThreadParser::run()
         for(long j=0;j<mapH->nrows;j++)
         {
             double x,z;
-            /*convertSphereToDekart(GradToRadian(mapH->yllcorner+mapH->ncols/2*mapH->cellsize),
+            convertSphereToDekart(GradToRadian(mapH->yllcorner+mapH->ncols/2*mapH->cellsize),
                                   GradToRadian(mapH->xllcorner+mapH->nrows/2*mapH->cellsize),
                                   GradToRadian(mapH->yllcorner+i*mapH->cellsize),
                                   GradToRadian(mapH->xllcorner+j*mapH->cellsize),
                                   x,
-                                  z
-                                  );*/
+                                  z);
             vec.push_back(QVector3D(x,mapH->data[i][j],z));
         }
         mapH->dataVectors.push_back(vec);
