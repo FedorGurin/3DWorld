@@ -1,11 +1,6 @@
 #include "view3DArea.h"
 
-#include <lib3ds/camera.h>
-#include <lib3ds/mesh.h>
-#include <lib3ds/material.h>
-#include <lib3ds/matrix.h>
-#include <lib3ds/vector.h>
-#include <lib3ds/light.h>
+
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
@@ -29,7 +24,7 @@ using namespace qglviewer;
 #define USE_3DMODEL
 #define FOG_OFF 1
 
-extern "C" { LIB3DSAPI void lib3ds_file_bounding_box(Lib3dsFile *fileAirCraft, Lib3dsVector min, Lib3dsVector max); }
+
 
 view3DArea::view3DArea():QGLViewer()
 {
@@ -198,12 +193,12 @@ void view3DArea::readAllModels()
     list3DObj[4].code=104;
     list3DObj[5].code=105;
     //! чтение моделей из 3ds файлов
-    loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
+    /*loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
     loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
     loadFile("./3dmodels/x55.3ds",       &(list3DObj[2].file));
     loadFile("./3dmodels/WATER_T2.3ds",  &(list3DObj[3].file));
     loadFile("./3dmodels/bomb.3ds",      &(list3DObj[4].file));
-    loadFile("./3dmodels/buran.3ds",     &(list3DObj[5].file));
+    loadFile("./3dmodels/buran.3ds",     &(list3DObj[5].file));*/
 }
 
 void view3DArea::init()
@@ -328,7 +323,7 @@ void view3DArea::draw()
 
 #ifdef USE_3DMODEL
     //! отрисовка трехмерных объектов
-    drawSolidObjects();
+//    drawSolidObjects();
 #endif
     //! отрисовка подстилающей поверхности
     if(terra==true)
@@ -538,7 +533,7 @@ int view3DArea::searchTimeInterval(double time)
         }
     }
 }
-void view3DArea::drawSolidObjects()
+/*void view3DArea::drawSolidObjects()
 {
     Lib3dsFile* file3DS=0;
     QVector<TVis> *list=net.getObjects();
@@ -550,7 +545,7 @@ void view3DArea::drawSolidObjects()
             file3DS=findObjByCode(solid->code)->file;
 
         if(file3DS!=0)
-        {
+        {*/
 //            convertSphereToDekart(lam0,
 //                                  fi0,
 //                                  solid->lam_geo,
@@ -558,7 +553,7 @@ void view3DArea::drawSolidObjects()
 //                                  solid->x,
 //                                  solid->z);
 
-
+/*
                 drawObject(file3DS,
                            solid->xg,
                            solid->yg,
@@ -570,8 +565,8 @@ void view3DArea::drawSolidObjects()
         }
 
     }
-}
-
+}*/
+/*
 void view3DArea::drawObject(Lib3dsFile *obj,
                             double pos_x,
                             double pos_y,
@@ -602,7 +597,7 @@ void view3DArea::drawObject(Lib3dsFile *obj,
     glDisable(GL_LIGHTING);
     glPopMatrix();
 
-}
+}*/
 //! отрисовка ИЛС
 void view3DArea::drawILS()
 {
@@ -997,7 +992,7 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
             QGLViewer::keyPressEvent(e);}
     };
 }
-void view3DArea::loadFile(QString nameFile,Lib3dsFile **file3ds)
+/*void view3DArea::loadFile(QString nameFile,Lib3dsFile **file3ds)
 {
     //!установить период анимации
     setAnimationPeriod(PERIOD_ANIMATION);
@@ -1023,7 +1018,7 @@ void view3DArea::loadFile(QString nameFile,Lib3dsFile **file3ds)
     lib3ds_file_eval((*file3ds),0);
 
     initScene(*file3ds);
-}
+}*/
 void view3DArea::setCameraToObject(int num)
 {
     cameraToBack=false;
@@ -1201,7 +1196,7 @@ void view3DArea::cameraToObject()
     }
 }
 */
-void view3DArea::initScene(Lib3dsFile *file3ds)
+/*void view3DArea::initScene(Lib3dsFile *file3ds)
 {
     camera()->setFieldOfView(GradToRadian(45));
     camera()->setZNearCoefficient(0.0001);
@@ -1219,9 +1214,7 @@ void view3DArea::initScene(Lib3dsFile *file3ds)
         glEnable(li);
         glLightfv(li, GL_POSITION, pos);
     }
-   /* Quaternion qPI_2( Vec(0.0, 1.0, 0.0),M_PI/2.0);
-    camera()->frame()->transformOf(Vec(0.0, 0.0, 1.0));
-    camera()->frame()->rotate(qPI_2);*/
+  
     // Camera
     Lib3dsNode* c = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_CAMERA_NODE);
     Lib3dsNode* t = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_TARGET_NODE);
@@ -1328,7 +1321,7 @@ void view3DArea::renderNode(Lib3dsFile *file,Lib3dsNode *node)
         }
     }
 }
-
+*/
 void view3DArea::slotRes(int w,int h)
 {
     resize(w,h);

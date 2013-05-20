@@ -4,9 +4,6 @@
 #include <QGLViewer/qglviewer.h>
 
 
-#include <lib3ds/file.h>
-#include <lib3ds/node.h>
-
 #include <QFile>
 #include <QTextStream>
 #include <QTextCodec>
@@ -65,7 +62,7 @@ typedef struct
     //! код объекта
     int code;
     //! загрузка файла с объектом
-    Lib3dsFile *file;
+    //Lib3dsFile *file;
 }T3DObject;
 //! класс 3D визуализации
 class view3DArea:public QGLViewer
@@ -79,23 +76,23 @@ public:
     //! расчитать
     void cameraToObject();
     //! Загрузить файл с 3D моделью
-    void loadFile(QString nameFile,Lib3dsFile **file3ds);
+    //void loadFile(QString nameFile,Lib3dsFile **file3ds);
     //! чтение всех моделей
     void readAllModels();
     //! поиск объекта по коду
     T3DObject* findObjByCode(int code);
     //! инициализация сцены
-    void initScene(Lib3dsFile *file3ds);
+    //void initScene(Lib3dsFile *file3ds);
     //! отрисовка объектов
-    void drawSolidObjects();
+    //void drawSolidObjects();
     //! отрисовка объекта
-    void drawObject(Lib3dsFile *obj,
+    /*void drawObject(Lib3dsFile *obj,
                     double pos_x,
                     double pos_y,
                     double pos_z,
                     double psi_grad,
                     double gamma_grad,
-                    double tan_grad);
+                    double tan_grad);*/
     //! перевод градусов в пиксели
     void gradToPixel(double xGrad,
                      double yGrad,
@@ -131,7 +128,7 @@ public:
     //! ограничение на КАИ
     LimitPositionKAI *limit;
     //! отрисовка узлов
-    void renderNode(Lib3dsFile *,Lib3dsNode *node);
+    //void renderNode(Lib3dsFile *,Lib3dsNode *node);
 protected :
     virtual void draw();
     virtual void animate();

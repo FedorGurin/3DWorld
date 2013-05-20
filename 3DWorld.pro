@@ -14,23 +14,6 @@ QT += gui\
     opengl \
     xml \
     svg
-3DSLIB = 3ds
-unix {
-
-    #QMAKE_CXXFLAGS_RELEASE += -malign-double
-    QGLVIEWER = QGLViewer
-    unix:LIBS += -l$${3DSLIB}
-    unix:LIBS += -l$${QGLVIEWER}
-
-}
-win32 {
-
-    QMAKE_CXXFLAGS_RELEASE += -mno-align-double
-    QGLVIEWER2 = QGLViewer2
-    win32-g++:LIBS += -l$${3DSLIB}
-    win32-g++:LIBS += -l$${QGLVIEWER2}
-
-}
 
 SOURCES += main.cpp\
     view3dterrain.cpp \
