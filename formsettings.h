@@ -24,6 +24,7 @@ signals:
     void terra(bool);
     void freq(int);
     void multTime(double);
+    void densityFog(double);
 private:
     Ui::FormSettings *ui;
 };

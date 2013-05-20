@@ -20,6 +20,7 @@ FormSettings::FormSettings(QWidget *parent) :
 
     connect(ui->spinBoxFreq,SIGNAL(valueChanged(int)),this,SIGNAL(freq(int)));
     connect(ui->doubleSpinBoxMulTime,SIGNAL(valueChanged(double)),this,SIGNAL(multTime(double)));
+    connect(ui->doubleSpinBoxFog,SIGNAL(valueChanged(double)),this,SIGNAL(densityFog(double)));
 }
 
 FormSettings::~FormSettings()

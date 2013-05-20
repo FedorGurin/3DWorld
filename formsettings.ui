@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>341</width>
-    <height>453</height>
+    <width>233</width>
+    <height>495</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,20 +30,13 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QCheckBox" name="checkBoxFog">
-          <property name="text">
-           <string>туман</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
          <widget class="QCheckBox" name="checkBox">
           <property name="text">
            <string>сетевой обмен</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item row="2" column="0">
          <widget class="QCheckBox" name="checkBoxILS">
           <property name="text">
            <string>отрисовка ИЛС</string>
@@ -53,14 +46,72 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="0">
+        <item row="3" column="0">
+         <widget class="QCheckBox" name="checkBoxLand">
+          <property name="text">
+           <string>отрисовка ландшафта</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
          <widget class="QCheckBox" name="checkBoxInfo">
           <property name="text">
            <string>информация</string>
           </property>
          </widget>
         </item>
+        <item row="5" column="0">
+         <widget class="QCheckBox" name="checkBoxFog">
+          <property name="text">
+           <string>туман</string>
+          </property>
+         </widget>
+        </item>
         <item row="6" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Прозрачность тумана</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="doubleSpinBoxFog">
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.500000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="7" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Глубина тумана</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="doubleSpinBoxDeepFog"/>
+          </item>
+         </layout>
+        </item>
+        <item row="8" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QLabel" name="label">
@@ -87,7 +138,7 @@
           </item>
          </layout>
         </item>
-        <item row="7" column="0">
+        <item row="9" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="QLabel" name="label_2">
@@ -108,7 +159,7 @@
           </item>
          </layout>
         </item>
-        <item row="8" column="0">
+        <item row="10" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
            <widget class="QLabel" name="label_3">
@@ -132,7 +183,7 @@
           </item>
          </layout>
         </item>
-        <item row="9" column="0">
+        <item row="11" column="0">
          <widget class="QGroupBox" name="groupBox_3">
           <property name="title">
            <string>Интерполяция</string>
@@ -156,16 +207,6 @@
             </widget>
            </item>
           </layout>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QCheckBox" name="checkBoxLand">
-          <property name="text">
-           <string>отрисовка ландшафта</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
          </widget>
         </item>
        </layout>

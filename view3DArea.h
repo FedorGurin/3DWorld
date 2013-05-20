@@ -76,7 +76,7 @@ public:
     view3DArea();
     //! установка номера камеры
     void setCameraToObject(int index);
-    //! расчитать
+    //! прив€зать камеру к объекту
     void cameraToObject();
     //! «агрузить файл с 3D моделью
     void loadFile(QString nameFile,Lib3dsFile **file3ds);
@@ -141,6 +141,8 @@ protected :
 private:
     //! множитель времени, б/р
     float multTime;
+    //! густота тумана,[0.0;1.0]
+    float dFog;
     //! глобальное врем€, сек
     double globalTime;
     //! период анимации, √ц
@@ -241,6 +243,8 @@ public slots:
     void setFreq(int);
     //! множитель времени
     void setMultTime(double);
+    //! глубина тумана
+    void setDensityFog(double);
 };
 
 #endif // VIEW3DAREA_H

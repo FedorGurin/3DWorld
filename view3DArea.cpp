@@ -52,6 +52,7 @@ view3DArea::view3DArea():QGLViewer()
     lam0=57.0;
     fi0=33.0;
 
+    dFog=0.5;
     globalCount=0;
     ils=true;
     vertLine=false;
@@ -98,6 +99,7 @@ view3DArea::view3DArea():QGLViewer()
     connect(setting,SIGNAL(terra(bool)),this,SLOT(setTerra(bool)));
     connect(setting,SIGNAL(freq(int)),this,SLOT(setFreq(int)));
     connect(setting,SIGNAL(multTime(double)),this,SLOT(setMultTime(double)));
+    connect(setting,SIGNAL(densityFog(double)),this,SLOT(setDensityFog(double)));
 
 
     init();
@@ -120,9 +122,15 @@ void view3DArea::setInfo(bool value)
 }
 void view3DArea::setMultTime(double value)
 {
-    //qDebug("setMultTime\n");
+
     multTime=value;
 }
+void view3DArea::setDensityFog(double value)
+{
+   // qDebug("setDensityFog");
+    dFog=value;
+}
+
 void view3DArea::setFreq(int freq)
 {
     //qDebug("catch\n");
@@ -191,12 +199,12 @@ void view3DArea::slotAccepted()
 void view3DArea::readAllModels()
 {
     list3DObj.resize(6);
-    list3DObj[0].code=100;
+    list3DObj[0].code=105;
     list3DObj[1].code=101;
     list3DObj[2].code=102;
     list3DObj[3].code=103;
     list3DObj[4].code=104;
-    list3DObj[5].code=105;
+    list3DObj[5].code=100;
     //! чтение моделей из 3ds файлов
     loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
     loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
@@ -249,7 +257,7 @@ void view3DArea::draw()
         glEnable(GL_FOG);               // Включает туман (GL_FOG)
         glFogi(GL_FOG_MODE, GL_LINEAR); // Выбираем тип тумана
         glFogfv(GL_FOG_COLOR, fogColor);// Устанавливаем цвет тумана
-        glFogf(GL_FOG_DENSITY, 0.5f);   // Насколько густым будет туман
+        glFogf(GL_FOG_DENSITY, dFog);   // Насколько густым будет туман
         glHint(GL_FOG_HINT, GL_NICEST); // Вспомогательная установка тумана
         glFogf(GL_FOG_START, d/2);      // Глубина, с которой начинается туман
         glFogf(GL_FOG_END, d);          // Глубина, где туман заканчивается.
@@ -418,17 +426,6 @@ void view3DArea::animate()
     //! если данные загружены из файла
     if(dataFromTXTFile==true)
     {
-        //! счетчик времени
-//        globalCount+=DIVIDE;
-//        if(globalCount>=rows.size())
-//        {
-//            globalCount=0;
-//            globalTime=0.0;
-//            trs[0].x.clear();
-//            trs[0].y.clear();
-//            trs[0].z.clear();
-//        }
-
         if(globalTime>=(rows.back().time))
         {
             globalCount=0;
