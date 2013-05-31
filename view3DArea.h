@@ -1,7 +1,10 @@
 #ifndef VIEW3DAREA_H
 #define VIEW3DAREA_H
 
-#include <QGLViewer/qglviewer.h>
+#include <GL\glew.h>
+#include <QtOpenGL\QGLWidget>
+#include <QGLViewer\qglviewer.h>
+#include <GL\GL.h>
 
 
 #include <QFile>
@@ -18,6 +21,7 @@
 #include "viewILS.h"
 #include "formsettings.h"
 #include "TemplateNASP.hpp"
+#include <QtOpenGL\QGLShaderProgram>
 //! струтура описывающа€ траекторию
 typedef struct _TTrajectory
 {
@@ -67,6 +71,8 @@ typedef struct
 //! класс 3D визуализации
 class view3DArea:public QGLViewer
 {
+    QGLShaderProgram *prg;
+    quint32 vb;
     Q_OBJECT;
 public:
     //! 3D просмотр области визуализации

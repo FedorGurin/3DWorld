@@ -1,7 +1,8 @@
 #ifndef VIEW3DTERRAIN_H
 #define VIEW3DTERRAIN_H
 
-#include <QGLWidget>
+#include <GL\glew.h>
+#include <QtOpenGL\QGLWidget>
 #include <QFileDialog>
 #include <QVector>
 #include <QThread>

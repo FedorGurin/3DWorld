@@ -4,7 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <GL/glu.h>
+//#include <GL/glu.h>
+
 
 #include <QMessageBox>
 #include <QKeyEvent>
@@ -95,7 +96,7 @@ view3DArea::view3DArea():QGLViewer()
     connect(setting,SIGNAL(multTime(double)),this,SLOT(setMultTime(double)));
 
 
-    init();
+    //init();
 }
 void view3DArea::openTXTFile()
 {
@@ -203,188 +204,54 @@ void view3DArea::readAllModels()
 
 void view3DArea::init()
 {
-#ifdef USE_3DMODEL
-    readAllModels();
-    setAxisIsDrawn(false);
-    setFPSIsDisplayed(true);
-    //setFullScreen(true);
-    setAnimationPeriod(dt);
-#endif
-    //! открыть рельеф по умолчанию
-    terrain->openTerrainMap("/defaultTerrain.asc");
-    QColor c(81,168,255);
-    this->setBackgroundColor(c);
-    startAnimation();
+    glewInit();
+    prg = new QGLShaderProgram();
+    prg->addShaderFromSourceFile(QGLShader::Vertex, "color.vsh.h");
+    prg->addShaderFromSourceFile(QGLShader::Fragment, "color.fsh.h");
+    prg->link();
+
+    float buf[6] = { 0, -1, -1,0, 1, 0 };
+    glGenBuffers(1, &vb);
+	
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6, buf, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+   // int color_loc = prg->uniformLocation("color");
+    //glBufferSubData
+
 }
 
 void view3DArea::draw()
 {
-    double d=20000.0;
+    prg->bind();
+    prg->setUniformValue("color", QColor(Qt::red));
 
-    net.checkDatagrams();
-    if(cameraToThisObj!=0)
-    {
-        d=6371000.0*atan(sqrt(cameraToThisObj->yg*(2*6371000.0+cameraToThisObj->yg))/6371000.0);
-    }
+ //   glUniform3f(color_loc, 1, 1, 3);
+    //glUseProgram(id)
+    
+    //QGLMatrix4x4 mat;
+    //map.projection(
+    
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    
+    glEnableVertexAttribArray(0);    
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-    glDisable(GL_LIGHTING);
-    setSceneRadius(d);
-    ////////////////////////////////////////////////
-    GLfloat fogColor[4];//= {0.1f, 0.1f, 0.5f, 1.0f}; // Цвет тумана
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    
+    glDisableVertexAttribArray(0);    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    //glUseProgram(0);
+    
+    prg->release();
 
-    QColor c(81,168,255);
-    //QColor c(Qt::cyan);
-    fogColor[0]=c.redF();
-    fogColor[1]=c.greenF();
-    fogColor[2]=c.blueF();
-    fogColor[3]=1.0;
-
-    if(fog==true)
-    {
-        glEnable(GL_FOG);               // Включает туман (GL_FOG)
-        glFogi(GL_FOG_MODE, GL_LINEAR); // Выбираем тип тумана
-        glFogfv(GL_FOG_COLOR, fogColor);// Устанавливаем цвет тумана
-        glFogf(GL_FOG_DENSITY, 0.5f);   // Насколько густым будет туман
-        glHint(GL_FOG_HINT, GL_NICEST); // Вспомогательная установка тумана
-        glFogf(GL_FOG_START, d/2);      // Глубина, с которой начинается туман
-        glFogf(GL_FOG_END, d);          // Глубина, где туман заканчивается.
-    }else
-    {
-        glDisable(GL_FOG);
-    }
-
-    glScalef(1.0,1.0,1.0);
-
-    glBegin(GL_POINTS);
-    qglColor(QColor(Qt::red));
-
-    glEnd();
-
-    drawTrajectory();
-    glPushMatrix();
-    ////////Нарисуем плоскость OXZ
-    //glScalef(radiusScene,radiusScene,radiusScene);
-    glScalef(d,d,d);
-    //glDisable(GL_LIGHTING);//Отключим свет
-    glBegin(GL_LINES);
-
-    float stepGrid=2.0/SIZE_GRID;//Шаг сетки
-    for(int i=0;i<=SIZE_GRID;i++)
-    {
-        /////////сетка при Z=0.0//////////////
-        qglColor(QColor(170,200,160));
-        //qglColor(QColor(11,11,11));
-
-        double dY=1.0/MAX_Y;
-
-#ifdef VERT_GRID
-        glVertex3f(1.0-i*stepGrid,0.0,0.0);
-        glVertex3f(1.0-i*stepGrid,1.0,0.0);
-        glVertex3f(-1.0,fabs(1.0-i*stepGrid),0.0);
-        glVertex3f(1.0,fabs(1.0-i*stepGrid),0.0);
-        //////////////////////////////////////
-
-        ///////сетка при X=0.0///////////////
-        glVertex3f(0.0,0.0,1.0-i*stepGrid);
-        glVertex3f(0.0,1.0,1.0-i*stepGrid);
-        glVertex3f(0.0,fabs(1.0-i*stepGrid),-1.0);
-        glVertex3f(0.0,fabs(1.0-i*stepGrid),1.0);
-        ////////////////////////////////////
-#endif
-        /////////сетка при Y=0.0///////////////
-        glVertex3f(-1.0,0.001,1.0-i*stepGrid);
-        glVertex3f(1.0,0.001,1.0-i*stepGrid);
-
-        glVertex3f(1.0-i*stepGrid,0.001,-1.0);
-        glVertex3f(1.0-i*stepGrid,0.001,1.0);
-
-    }
-    glDisable(GL_BLEND);//Уберем прозрачность
-    glEnd();
-    //////////////////////////////////////////
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
-    qglColor(QColor(Qt::gray));
-    glBegin(GL_QUADS);
-    //qglColor(QColor(229,210,175,220));
-
-
-    glVertex3f(1.0,0.0,-1.0);
-    glVertex3f(-1.0,0.0,-1.0);
-    glVertex3f(-1.0,0.0,1.0);
-    glVertex3f(1.0,0.0,1.0);
-    glEnd();
-
-    glDisable(GL_BLEND);//Уберем прозрачность
-    glPopMatrix();
-
-    glLineWidth(1.0);
-    glPointSize(4.0);
-
-#ifdef USE_3DMODEL
-    //! отрисовка трехмерных объектов
-//    drawSolidObjects();
-#endif
-    //! отрисовка подстилающей поверхности
-    if(terra==true)
-        drawTerra();
-    //! отрисовка ИЛС
-    if(ils==true)
-        drawILS();
-    if(sky==true)
-        drawSky();
-    //////////////////////////
-    glDisable(GL_LIGHTING);
-    //glEnable(GL_BLEND);
-    //! Полная яркость, 50% альфа (НОВОЕ)
-    glColor4f(1.0f,1.0f,1.0f,0.7f);
-    //! Функция смешивания для непрозрачности
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE);
-
-    //if(grid==true) drawGrid();
-    drawStateLine();
-    if(info==true)
-    {
-        drawText(10,60,"[+] zoom UP");
-        drawText(10,80,"[-] zoom DOWN");
-        drawText(10,100,"Current Scale="+QString::number(d)+" meters");
-        drawText(10,150,"Psi="+QString::number(curPsi));
-        drawText(10,170,"Gamma="+QString::number(curGamma));
-        drawText(10,190,"Teta="+QString::number(curTeta));
-        drawText(10,210,"Vy="+QString::number(curVy));
-        drawText(10,230,"y="+QString::number(curY));
-        drawText(10,250,"V="+QString::number(curV));
-        drawText(10,270,"alfa="+QString::number(curAlfa));
-        drawText(10,290,"nya="+QString::number(curNya));
-        drawText(10,310,"fi="+QString::number(curFi));
-        drawText(10,330,"unt="+QString::number(curUnt));
-
-        drawText(10,120,"HorFilter="+QString::number(horFilter->curValue()));
-        drawText(10,140,"VerFilter="+QString::number(verFilter->curValue()));
-
-        QString nameMan="Unknown";
-
-        switch(curIdMan)
-        {
-            case 1000:{nameMan="Homing";break;}
-            case 1:{nameMan="left_turn";break;}
-            case 2:{nameMan="right_turn";break;}
-            case 5:{nameMan="halfcross";break;}
-            case 7:{nameMan="gorka";break;}
-            case 9:{nameMan="prividenie";break;}
-            case 10:{nameMan="dive";break;}
-            case 12:{nameMan="battle_allign";break;}
-            case 14:{nameMan="none";break;}
-
-        };
-        drawText(10,350,"man="+nameMan);
-    }
-    //drawLight(GL_LIGHT0);
 }
 void view3DArea::drawTrajectory()
 {
     //! отрисовка точек
-    glBegin(GL_POINTS);
+   /* glBegin(GL_POINTS);
 
     for(long i=0;i<trs[0].x.size();i++)
     {
@@ -403,7 +270,7 @@ void view3DArea::drawTrajectory()
             glVertex3f(trs[0].x[i],trs[0].y[i],trs[0].z[i]);
         }
         glEnd();
-    }
+    }*/
 }
 
 void view3DArea::animate()
@@ -601,7 +468,7 @@ void view3DArea::drawObject(Lib3dsFile *obj,
 //! отрисовка ИЛС
 void view3DArea::drawILS()
 {
-    if(cameraToThisObj==0)
+    /*if(cameraToThisObj==0)
         return;
 
     /////////////////////////////////////////
@@ -657,7 +524,7 @@ void view3DArea::drawILS()
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-    glPopAttrib();
+    glPopAttrib();*/
     /////////////////////////////////////////
 }
 //! отрисовка прицельной символики
@@ -700,7 +567,7 @@ void view3DArea::drawStateLine()
 void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
 {
     //! координаты центра
-    int xCenter=0;
+    /*int xCenter=0;
     int yCenter=0;
     glPointSize(width_);
     //! перевод
@@ -722,12 +589,12 @@ void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
 
         glVertex2i(xCenter,yCenter+radius_/2.0);
         glVertex2i(xCenter,yCenter-radius_/2.0);
-    glEnd();
+    glEnd();*/
 }
 
 void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
 {
-    int x=0;
+    /*int x=0;
     int y=radius_;
     int delta=1-1*radius_;
     int error=0;
@@ -775,102 +642,14 @@ void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
         delta += 2*(x-y);
         --y;
     }
-    glEnd();
+    glEnd();*/
 
 }
 
 //! отрисовка земли
 void view3DArea::drawTerra()
 {
-    if(terrain->loadCompleate==true)
-    {
-        int step=1;
-
-        /*glPushMatrix();
-        //glEnable(GL_BLEND);
-        //glEnable(GL_AUTO_NORMAL);
-        //glEnable(GL_NORMALIZE);
-        GLfloat pos[4]={0.0,5000.0,0.0,1.0};
-        Lib3dsRgba a={0.2, 0.2, 0.2, 1.0};
-        Lib3dsRgba d={0.8, 0.8, 0.8, 1.0};
-        Lib3dsRgba s={1.0, 1.0, 1.0, 1.0};
-        glLightfv (GL_LIGHT0, GL_AMBIENT, a);
-        glLightfv (GL_LIGHT0, GL_DIFFUSE, d);
-        glLightfv (GL_LIGHT0, GL_SPECULAR, s);
-
-        glRotated (90.0, 3500.0,0.0, 0.0);
-        glLightfv (GL_LIGHT0, GL_POSITION, pos);
-
-        glEnable(GL_LIGHTING);
-
-        glPopMatrix();*/
-
-        glPushMatrix();
-        glShadeModel(GL_SMOOTH);
-        glClearDepth(1.0f);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
-        glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
-        glBegin(GL_QUADS);
-
-//        if(camera()->position().y>25000.0)
-//            step=10;
-
-//        else if(camera()->position().y<7000)
-//            step=1;
-//        else
-//            step=limitMinMax(((int)floor(linearInterpolation(camera()->position().y,10,1,25000,7000))),1,10);
-
-        for(int i=0;i<terrain->mapH->nrows-step;i+=step)
-        {
-            for(int j=0;j<terrain->mapH->ncols-step;j+=step)
-            {
-
-
-                QVector3D vec=terrain->mapH->value(j,i);
-                QVector3D vec1=terrain->mapH->value(j,i+step);
-                QVector3D vec1N=vec-vec1;
-
-                QVector3D vec2=terrain->mapH->value(j+step,i);
-                QVector3D vec2N=vec2-vec;
-                QVector3D norm;norm.normal(vec2N,vec1N);
-
-                if(vec.y()<100)
-                    glColor3f(0.0f,0.0,1.0f);
-                else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
-                glVertex3f(vec.x(),vec.y(),vec.z());
-
-                vec=terrain->mapH->value(j,i+step);
-
-                if(vec.y()<100)
-                    glColor3f(0.0f,0.0,1.0f);
-                else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
-
-                glVertex3f(vec.x(),vec.y(),vec.z());
-
-                vec=terrain->mapH->value(j+step,i+step);
-                if(vec.y()<100)
-                    glColor3f(0.0f,0.0,1.0f);
-                else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
-
-                glVertex3f(vec.x(),vec.y(),vec.z());
-
-                vec=terrain->mapH->value(j+step,i);
-                if(vec.y()<100)
-                    glColor3f(0.0f,0.0,1.0f);
-                else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
-
-                glVertex3f(vec.x(),vec.y(),vec.z());
-
-            }
-        }
-        glEnd();
-        glPopMatrix();
-    }
+  
 }
 //! отрисовка неба
 void view3DArea::drawSky()
