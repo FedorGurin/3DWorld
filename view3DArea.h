@@ -139,6 +139,10 @@ protected :
     virtual void keyPressEvent(QKeyEvent *e);
     virtual void keyReleaseEvent(QKeyEvent *e);
 private:
+    //! приращения к повороту камеры
+    double dpsi_camera;
+    double dteta_camera;
+    double dgamma_camera;
     //! множитель времени, б/р
     float multTime;
     //! густота тумана,[0.0;1.0]
@@ -149,6 +153,10 @@ private:
     int dt;//мсек
     //! глобальный счетчик
     int globalCount;
+    //! поворот карты
+    double rotMap;
+    double offsetMapX;
+    double offsetMapZ;
     //! для чтения TXT файла с данными
     QFile *file;
     QTextStream *stream;
@@ -245,6 +253,13 @@ public slots:
     void setMultTime(double);
     //! глубина тумана
     void setDensityFog(double);
+    //! размер сцены
+    void setSizeScene(double);
+    //! отрисовка сетки
+    void setGrid(bool);
+    void setRotateMap(double);
+    void setOffsetMapX(double);
+    void setOffsetMapZ(double);
 };
 
 #endif // VIEW3DAREA_H

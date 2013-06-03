@@ -16,6 +16,7 @@ public:
     ~FormSettings();
 signals:
     void fog(bool);
+    void grid(bool);
     void vertical(bool);
     void ils(bool);
     void info(bool);
@@ -25,6 +26,10 @@ signals:
     void freq(int);
     void multTime(double);
     void densityFog(double);
+    void sizeScene(double);
+    void offsetMapX(double);
+    void offsetMapZ(double);
+    void rotateMap(double);
 private:
     Ui::FormSettings *ui;
 };

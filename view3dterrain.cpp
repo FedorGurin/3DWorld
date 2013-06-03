@@ -67,14 +67,13 @@ void ThreadParser::setParserFile(QTextStream *out_,TASCII_MAP *mapH_)
 void ThreadParser::run()
 {
     QStringList list=(out->readAll()).split("\n",QString::SkipEmptyParts);
-    printf("Size=%d\n",list.size());
 
     QStringList tempList;
     tempList=list[0].split(" ",QString::SkipEmptyParts);
-    mapH->ncols=tempList[1].toDouble()/2;
+    mapH->ncols=tempList[1].toDouble();
 
     tempList=list[1].split(" ",QString::SkipEmptyParts);
-    mapH->nrows=tempList[1].toDouble()/2;
+    mapH->nrows=tempList[1].toDouble();
 
     tempList=list[2].split(" ",QString::SkipEmptyParts);
     mapH->xllcorner=tempList[1].toDouble();

@@ -19,7 +19,7 @@
 #include <QByteArray>
 
 using namespace qglviewer;
-#define SIZE_GRID 50
+#define SIZE_GRID 10
 #define MAX_Y 20000.0
 //#define PERIOD_ANIMATION 50
 #define PERIOD_ANIMATION 1000
@@ -51,7 +51,9 @@ view3DArea::view3DArea():QGLViewer()
 
     lam0=57.0;
     fi0=33.0;
-
+    rotMap=90.0;
+    offsetMapX=0.0;
+    offsetMapZ=0.0;
     dFog=0.5;
     globalCount=0;
     ils=true;
@@ -60,10 +62,15 @@ view3DArea::view3DArea():QGLViewer()
     info=false;
     terra=true;
     sky=false;
-    radiusScene=20000.0;
+    grid=true;
+    radiusScene=60000.0;
     globalTime=0.0;
     multTime=1.0;
     dt=((1.0/20)*1000.0);;
+
+    dpsi_camera=0.0;
+    dteta_camera=0.0;
+    dgamma_camera=0.0;
 
     rows.clear();
     trs.clear();
@@ -88,9 +95,11 @@ view3DArea::view3DArea():QGLViewer()
 
     vecCameraInTargetSystem=Vector3D_D::zero;
     vecCameraInTargetSystem.y=100;
-    vecCameraInTargetSystem.x=-500;
+    vecCameraInTargetSystem.x=-1500;
 
     connect(setting,SIGNAL(fog(bool)),this,SLOT(setFog(bool)));
+    connect(setting,SIGNAL(grid(bool)),this,SLOT(setGrid(bool)));
+
     connect(setting,SIGNAL(info(bool)),this,SLOT(setInfo(bool)));
     connect(setting,SIGNAL(ils(bool)),this,SLOT(setILS(bool)));
     connect(setting,SIGNAL(vertical(bool)),this,SLOT(setVertical(bool)));
@@ -100,10 +109,19 @@ view3DArea::view3DArea():QGLViewer()
     connect(setting,SIGNAL(freq(int)),this,SLOT(setFreq(int)));
     connect(setting,SIGNAL(multTime(double)),this,SLOT(setMultTime(double)));
     connect(setting,SIGNAL(densityFog(double)),this,SLOT(setDensityFog(double)));
+    connect(setting,SIGNAL(sizeScene(double)),this,SLOT(setSizeScene(double)));
+    connect(setting,SIGNAL(offsetMapX(double)),this,SLOT(setOffsetMapX(double)));
+    connect(setting,SIGNAL(offsetMapZ(double)),this,SLOT(setOffsetMapZ(double)));
+    connect(setting,SIGNAL(rotateMap(double)),this,SLOT(setRotateMap(double)));
 
 
     init();
 }
+void view3DArea::setGrid(bool value)
+{
+    grid=value;
+}
+
 void view3DArea::openTXTFile()
 {
     dialog->exec();
@@ -130,6 +148,10 @@ void view3DArea::setDensityFog(double value)
    // qDebug("setDensityFog");
     dFog=value;
 }
+void view3DArea::setSizeScene(double value)
+{
+    radiusScene=value;
+}
 
 void view3DArea::setFreq(int freq)
 {
@@ -139,6 +161,20 @@ void view3DArea::setFreq(int freq)
     stopAnimation();
     startAnimation();
 }
+void view3DArea::setRotateMap(double value)
+{
+    rotMap=value;
+}
+void view3DArea::setOffsetMapX(double value)
+{
+    offsetMapX=value;
+}
+
+void view3DArea::setOffsetMapZ(double value)
+{
+    offsetMapZ=value;
+}
+
 void view3DArea::setILS(bool value)
 {
     ils=value;
@@ -199,12 +235,12 @@ void view3DArea::slotAccepted()
 void view3DArea::readAllModels()
 {
     list3DObj.resize(6);
-    list3DObj[0].code=105;
+    list3DObj[0].code=100;
     list3DObj[1].code=101;
     list3DObj[2].code=102;
     list3DObj[3].code=103;
     list3DObj[4].code=104;
-    list3DObj[5].code=100;
+    list3DObj[5].code=105;
     //! чтение моделей из 3ds файлов
     loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
     loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
@@ -221,7 +257,7 @@ void view3DArea::init()
     setAxisIsDrawn(false);
     setFPSIsDisplayed(true);
     //setFullScreen(true);
-    setAnimationPeriod(dt);
+    //setAnimationPeriod(dt);
 #endif
     //! открыть рельеф по умолчанию
     terrain->openTerrainMap("/defaultTerrain.asc");
@@ -232,16 +268,21 @@ void view3DArea::init()
 
 void view3DArea::draw()
 {
-    double d=20000.0;
-
+    double d=0;
+    glDisable(GL_LIGHTING);
     net.checkDatagrams();
     if(cameraToThisObj!=0)
     {
         d=6371000.0*atan(sqrt(cameraToThisObj->yg*(2*6371000.0+cameraToThisObj->yg))/6371000.0);
+        setSceneRadius(d);
+    }else
+    {
+        setSceneRadius(radiusScene);
+        d=radiusScene;
     }
 
-    glDisable(GL_LIGHTING);
-    setSceneRadius(d);
+
+
     ////////////////////////////////////////////////
     GLfloat fogColor[4];//= {0.1f, 0.1f, 0.5f, 1.0f}; // Цвет тумана
 
@@ -274,65 +315,8 @@ void view3DArea::draw()
     glEnd();
 
     drawTrajectory();
-    glPushMatrix();
-    ////////Нарисуем плоскость OXZ
-    //glScalef(radiusScene,radiusScene,radiusScene);
-    glScalef(d,d,d);
-    //glDisable(GL_LIGHTING);//Отключим свет
-    glBegin(GL_LINES);
-
-    float stepGrid=2.0/SIZE_GRID;//Шаг сетки
-    for(int i=0;i<=SIZE_GRID;i++)
-    {
-        /////////сетка при Z=0.0//////////////
-        qglColor(QColor(170,200,160));
-        //qglColor(QColor(11,11,11));
-
-        double dY=1.0/MAX_Y;
-
-#ifdef VERT_GRID
-        glVertex3f(1.0-i*stepGrid,0.0,0.0);
-        glVertex3f(1.0-i*stepGrid,1.0,0.0);
-        glVertex3f(-1.0,fabs(1.0-i*stepGrid),0.0);
-        glVertex3f(1.0,fabs(1.0-i*stepGrid),0.0);
-        //////////////////////////////////////
-
-        ///////сетка при X=0.0///////////////
-        glVertex3f(0.0,0.0,1.0-i*stepGrid);
-        glVertex3f(0.0,1.0,1.0-i*stepGrid);
-        glVertex3f(0.0,fabs(1.0-i*stepGrid),-1.0);
-        glVertex3f(0.0,fabs(1.0-i*stepGrid),1.0);
-        ////////////////////////////////////
-#endif
-        /////////сетка при Y=0.0///////////////
-        glVertex3f(-1.0,0.001,1.0-i*stepGrid);
-        glVertex3f(1.0,0.001,1.0-i*stepGrid);
-
-        glVertex3f(1.0-i*stepGrid,0.001,-1.0);
-        glVertex3f(1.0-i*stepGrid,0.001,1.0);
-
-    }
-    glDisable(GL_BLEND);//Уберем прозрачность
-    glEnd();
-    //////////////////////////////////////////
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
-    qglColor(QColor(Qt::gray));
-    glBegin(GL_QUADS);
-    //qglColor(QColor(229,210,175,220));
 
 
-    glVertex3f(1.0,0.0,-1.0);
-    glVertex3f(-1.0,0.0,-1.0);
-    glVertex3f(-1.0,0.0,1.0);
-    glVertex3f(1.0,0.0,1.0);
-    glEnd();
-
-    glDisable(GL_BLEND);//Уберем прозрачность
-    glPopMatrix();
-
-    glLineWidth(1.0);
-    glPointSize(4.0);
 
 #ifdef USE_3DMODEL
     //! отрисовка трехмерных объектов
@@ -393,13 +377,79 @@ void view3DArea::draw()
         drawText(10,350,"man="+nameMan);
     }
     //drawLight(GL_LIGHT0);
+
+    if(grid==true)
+    {
+    glPushMatrix();
+    //glDisable(GL_DEPTH_TEST);
+    ////////Нарисуем плоскость OXZ
+    //glScalef(radiusScene,radiusScene,radiusScene);
+    glScalef(d,d,d);
+    //glDisable(GL_LIGHTING);//Отключим свет
+    glBegin(GL_LINES);
+
+        float stepGrid=2.0/SIZE_GRID;//Шаг сетки
+        for(int i=0;i<=SIZE_GRID;i++)
+        {
+            /////////сетка при Z=0.0//////////////
+            qglColor(QColor(170,200,160,255));
+            //qglColor(QColor(11,11,11));
+
+            double dY=1.0/MAX_Y;
+
+#ifdef VERT_GRID
+            glVertex3f(1.0-i*stepGrid,0.0,0.0);
+            glVertex3f(1.0-i*stepGrid,1.0,0.0);
+            glVertex3f(-1.0,fabs(1.0-i*stepGrid),0.0);
+            glVertex3f(1.0,fabs(1.0-i*stepGrid),0.0);
+            //////////////////////////////////////
+
+            ///////сетка при X=0.0///////////////
+            glVertex3f(0.0,0.0,1.0-i*stepGrid);
+            glVertex3f(0.0,1.0,1.0-i*stepGrid);
+            glVertex3f(0.0,fabs(1.0-i*stepGrid),-1.0);
+            glVertex3f(0.0,fabs(1.0-i*stepGrid),1.0);
+            ////////////////////////////////////
+#endif
+            /////////сетка при Y=0.0///////////////
+            glVertex3f(-1.0,0.001,1.0-i*stepGrid);
+            glVertex3f(1.0,0.001,1.0-i*stepGrid);
+
+            glVertex3f(1.0-i*stepGrid,0.001,-1.0);
+            glVertex3f(1.0-i*stepGrid,0.001,1.0);
+        }
+
+    glDisable(GL_BLEND);//Уберем прозрачность
+    glEnd();
+    //////////////////////////////////////////
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
+/*    qglColor(QColor(Qt::gray));
+    glBegin(GL_QUADS);
+    //qglColor(QColor(229,210,175,220));
+
+
+    glVertex3f(1.0,0.0,-1.0);
+    glVertex3f(-1.0,0.0,-1.0);
+    glVertex3f(-1.0,0.0,1.0);
+    glVertex3f(1.0,0.0,1.0);
+    glEnd();*/
+
+    glDisable(GL_BLEND);//Уберем прозрачность
+
+    glLineWidth(1.0);
+    glPointSize(4.0);
+    glPopMatrix();
+
+
+}
 }
 void view3DArea::drawTrajectory()
 {
     //! отрисовка точек
     glBegin(GL_POINTS);
 
-    for(long i=0;i<trs[0].x.size();i++)
+    /*for(long i=0;i<trs[0].x.size();i++)
     {
         qglColor(QColor(trs[0].r[i],trs[0].g[i],trs[0].b[i]));
         glVertex3f(trs[0].x[i],trs[0].y[i],trs[0].z[i]);
@@ -414,6 +464,24 @@ void view3DArea::drawTrajectory()
         {
             glVertex3f(trs[0].x[i],0.0,trs[0].z[i]);
             glVertex3f(trs[0].x[i],trs[0].y[i],trs[0].z[i]);
+        }
+        glEnd();
+    }*/
+    for(long i=0;i<rows.size();i++)
+    {
+        qglColor(QColor(80,223,72));
+        glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
+        //glVertex3f(rows[i].x_g,0,rows[i].z_g);
+    }
+    glEnd();
+    if(vertLine==true)
+    {
+        //! отрисовка вертикальных линий
+        glBegin(GL_LINES);
+        for(long i=0;i<rows.size();i=i+5)
+        {
+            glVertex3f(rows[i].x_g,0.0,rows[i].z_g);
+            glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
         }
         glEnd();
     }
@@ -808,6 +876,7 @@ void view3DArea::drawTerra()
         glPopMatrix();*/
 
         glPushMatrix();
+        glRotated(rotMap,0.0,1.0,0.0);
         glShadeModel(GL_SMOOTH);
         glClearDepth(1.0f);
         glEnable(GL_DEPTH_TEST);
@@ -838,35 +907,35 @@ void view3DArea::drawTerra()
                 QVector3D norm;norm.normal(vec2N,vec1N);
 
                 if(vec.y()<100)
-                    glColor3f(0.0f,0.0,1.0f);
+                     glColor3f(0.0f,0.0f,vec.y()/100);
                 else
                     glColor3f(0.0f,vec.y()/1500.0,0.0);
-                glVertex3f(vec.x(),vec.y(),vec.z());
+                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
 
                 vec=terrain->mapH->value(j,i+step);
 
                 if(vec.y()<100)
-                    glColor3f(0.0f,0.0,1.0f);
+                    glColor3f(0.0f,0.0f,vec.y()/100);
                 else
                     glColor3f(0.0f,vec.y()/1500.0,0.0);
 
-                glVertex3f(vec.x(),vec.y(),vec.z());
+                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
 
                 vec=terrain->mapH->value(j+step,i+step);
                 if(vec.y()<100)
-                    glColor3f(0.0f,0.0,1.0f);
+                      glColor3f(0.0f,0.0f,vec.y()/100);
                 else
                     glColor3f(0.0f,vec.y()/1500.0,0.0);
 
-                glVertex3f(vec.x(),vec.y(),vec.z());
+                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
 
                 vec=terrain->mapH->value(j+step,i);
                 if(vec.y()<100)
-                    glColor3f(0.0f,0.0,1.0f);
+                     glColor3f(0.0f,0.0f,vec.y()/100);
                 else
                     glColor3f(0.0f,vec.y()/1500.0,0.0);
 
-                glVertex3f(vec.x(),vec.y(),vec.z());
+                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
 
             }
         }
@@ -894,7 +963,7 @@ void view3DArea::keyReleaseEvent(QKeyEvent *e)
         case Qt::Key_Plus:  {vecCameraInTargetSystem.x+=50;    break;}
         case Qt::Key_Minus:  {vecCameraInTargetSystem.x-=50;    break;}
 
-        default:{QGLViewer::keyPressEvent(e);}
+        default:{QGLViewer::keyReleaseEvent(e);}
     };
 
 }
@@ -906,6 +975,7 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
     {
     case Qt::Key_Plus : {radiusScene*=2.0; break;}
     case Qt::Key_Minus: {radiusScene/=2.0; break;}
+    case Qt::Key_A:     {break;}
     case Qt::Key_0    : {setCameraToObject(-1);break;}
     case Qt::Key_1    : {setCameraToObject(0);break;}
     case Qt::Key_2    : {setCameraToObject(1);break;}
@@ -917,6 +987,10 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
     case Qt::Key_8    : {setCameraToObject(7);break;}
     case Qt::Key_9    : {setCameraToObject(8);break;}
     case Qt::Key_Insert:{cameraToBack=true;break;}
+    case Qt::Key_T:     {dteta_camera+=0.01;break;}
+    case Qt::Key_G:     {dteta_camera-=0.01;break;}
+    case Qt::Key_F:     {dpsi_camera+=0.01;break;}
+    case Qt::Key_H:     {dpsi_camera-=0.01;break;}
 
     case Qt::Key_Right: {horFilter->setFilterValue(1.0);   break;}
     case Qt::Key_Left:  {horFilter->setFilterValue(-1.0);   break;}
@@ -970,13 +1044,10 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
             //openTXTFile();
             break;
         }
-    case Qt::Key_G:
+    /*case Qt::Key_G:
         {
-            //net.sendData(curTarget,8);
-            /*if(grid==true) grid=false;
-            else grid=true;*/
             break;
-        }
+        }*/
     case Qt::Key_Z:
         {
             //net.sendData(curTarget,7);
@@ -997,9 +1068,9 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
 void view3DArea::loadFile(QString nameFile,Lib3dsFile **file3ds)
 {
     //!установить период анимации
-    setAnimationPeriod(PERIOD_ANIMATION);
+    //setAnimationPeriod(PERIOD_ANIMATION);
     //! отрисовка сетки
-    setGridIsDrawn(true);
+    setGridIsDrawn(false);
     //! отрисовка осей
     setAxisIsDrawn(false);
     //! Путь к 3D модели
@@ -1151,9 +1222,9 @@ void view3DArea::cameraToObject()
 
     //! кватернион поворотов
     Quaternion qPI_2(   Vec(0.0, 1.0, 0.0),-M_PI/2.0);
-    Quaternion qPsi(    Vec(0.0, 1.0, 0.0),psi_tar_radian+d_psi_tar_rad);
-    Quaternion qTeta(   Vec(0.0, 0.0, 1.0),-gamma_tar_radian);
-    Quaternion qGamma(  Vec(1.0, 0.0, 0.0),tan_tar_radian);
+    Quaternion qPsi(    Vec(0.0, 1.0, 0.0),psi_tar_radian+d_psi_tar_rad+dpsi_camera);
+    Quaternion qTeta(   Vec(0.0, 0.0, 1.0),-gamma_tar_radian+dgamma_camera);
+    Quaternion qGamma(  Vec(1.0, 0.0, 0.0),tan_tar_radian+dteta_camera);
 
     //! единичный кватернион
     Quaternion identity;

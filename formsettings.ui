@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>233</width>
-    <height>495</height>
+    <width>269</width>
+    <height>613</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@
        <property name="title">
         <string>Настройки</string>
        </property>
-       <layout class="QGridLayout" name="gridLayout_3">
+       <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
          <widget class="QCheckBox" name="checkBoxVertLine">
           <property name="text">
@@ -57,20 +57,30 @@
          </widget>
         </item>
         <item row="4" column="0">
+         <widget class="QCheckBox" name="checkBoxGrid">
+          <property name="text">
+           <string>отрисовка сетки</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
          <widget class="QCheckBox" name="checkBoxInfo">
           <property name="text">
            <string>информация</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="0">
+        <item row="6" column="0">
          <widget class="QCheckBox" name="checkBoxFog">
           <property name="text">
            <string>туман</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
+        <item row="7" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
            <widget class="QLabel" name="label_4">
@@ -97,7 +107,7 @@
           </item>
          </layout>
         </item>
-        <item row="7" column="0">
+        <item row="8" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
            <widget class="QLabel" name="label_5">
@@ -111,7 +121,7 @@
           </item>
          </layout>
         </item>
-        <item row="8" column="0">
+        <item row="9" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QLabel" name="label">
@@ -138,7 +148,7 @@
           </item>
          </layout>
         </item>
-        <item row="9" column="0">
+        <item row="10" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="QLabel" name="label_2">
@@ -159,7 +169,7 @@
           </item>
          </layout>
         </item>
-        <item row="10" column="0">
+        <item row="11" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
            <widget class="QLabel" name="label_3">
@@ -183,7 +193,94 @@
           </item>
          </layout>
         </item>
-        <item row="11" column="0">
+        <item row="12" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <item>
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Размер сцены</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="doubleSpinBoxSizeScene">
+            <property name="maximum">
+             <double>99999999.989999994635582</double>
+            </property>
+            <property name="value">
+             <double>60000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="13" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Смещение рельефа по X</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="doubleSpinBoxOffsetX">
+            <property name="minimum">
+             <double>-99999999.989999994635582</double>
+            </property>
+            <property name="maximum">
+             <double>99999999.989999994635582</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="14" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>Смещение рельефа по Z</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="doubleSpinBoxOffsetZ">
+            <property name="minimum">
+             <double>-99999999.989999994635582</double>
+            </property>
+            <property name="maximum">
+             <double>99999999.989999994635582</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="15" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_9">
+          <item>
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>Поворот карты</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="doubleSpinBoxRot">
+            <property name="minimum">
+             <double>-180.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>180.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>90.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="16" column="0">
          <widget class="QGroupBox" name="groupBox_3">
           <property name="title">
            <string>Интерполяция</string>
@@ -217,7 +314,7 @@
        <property name="title">
         <string>Загрузка</string>
        </property>
-       <layout class="QGridLayout" name="gridLayout">
+       <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="0">
          <widget class="QPushButton" name="pushButtonLoadData">
           <property name="text">
@@ -225,7 +322,7 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="0" column="1">
          <widget class="QPushButton" name="pushButtonLoadLand">
           <property name="text">
            <string>ландшафт</string>
