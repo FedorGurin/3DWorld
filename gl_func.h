@@ -2,7 +2,7 @@
 #define GL_FUNC_H
 
 #include "Matrix3D_D.h"
-#include "ibuffer.h"
+//#include "ibuffer.h"
 #include <limits.h>
 #include <QDomElement>
 
@@ -421,7 +421,7 @@ void adams4(T* const obj,
 
 }
 //! метод Адамса 4-порядка (предикатор-корректор)
-template<typename T,typename J,int nParam>
+/*template<typename T,typename J,int nParam>
 void adams4_pred_correct(T* const obj,
             int nSDU,
             IBuffers<J> *buffers,
@@ -438,5 +438,5 @@ void euler(T* const obj,
            double step)
 {
 
-}
+}*/
 #endif // GL_FUNC_H

@@ -1,10 +1,22 @@
+//#version 330
+
+//uniform vec4 color;
+
+//out vec4 outputColor;
+//in float distance
+//void main(void)
+//{
+//    outputColor = color;
+//}
+
 #version 330
 
-uniform vec4 color;
+smooth in vec4 theColor;
 
 out vec4 outputColor;
-//in float distance
-void main(void)
+
+void main()
 {
-    outputColor = color;
+	outputColor = theColor;
 }
+

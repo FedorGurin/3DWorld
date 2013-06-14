@@ -210,11 +210,19 @@ void view3DArea::init()
     prg->addShaderFromSourceFile(QGLShader::Fragment, "color.fsh.h");
     prg->link();
 
-    float buf[6] = { 0, -1, -1,0, 1, 0 };
+    //float buf[6] = { 0, -1, -1,0, 1, 0 };
+    const float vertexData[] = {
+	 0.0f,    0.5f, 0.0f, 1.0f,
+	 0.5f, -0.366f, 0.0f, 1.0f,
+	-0.5f, -0.366f, 0.0f, 1.0f,
+	 1.0f,    0.0f, 0.0f, 1.0f,
+	 0.0f,    1.0f, 0.0f, 1.0f,
+	 0.0f,    0.0f, 1.0f, 1.0f,
+};
     glGenBuffers(1, &vb);
 	
     glBindBuffer(GL_ARRAY_BUFFER, vb);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6, buf, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float), vertexData, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
    // int color_loc = prg->uniformLocation("color");
@@ -235,16 +243,24 @@ void view3DArea::draw()
     
     glBindBuffer(GL_ARRAY_BUFFER, vb);
     
-    glEnableVertexAttribArray(0);    
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0); 
+    glEnableVertexAttribArray(1);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)48);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    //glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+    //glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLES, 0, 4);
     
     glDisableVertexAttribArray(0);    
+    glDisableVertexAttribArray(1);    
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     //glUseProgram(0);
-    
+    //glutSwapBuffers();
+	//glutPostRedisplay();
+
     prg->release();
 
 }
