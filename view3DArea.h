@@ -135,6 +135,7 @@ public:
     LimitPositionKAI *limit;
     //! отрисовка узлов
     //void renderNode(Lib3dsFile *,Lib3dsNode *node);
+    void computePositionOffsets(float &fXOffset, float &fYOffset);
 protected :
     virtual void draw();
     virtual void animate();

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <math.h>
 //#include <GL/glu.h>
-
+#include <GL/glut.h>
 
 #include <QMessageBox>
 #include <QKeyEvent>
@@ -222,39 +222,81 @@ void view3DArea::init()
     glGenBuffers(1, &vb);
 	
     glBindBuffer(GL_ARRAY_BUFFER, vb);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float), vertexData, GL_STATIC_DRAW);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STREAM_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
    // int color_loc = prg->uniformLocation("color");
     //glBufferSubData
 
 }
+void view3DArea::computePositionOffsets(float &fXOffset, float &fYOffset)
+{
+const float fLoopDuration = 5.0f;
+const float fScale = 3.14159f * 2.0f / fLoopDuration;
+float fElapsedTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+float fCurrTimeThroughLoop = fmodf(fElapsedTime, fLoopDuration);
+fXOffset = cosf(fCurrTimeThroughLoop * fScale) * 0.5f;
+fYOffset = sinf(fCurrTimeThroughLoop * fScale) * 0.5f;
+}
 
+/*void AdjustVertexData(float fXOffset, float fYOffset)
+{
+std::vector<float> fNewData(ARRAY_COUNT(vertexPositions));
+memcpy(&fNewData[0], vertexPositions, sizeof(vertexPositions));
+for(int iVertex = 0; iVertex < ARRAY_COUNT(vertexPositions); iVertex += 4)
+{
+fNewData[iVertex] += fXOffset;
+fNewData[iVertex + 1] += fYOffset;
+}
+glBindBuffer(GL_ARRAY_BUFFER, positionBufferObject);
+glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertexPositions), &fNewData[0]);
+
+glBindBuffer(GL_ARRAY_BUFFER, 0);
+}*/
 void view3DArea::draw()
 {
+    float fXOffset = 0.0f, fYOffset = 0.0f;
     prg->bind();
-    prg->setUniformValue("color", QColor(Qt::red));
-
+    prg->setUniformValue("offset",fXOffset,fYOffset);
+    computePositionOffsets(fXOffset,fYOffset);
+    /////////////////////
+  /*float vertexData[] = {
+	 0.0f,    0.5f, 0.0f, 1.0f,
+	 0.5f, -0.366f, 0.0f, 1.0f,
+	-0.5f, -0.366f, 0.0f, 1.0f,
+	 1.0f,    0.0f, 0.0f, 1.0f,
+	 0.0f,    1.0f, 0.0f, 1.0f,
+	 0.0f,    0.0f, 1.0f, 1.0f,
+    };
+    vertexData[0]+=fXOffset;
+    vertexData[1]+=fYOffset;
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertexData), vertexData);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);*/
  //   glUniform3f(color_loc, 1, 1, 3);
     //glUseProgram(id)
     
     //QGLMatrix4x4 mat;
     //map.projection(
     
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+glClear(GL_COLOR_BUFFER_BIT);
+
     glBindBuffer(GL_ARRAY_BUFFER, vb);
     
     glEnableVertexAttribArray(0); 
-    glEnableVertexAttribArray(1);
+    //glEnableVertexAttribArray(1);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)48);
+	//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)48);
 
     //glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     //glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDrawArrays(GL_TRIANGLES, 0, 4);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
     
     glDisableVertexAttribArray(0);    
-    glDisableVertexAttribArray(1);    
+    //glDisableVertexAttribArray(1);    
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     //glUseProgram(0);
