@@ -13,7 +13,7 @@
 #include <QTextStream>
 
 
-#include "gl_func.h"
+#include "math_func.h"
 typedef struct
 {
     long ncols;

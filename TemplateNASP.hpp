@@ -1,7 +1,7 @@
 #ifndef TEMPLATENASP_HPP
 #define TEMPLATENASP_HPP
 
-#include "gl_func.h"
+#include "math_func.h"
 #include <QQueue>
 
 //! гистерезис

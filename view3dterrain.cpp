@@ -106,7 +106,7 @@ void ThreadParser::run()
                                   GradToRadian(mapH->xllcorner+j*mapH->cellsize),
                                   x,
                                   z);
-            vec.push_back(QVector3D(x,mapH->data[i][j],z));
+            vec.push_back(QVector3D(5*x,mapH->data[i][j],5*z));
         }
         mapH->dataVectors.push_back(vec);
 

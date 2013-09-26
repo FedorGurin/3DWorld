@@ -22,7 +22,7 @@ using namespace qglviewer;
 #define SIZE_GRID 10
 #define MAX_Y 20000.0
 //#define PERIOD_ANIMATION 50
-#define PERIOD_ANIMATION 1000
+#define PERIOD_ANIMATION 100
 #define DIVIDE 10
 //#define VERT_GRID
 
@@ -58,33 +58,38 @@ view3DArea::view3DArea():QGLViewer()
     globalCount=0;
     ils=true;
     vertLine=false;
+    //! признаки отрисовки тумана
     fog=false;
     info=false;
     terra=true;
     sky=false;
     grid=true;
-    radiusScene=60000.0;
+    cameraUp=false;
+
+    radiusScene=260000.0;
     globalTime=0.0;
     multTime=1.0;
-    dt=((1.0/20)*1000.0);;
+    dt=((1.0/20)*1000.0);
 
+    //! доп. поворот камеры
     dpsi_camera=0.0;
     dteta_camera=0.0;
     dgamma_camera=0.0;
 
     rows.clear();
     trs.clear();
-    trs.resize(1);
+    trs.resize(17);
 
     current_frame_aircraft=0.0;
     current_frame_target=0.0;
 
     camera_name=0;
 
+    //! указатель на рельеф
     terrain=new View3DTerrain;
 
+    //! ограничения на КАИ
     limit=new LimitPositionKAI;
-    //viewILS=new ViewILS(&net);
 
     horFilter=new FilterAperiodic(0.0,1.0,PERIOD_ANIMATION/1000.0,1.0,-1.0);
     verFilter=new FilterAperiodic(0.0,1.0,PERIOD_ANIMATION/1000.0,1.0,-1.0);
@@ -93,35 +98,43 @@ view3DArea::view3DArea():QGLViewer()
                               2000.0,
                               0.0));
 
-    vecCameraInTargetSystem=Vector3D_D::zero;
-    vecCameraInTargetSystem.y=100;
-    vecCameraInTargetSystem.x=-1500;
+    vecCameraInTargetSystem=glm::vec3(-1500,100,0);
 
-    connect(setting,SIGNAL(fog(bool)),this,SLOT(setFog(bool)));
-    connect(setting,SIGNAL(grid(bool)),this,SLOT(setGrid(bool)));
+    connect(setting,SIGNAL(fog(bool)),          this,SLOT(setFog(bool)));
+    connect(setting,SIGNAL(grid(bool)),         this,SLOT(setGrid(bool)));
 
-    connect(setting,SIGNAL(info(bool)),this,SLOT(setInfo(bool)));
-    connect(setting,SIGNAL(ils(bool)),this,SLOT(setILS(bool)));
-    connect(setting,SIGNAL(vertical(bool)),this,SLOT(setVertical(bool)));
-    connect(setting,SIGNAL(loadLand()),terrain,SLOT(openFileWithTerrain()));
-    connect(setting,SIGNAL(loadDataFlight()),this,SLOT(openTXTFile()));
-    connect(setting,SIGNAL(terra(bool)),this,SLOT(setTerra(bool)));
-    connect(setting,SIGNAL(freq(int)),this,SLOT(setFreq(int)));
-    connect(setting,SIGNAL(multTime(double)),this,SLOT(setMultTime(double)));
-    connect(setting,SIGNAL(densityFog(double)),this,SLOT(setDensityFog(double)));
-    connect(setting,SIGNAL(sizeScene(double)),this,SLOT(setSizeScene(double)));
-    connect(setting,SIGNAL(offsetMapX(double)),this,SLOT(setOffsetMapX(double)));
-    connect(setting,SIGNAL(offsetMapZ(double)),this,SLOT(setOffsetMapZ(double)));
-    connect(setting,SIGNAL(rotateMap(double)),this,SLOT(setRotateMap(double)));
+    connect(setting,SIGNAL(info(bool)),         this,SLOT(setInfo(bool)));
+    connect(setting,SIGNAL(ils(bool)),          this,SLOT(setILS(bool)));
+    connect(setting,SIGNAL(vertical(bool)),     this,SLOT(setVertical(bool)));
+    connect(setting,SIGNAL(loadLand()),         terrain,SLOT(openFileWithTerrain()));
+    connect(setting,SIGNAL(loadDataFlight()),   this,SLOT(openTXTFile()));
+    connect(setting,SIGNAL(terra(bool)),        this,SLOT(setTerra(bool)));
+    connect(setting,SIGNAL(freq(int)),          this,SLOT(setFreq(int)));
+    connect(setting,SIGNAL(multTime(double)),   this,SLOT(setMultTime(double)));
+    connect(setting,SIGNAL(densityFog(double)), this,SLOT(setDensityFog(double)));
+    connect(setting,SIGNAL(sizeScene(double)),  this,SLOT(setSizeScene(double)));
+    connect(setting,SIGNAL(offsetMapX(double)), this,SLOT(setOffsetMapX(double)));
+    connect(setting,SIGNAL(offsetMapZ(double)), this,SLOT(setOffsetMapZ(double)));
+    connect(setting,SIGNAL(rotateMap(double)),  this,SLOT(setRotateMap(double)));
+    connect(&net,SIGNAL(resetTrajectory()),this,SLOT(slotReset()));
+}
+void view3DArea::slotReset()
+{
+    for(int i=0;i<17;i++)
+    {
+        trs[i].r.clear();
+        trs[i].g.clear();
+        trs[i].b.clear();
 
-
-    init();
+        trs[i].x.clear();
+        trs[i].y.clear();
+        trs[i].z.clear();
+    }
 }
 void view3DArea::setGrid(bool value)
 {
     grid=value;
 }
-
 void view3DArea::openTXTFile()
 {
     dialog->exec();
@@ -140,19 +153,16 @@ void view3DArea::setInfo(bool value)
 }
 void view3DArea::setMultTime(double value)
 {
-
     multTime=value;
 }
 void view3DArea::setDensityFog(double value)
 {
-   // qDebug("setDensityFog");
     dFog=value;
 }
 void view3DArea::setSizeScene(double value)
 {
     radiusScene=value;
 }
-
 void view3DArea::setFreq(int freq)
 {
     //qDebug("catch\n");
@@ -211,7 +221,6 @@ void view3DArea::parserTXTFile()
         row.gamma=  GradToRadian(tempList[8].toFloat());
         rows.push_back(row);
     }
-
 }
 
 void view3DArea::slotAccepted()
@@ -229,18 +238,18 @@ void view3DArea::slotAccepted()
         net.setSizeObj(1);
         parserTXTFile();
         globalTime=rows[0].time;
-
     }
 }
 void view3DArea::readAllModels()
 {
     list3DObj.resize(6);
-    list3DObj[0].code=100;
+    //! коды известных объектов
+    list3DObj[0].code=105;
     list3DObj[1].code=101;
     list3DObj[2].code=102;
     list3DObj[3].code=103;
     list3DObj[4].code=104;
-    list3DObj[5].code=105;
+    list3DObj[5].code=100;
     //! чтение моделей из 3ds файлов
     loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
     loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
@@ -261,8 +270,8 @@ void view3DArea::init()
 #endif
     //! открыть рельеф по умолчанию
     terrain->openTerrainMap("/defaultTerrain.asc");
-    QColor c(81,168,255);
-    this->setBackgroundColor(c);
+    this->setBackgroundColor(QColor(81,168,255));
+    setSceneRadius(radiusScene);
     startAnimation();
 }
 
@@ -273,16 +282,13 @@ void view3DArea::draw()
     net.checkDatagrams();
     if(cameraToThisObj!=0)
     {
-        d=6371000.0*atan(sqrt(cameraToThisObj->yg*(2*6371000.0+cameraToThisObj->yg))/6371000.0);
+        d=6371000.0*atan(sqrt(cameraToThisObj->y_g*(2*6371000.0+cameraToThisObj->y_g))/6371000.0);
         setSceneRadius(d);
     }else
     {
         setSceneRadius(radiusScene);
         d=radiusScene;
     }
-
-
-
     ////////////////////////////////////////////////
     GLfloat fogColor[4];//= {0.1f, 0.1f, 0.5f, 1.0f}; // Цвет тумана
 
@@ -314,10 +320,8 @@ void view3DArea::draw()
 
     glEnd();
 
+    //! отрисовка траектории
     drawTrajectory();
-
-
-
 #ifdef USE_3DMODEL
     //! отрисовка трехмерных объектов
     drawSolidObjects();
@@ -328,6 +332,7 @@ void view3DArea::draw()
     //! отрисовка ИЛС
     if(ils==true)
         drawILS();
+    //! отрисовка неба
     if(sky==true)
         drawSky();
     //////////////////////////
@@ -356,8 +361,8 @@ void view3DArea::draw()
         drawText(10,310,"fi="+QString::number(curFi));
         drawText(10,330,"unt="+QString::number(curUnt));
 
-        drawText(10,120,"HorFilter="+QString::number(horFilter->curValue()));
-        drawText(10,140,"VerFilter="+QString::number(verFilter->curValue()));
+        //drawText(10,120,"HorFilter="+QString::number(horFilter->curValue()));
+        //drawText(10,140,"VerFilter="+QString::number(verFilter->curValue()));
 
         QString nameMan="Unknown";
 
@@ -380,74 +385,71 @@ void view3DArea::draw()
 
     if(grid==true)
     {
-    glPushMatrix();
-    //glDisable(GL_DEPTH_TEST);
-    ////////Нарисуем плоскость OXZ
-    //glScalef(radiusScene,radiusScene,radiusScene);
-    glScalef(d,d,d);
-    //glDisable(GL_LIGHTING);//Отключим свет
-    glBegin(GL_LINES);
+        glPushMatrix();
+        //glDisable(GL_DEPTH_TEST);
+        ////////Нарисуем плоскость OXZ
+        //glScalef(radiusScene,radiusScene,radiusScene);
+        glScalef(d,d,d);
+        //glDisable(GL_LIGHTING);//Отключим свет
+        glBegin(GL_LINES);
 
-        float stepGrid=2.0/SIZE_GRID;//Шаг сетки
-        for(int i=0;i<=SIZE_GRID;i++)
-        {
-            /////////сетка при Z=0.0//////////////
-            qglColor(QColor(170,200,160,255));
-            //qglColor(QColor(11,11,11));
+            float stepGrid=2.0/SIZE_GRID;//Шаг сетки
+            for(int i=0;i<=SIZE_GRID;i++)
+            {
+                /////////сетка при Z=0.0//////////////
+                qglColor(QColor(170,200,160,255));
+                //qglColor(QColor(11,11,11));
 
-            double dY=1.0/MAX_Y;
+                double dY=1.0/MAX_Y;
 
 #ifdef VERT_GRID
-            glVertex3f(1.0-i*stepGrid,0.0,0.0);
-            glVertex3f(1.0-i*stepGrid,1.0,0.0);
-            glVertex3f(-1.0,fabs(1.0-i*stepGrid),0.0);
-            glVertex3f(1.0,fabs(1.0-i*stepGrid),0.0);
-            //////////////////////////////////////
+                glVertex3f(1.0-i*stepGrid,0.0,0.0);
+                glVertex3f(1.0-i*stepGrid,1.0,0.0);
+                glVertex3f(-1.0,fabs(1.0-i*stepGrid),0.0);
+                glVertex3f(1.0,fabs(1.0-i*stepGrid),0.0);
+                //////////////////////////////////////
 
-            ///////сетка при X=0.0///////////////
-            glVertex3f(0.0,0.0,1.0-i*stepGrid);
-            glVertex3f(0.0,1.0,1.0-i*stepGrid);
-            glVertex3f(0.0,fabs(1.0-i*stepGrid),-1.0);
-            glVertex3f(0.0,fabs(1.0-i*stepGrid),1.0);
-            ////////////////////////////////////
+                ///////сетка при X=0.0///////////////
+                glVertex3f(0.0,0.0,1.0-i*stepGrid);
+                glVertex3f(0.0,1.0,1.0-i*stepGrid);
+                glVertex3f(0.0,fabs(1.0-i*stepGrid),-1.0);
+                glVertex3f(0.0,fabs(1.0-i*stepGrid),1.0);
+                ////////////////////////////////////
 #endif
-            /////////сетка при Y=0.0///////////////
-            glVertex3f(-1.0,0.001,1.0-i*stepGrid);
-            glVertex3f(1.0,0.001,1.0-i*stepGrid);
+                /////////сетка при Y=0.0///////////////
+                glVertex3f(-1.0,0.001,1.0-i*stepGrid);
+                glVertex3f(1.0,0.001,1.0-i*stepGrid);
 
-            glVertex3f(1.0-i*stepGrid,0.001,-1.0);
-            glVertex3f(1.0-i*stepGrid,0.001,1.0);
-        }
+                glVertex3f(1.0-i*stepGrid,0.001,-1.0);
+                glVertex3f(1.0-i*stepGrid,0.001,1.0);
+            }
 
-    glDisable(GL_BLEND);//Уберем прозрачность
-    glEnd();
-    //////////////////////////////////////////
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
-/*    qglColor(QColor(Qt::gray));
-    glBegin(GL_QUADS);
-    //qglColor(QColor(229,210,175,220));
-
-
-    glVertex3f(1.0,0.0,-1.0);
-    glVertex3f(-1.0,0.0,-1.0);
-    glVertex3f(-1.0,0.0,1.0);
-    glVertex3f(1.0,0.0,1.0);
-    glEnd();*/
-
-    glDisable(GL_BLEND);//Уберем прозрачность
-
-    glLineWidth(1.0);
-    glPointSize(4.0);
-    glPopMatrix();
+            glDisable(GL_BLEND);//Уберем прозрачность
+            glEnd();
+            //////////////////////////////////////////
+            ///            /////glEnable(GL_BLEND);
+            ///    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
+            /*    qglColor(QColor(Qt::gray));
+            ///    glBegin(GL_QUADS);
+            ///    //qglColor(QColor(229,210,175,220));
 
 
-}
+            glVertex3f(1.0,0.0,-1.0);
+            glVertex3f(-1.0,0.0,-1.0);
+            glVertex3f(-1.0,0.0,1.0);
+            glVertex3f(1.0,0.0,1.0);
+            glEnd();*/
+
+        glDisable(GL_BLEND);//Уберем прозрачность
+
+        glLineWidth(1.0);
+        glPointSize(4.0);
+        glPopMatrix();
+    }
 }
 void view3DArea::drawTrajectory()
 {
-    //! отрисовка точек
-    glBegin(GL_POINTS);
+
 
     /*for(long i=0;i<trs[0].x.size();i++)
     {
@@ -467,28 +469,66 @@ void view3DArea::drawTrajectory()
         }
         glEnd();
     }*/
-    for(long i=0;i<rows.size();i++)
+
+
+    if(dataFromTXTFile==true)
     {
-        qglColor(QColor(80,223,72));
-        glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
-        //glVertex3f(rows[i].x_g,0,rows[i].z_g);
-    }
-    glEnd();
-    if(vertLine==true)
-    {
-        //! отрисовка вертикальных линий
-        glBegin(GL_LINES);
-        for(long i=0;i<rows.size();i=i+5)
+        //! отрисовка точек
+        glBegin(GL_POINTS);
+        //! если прочитали файл
+        for(long i=0;i<rows.size();i++)
         {
-            glVertex3f(rows[i].x_g,0.0,rows[i].z_g);
+            qglColor(QColor(80,223,72));
             glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
         }
         glEnd();
+        if(vertLine==true)
+        {
+            //! отрисовка вертикальных линий
+            glBegin(GL_LINES);
+            for(long i=0;i<rows.size();i=i+5)
+            {
+                glVertex3f(rows[i].x_g,0.0,rows[i].z_g);
+                glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
+            }
+            glEnd();
+        }
+    }else
+    {
+        //! отрисовка точек
+        glBegin(GL_POINTS);
+        for(long i=0;i<trs.size();i++)
+        {
+            for(long int j=0;j<trs[i].x.size();j++)
+            {
+                qglColor(QColor(trs[i].r[j],trs[i].g[j],trs[i].b[j]));
+                glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
+                glVertex3f(trs[i].x[j],0,trs[i].z[j]);
+            }
+        }
+        glEnd();
+        if(vertLine==true)
+        {
+            //! отрисовка вертикальных линий
+            glBegin(GL_LINES);
+            for(long i=0;i<trs.size();i++)
+            {
+                for(long int j=0;j<trs[i].x.size();j++)
+                {
+                    glVertex3f(trs[i].x[j],0.0,trs[i].z[j]);
+                    glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
+                }
+            }
+            glEnd();
+        }
     }
+
 }
 
 void view3DArea::animate()
 {
+    static int div=0;
+    div++;
     //! счетчик времени, сек
     globalTime=globalTime+dt*0.001*multTime;
     //! если данные загружены из файла
@@ -505,26 +545,26 @@ void view3DArea::animate()
 
         int index=searchTimeInterval(globalTime);
         //! записываем параметры
-        QVector<TVis> *list=net.getObjects();
+        QVector<TSolidObj> *list=net.getObjects();
 
-        TVis *solid=&((*list)[0]);
+        TSolidObj *solid=&((*list)[0]);
         solid->code=rows[index].code;
 
 
         //! эти параметры нужно прогнать через блок интерполяции
-        solid->xg=linearInterpolation(globalTime,
+        solid->x_g=linearInterpolation(globalTime,
                                       rows[index].x_g,
                                       rows[index-1].x_g,
                                       rows[index].time,
                                       rows[index-1].time);
 
-        solid->yg=linearInterpolation(globalTime,
+        solid->y_g=linearInterpolation(globalTime,
                                       rows[index].y_g,
                                       rows[index-1].y_g,
                                       rows[index].time,
                                       rows[index-1].time);
 
-        solid->zg=linearInterpolation(globalTime,
+        solid->z_g=linearInterpolation(globalTime,
                                       rows[index].z_g,
                                       rows[index-1].z_g,
                                       rows[index].time,
@@ -549,13 +589,33 @@ void view3DArea::animate()
                                          rows[index-1].time);
 
         //! заполнение траектории
-        trs[0].x.push_back(solid->xg);
-        trs[0].y.push_back(solid->yg);
-        trs[0].z.push_back(solid->zg);
+        trs[0].x.push_back(solid->x_g);
+        trs[0].y.push_back(solid->y_g);
+        trs[0].z.push_back(solid->z_g);
         //! цвет траектории
         trs[0].r.push_back(rows[index].r);
         trs[0].g.push_back(rows[index].g);
         trs[0].b.push_back(rows[index].b);
+    }else
+    {
+        if(div==DIVIDE)
+        {
+            div=0;
+            QVector<TSolidObj> *list=net.getObjects();
+            for(int i=0;i<list->size();i++)
+            {
+                TSolidObj *solid=&((*list)[i]);
+
+                //! координаты объектов
+                trs[i].x.push_back(solid->x_g);
+                trs[i].y.push_back(solid->y_g);
+                trs[i].z.push_back(solid->z_g);
+                //! цвет траектории
+                trs[i].r.push_back(80);
+                trs[i].g.push_back(223);
+                trs[i].b.push_back(72);
+            }
+        }
     }
 
     horFilter->refresh();
@@ -565,7 +625,7 @@ void view3DArea::animate()
 
 
     //! отправка органов управления
-    if(horFilter->delta()>10e-3 || verFilter->delta()>10e-3)
+   /* if(horFilter->delta()>10e-3 || verFilter->delta()>10e-3)
     {
         if(cameraToThisObj!=0)
         {
@@ -581,7 +641,7 @@ void view3DArea::animate()
 
             net.sendData(cameraToThisObj->id,CONTROL_STICK,array);
         }
-    }
+    }*/
 }
 
 T3DObject* view3DArea::findObjByCode(int code)
@@ -606,11 +666,10 @@ int view3DArea::searchTimeInterval(double time)
 void view3DArea::drawSolidObjects()
 {
     Lib3dsFile* file3DS=0;
-    QVector<TVis> *list=net.getObjects();
-    //qDebug("obj=%d\n",net.getObjects()->size());
+    QVector<TSolidObj> *list=net.getObjects();
     for(int i=0;i<list->size();i++)
     {
-        TVis *solid=&((*list)[i]);
+        TSolidObj *solid=&((*list)[i]);
         if(findObjByCode(solid->code)!=0)
             file3DS=findObjByCode(solid->code)->file;
 
@@ -625,9 +684,9 @@ void view3DArea::drawSolidObjects()
 
 
                 drawObject(file3DS,
-                           solid->xg,
-                           solid->yg,
-                           solid->zg,
+                           solid->x_g,
+                           solid->y_g,
+                           solid->z_g,
                            solid->psi,
                            solid->gamma,
                            solid->tan);
@@ -733,17 +792,17 @@ void view3DArea::drawILS()
 //! отрисовка прицельной символики
 void view3DArea::drawSymbol()
 {
-    Matrix3D_D m=signleCalcMatrix(cameraToThisObj);
+    glm::mat3 m=signleCalcMatrix(cameraToThisObj);
 
-    QVector<TVis> *list=net.getObjects();
+    QVector<TSolidObj> *list=net.getObjects();
     for(int i=0;i<list->size();i++)
     {
-        TVis *solid=&((*list)[i]);
+        TSolidObj *solid=&((*list)[i]);
         if(solid!=cameraToThisObj)
         {
-            Vector3D_D vecTarget(solid->xg,
-                                solid->yg,
-                                solid->zg);
+            glm::vec3 vecTarget(solid->x_g,
+                                solid->y_g,
+                                solid->z_g);
             TAngle angle;
             earthToSGF(vecTarget,vecCameraInGeoSys,m,&angle);
 
@@ -762,8 +821,16 @@ void view3DArea::gradToPixel(double xRad,
 }
 void view3DArea::drawStateLine()
 {
-    if(cameraToThisObj==0)
-        drawText((width()/2)-20,height()-20,"Current Object="+QString::number(cameraToObjIndex));
+    QString prefix=tr("our aircraft");
+    if(cameraToObjIndex==0)
+    {
+        prefix=tr("our aircraft");
+    }else if(cameraToObjIndex>0)
+    {
+        prefix=tr("target #")+QString::number(cameraToObjIndex);
+    }else
+        prefix=tr("no select");
+    drawText((width()/2)-20,height()-20,"Current Object="+prefix);
 
     drawText((width()/2)-20,height()-40,"Time="+QString::number(globalTime));
 }
@@ -774,7 +841,16 @@ void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
     int yCenter=0;
     glPointSize(width_);
     //! перевод
-    TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
+    //TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
+
+    TAngle an;
+    an.tau=limitMinMax(angle->tau,
+                       -(camera()->fieldOfView()/2.0),
+                       (camera()->fieldOfView()/2.0));
+    an.sigma=limitMinMax(angle->sigma,
+                         -(camera()->horizontalFieldOfView()/2.0),
+                         (camera()->horizontalFieldOfView()/2.0));
+
     //! перевод градусов в пиксели
     gradToPixel(-an.sigma,
                 -an.tau,
@@ -806,7 +882,14 @@ void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
     int yCenter=0;
     glPointSize(width_);
     //! перевод
-    TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
+    //TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
+    TAngle an;
+    an.tau=limitMinMax(angle->tau,
+                       -(camera()->fieldOfView()/2.0),
+                       (camera()->fieldOfView()/2.0));
+    an.sigma=limitMinMax(angle->sigma,
+                         -(camera()->horizontalFieldOfView()/2.0),
+                         (camera()->horizontalFieldOfView()/2.0));
     //! перевод градусов в пиксели
     gradToPixel(-an.sigma,
                 -an.tau,
@@ -960,15 +1043,28 @@ void view3DArea::keyReleaseEvent(QKeyEvent *e)
         case Qt::Key_D:     {vecCameraInTargetSystem.z+=50;    break;}
         case Qt::Key_W:     {vecCameraInTargetSystem.y-=50;    break;}
         case Qt::Key_S:     {vecCameraInTargetSystem.y+=50;    break;}
-        case Qt::Key_Plus:  {vecCameraInTargetSystem.x+=50;    break;}
-        case Qt::Key_Minus:  {vecCameraInTargetSystem.x-=50;    break;}
+        case Qt::Key_Plus:
+        {
+            if(cameraUp==true)
+                vecCameraInTargetSystem.y+=250;
+            else
+                vecCameraInTargetSystem.x+=50;
+            break;
+        }
+        case Qt::Key_Minus:
+        {
+            if(cameraUp==true)
+                vecCameraInTargetSystem.y-=250;
+            else
+                vecCameraInTargetSystem.x-=50;
+
+            break;
+        }
 
         default:{QGLViewer::keyReleaseEvent(e);}
     };
 
 }
-
-
 void view3DArea::keyPressEvent(QKeyEvent *e)
 {
     switch (e->key())
@@ -1001,9 +1097,26 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
        /* if(ils==true) ils=false;
         else ils=true;
         break;*/
-    }
 
-    case Qt::Key_S:
+        break;
+    }
+    case Qt::Key_U:
+    {
+        if(cameraUp==false)
+        {
+            cameraUp=true;
+            vecCameraInTargetSystem.y=30000.0;
+            ils=false;
+        }
+        else
+        {
+            cameraUp=false;
+            ils=true;
+            vecCameraInTargetSystem=glm::vec3(-1500,100,0);
+        }
+        break;
+    }
+    case Qt::Key_Z:
     {
         setting->show();
         break;
@@ -1044,15 +1157,21 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
             //openTXTFile();
             break;
         }
-    /*case Qt::Key_G:
+    case Qt::Key_S:
         {
-            break;
-        }*/
-    case Qt::Key_Z:
-        {
-            //net.sendData(curTarget,7);
             break;
         }
+    case Qt::Key_Q:
+    {
+
+        dpsi_camera=0.0;
+        dteta_camera=0.0;
+        dgamma_camera=0.0;
+
+        vecCameraInTargetSystem=glm::vec3(-1500,100,0);
+
+        break;
+    }
     case Qt::Key_L    :
         {
             //terrain->openFileWithTerrain();
@@ -1103,7 +1222,7 @@ void view3DArea::setCameraToObject(int num)
 
     if(num>=0)
     {
-        QVector<TVis> *list=net.getObjects();
+        QVector<TSolidObj> *list=net.getObjects();
 
         if(num<list->size())
         {
@@ -1111,8 +1230,10 @@ void view3DArea::setCameraToObject(int num)
             cameraToObjIndex=num;
         }
         else
+        {
             cameraToThisObj=0;
             cameraToObjIndex=-1;
+        }
     }
 
 }
@@ -1126,72 +1247,100 @@ void view3DArea::slotReadRes()
     QSize s=this->size();
 
 }
-Matrix3D_D view3DArea::signleCalcMatrix(TVis *solid)
+glm::mat3 view3DArea::signleCalcMatrixPsi(TSolidObj *solid)
 {
-    Matrix3D_D matrixPsi;
-    Matrix3D_D matrixGamma;
-    Matrix3D_D matrixTan;
-    //==================================================
     double psi=solid->psi;
-    //double gamma=GradToRadian(0.0);
+
+    glm::mat3 matrixPsi1;
+
+    matrixPsi1[0][0]=cos(psi);
+    matrixPsi1[0][1]=0.0;
+    matrixPsi1[0][2]=-sin(psi);
+
+    matrixPsi1[1][0]=0.0;
+    matrixPsi1[1][1]=1.0;
+    matrixPsi1[1][2]=0.0;
+
+    matrixPsi1[2][0]=sin(psi);
+    matrixPsi1[2][1]=0.0;
+    matrixPsi1[2][2]=cos(psi);
+
+    return matrixPsi1;
+}
+
+glm::mat3 view3DArea::signleCalcMatrix(TSolidObj *solid)
+{
+    double psi=solid->psi;
     double gamma=solid->gamma;
     double tan=solid->tan;
 
-    matrixPsi.x[0][0]=cos(psi);
-    matrixPsi.x[0][1]=0.0;
-    matrixPsi.x[0][2]=-sin(psi);
+    glm::mat3 matrixPsi1;
+    glm::mat3 matrixGamma1;
+    glm::mat3 matrixTan1;
 
-    matrixPsi.x[1][0]=0.0;
-    matrixPsi.x[1][1]=1.0;
-    matrixPsi.x[1][2]=0.0;
+    matrixPsi1[0][0]=cos(psi);
+    matrixPsi1[0][1]=0.0;
+    matrixPsi1[0][2]=-sin(psi);
 
-    matrixPsi.x[2][0]=sin(psi);
-    matrixPsi.x[2][1]=0.0;
-    matrixPsi.x[2][2]=cos(psi);
+    matrixPsi1[1][0]=0.0;
+    matrixPsi1[1][1]=1.0;
+    matrixPsi1[1][2]=0.0;
+
+    matrixPsi1[2][0]=sin(psi);
+    matrixPsi1[2][1]=0.0;
+    matrixPsi1[2][2]=cos(psi);
 
     //===================================================
-    matrixGamma.x[0][0]=1.0;
-    matrixGamma.x[0][1]=0.0;
-    matrixGamma.x[0][2]=0.0;
+    matrixGamma1[0][0]=1.0;
+    matrixGamma1[0][1]=0.0;
+    matrixGamma1[0][2]=0.0;
 
-    matrixGamma.x[1][0]=0.0;
-    matrixGamma.x[1][1]=cos(gamma);
-    matrixGamma.x[1][2]=sin(gamma);
+    matrixGamma1[1][0]=0.0;
+    matrixGamma1[1][1]=cos(gamma);
+    matrixGamma1[1][2]=sin(gamma);
 
-    matrixGamma.x[2][0]=0.0;
-    matrixGamma.x[2][1]=-sin(gamma);
-    matrixGamma.x[2][2]=cos(gamma);
+    matrixGamma1[2][0]=0.0;
+    matrixGamma1[2][1]=-sin(gamma);
+    matrixGamma1[2][2]=cos(gamma);
     //==================================================
-    matrixTan.x[0][0]=cos(tan);
-    matrixTan.x[0][1]=sin(tan);
-    matrixTan.x[0][2]=0.0;
+    matrixTan1[0][0]=cos(tan);
+    matrixTan1[0][1]=sin(tan);
+    matrixTan1[0][2]=0.0;
 
-    matrixTan.x[1][0]=-sin(tan);
-    matrixTan.x[1][1]=cos(tan);
-    matrixTan.x[1][2]=0.0;
+    matrixTan1[1][0]=-sin(tan);
+    matrixTan1[1][1]=cos(tan);
+    matrixTan1[1][2]=0.0;
 
-    matrixTan.x[2][0]=0.0;
-    matrixTan.x[2][1]=0.0;
-    matrixTan.x[2][2]=1.0;
-    //===================================================
+    matrixTan1[2][0]=0.0;
+    matrixTan1[2][1]=0.0;
+    matrixTan1[2][2]=1.0;
 
-    Matrix3D_D tempMatrix=matrixTan*matrixPsi;
-    return matrixGamma*tempMatrix;
+    glm::mat3 tM=matrixTan1*matrixPsi1;
+    glm::mat3 vec=matrixGamma1*tM;
+
+    return vec;
 }
 void view3DArea::cameraToObject()
 {
-
     if(cameraToThisObj==0)
-    {
-
         return;
-    }
-    Matrix3D_D matr=signleCalcMatrix(cameraToThisObj);
-    Vector3D_D vec1(cameraToThisObj->xg,
-                    cameraToThisObj->yg,
-                    cameraToThisObj->zg);
 
-    vecCameraInGeoSys=matr.transpose()*vecCameraInTargetSystem+vec1;
+    glm::mat3 matr=signleCalcMatrix(cameraToThisObj);
+    glm::vec3 vec1(cameraToThisObj->x_g,
+                   cameraToThisObj->y_g,
+                   cameraToThisObj->z_g);
+
+    if(cameraUp==true)
+    {
+        vecCameraInTargetSystem.x=0.0;
+        //vecCameraInTargetSystem.y=30000.0;
+        vecCameraInTargetSystem.z=0.0;
+
+        matr=signleCalcMatrixPsi(cameraToThisObj);
+    }
+    vecCameraInGeoSys=(vecCameraInTargetSystem*glm::transpose(matr))+vec1;
+
+
     camera()->setPosition(Vec(vecCameraInGeoSys.x,
                               vecCameraInGeoSys.y,
                               vecCameraInGeoSys.z));
@@ -1200,18 +1349,9 @@ void view3DArea::cameraToObject()
                        0.0,
                        vecCameraInGeoSys.z));
 
-    //camera()->showEntireScene();
     curGamma=   RadianToGrad(cameraToThisObj->gamma);
     curPsi=     RadianToGrad(cameraToThisObj->psi);
     curTeta=    RadianToGrad(cameraToThisObj->tan);
-    curVy=      cameraToThisObj->vyg;
-    curY=       cameraToThisObj->yg;
-    curV=       cameraToThisObj->vc;
-    curNya=     cameraToThisObj->nya;
-    curAlfa=    RadianToGrad(cameraToThisObj->alfa);
-    curFi=      RadianToGrad(cameraToThisObj->fi);
-    curUnt=     RadianToGrad(cameraToThisObj->unt);
-    curIdMan=   cameraToThisObj->idManevr;
 
     //! углы повортов камеры в радианах
     double tan_tar_radian=  cameraToThisObj->tan;
@@ -1226,6 +1366,13 @@ void view3DArea::cameraToObject()
     Quaternion qTeta(   Vec(0.0, 0.0, 1.0),-gamma_tar_radian+dgamma_camera);
     Quaternion qGamma(  Vec(1.0, 0.0, 0.0),tan_tar_radian+dteta_camera);
 
+    if(cameraUp==true)
+    {
+        Quaternion tempG(Vec(1.0, 0.0, 0.0),-M_PI/2);
+        qGamma=tempG;
+        Quaternion tempTan(Vec(0.0, 0.0, 1.0),0);
+        qTeta=tempTan;
+    }
     //! единичный кватернион
     Quaternion identity;
     camera()->frame()->setOrientation(identity);

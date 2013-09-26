@@ -2,48 +2,58 @@
 #define VISUDP_H
 #include <QUdpSocket>
 #include <QObject>
-#include "gl_func.h"
+#include "math_func.h"
 #include "globalData.h"
+
+#define SIZE_BUF_MAX 2048
 
 enum TTypeHead
 {
-    FLIGHT_OBJECT=0
+    FLIGHT_OBJ=0,
+    INFO_FLIGHT_OBJ=1,
+    COMMAND=2
 };
-
-//! Структура запроса для отправки/получения
-typedef struct THeadRequest_
+//! структура запроса для отправки/получения
+typedef struct
 {
-    //! идентификатор пакета (для обработки запроса)
-    unsigned int uid;
-    //! Назначение сообщения:
-    //              0 - чтение,
-    //              1 - запись,
-    //              2 - маска
-    TTypeHead type;
-    //! идентификатор пользователя
-    unsigned int uid_user;
-    //! размер пакета
+    //! идентификатор программного модуля
+    unsigned long id;
+    //! тип запроса
+    TTypeHead typeRequest;
+    //! размер всего пакета
     unsigned long size;
-}THeadRequest;
-//! описан
+    //! глобальное время(в тиках)
+    unsigned long tics;
+    //! предполагаемая задержка(в тиках) измеренная опытным путем
+    unsigned long dtTics;
+}THRequest;
+//! структура для передачи всего буфера данных
 typedef struct
 {
-    THeadRequest    head;
-    TVis      object;
-}TRec_Flight_Obj;
+    //! заголовок пакета
+    THRequest head;
+    //! признак сжатия буфера данных
+    char compressed;
+    //! код ошибки
+    char err;
+    //! размер структуры в буффере
+    unsigned long sizeBuf;
+    //! буффер с данными(размер массива указан в sizebuf)
+    char buffer[SIZE_BUF_MAX];
+}TMRequest;
 
-enum TCommand
+enum TypeCommand
 {
-    CONTROL_STICK=1
+    TC_RESET,/*перевод системы отображение в первоначальное состояние*/
+    TC_CLEAR /*очистка траектории*/
 };
-
-//! сообщения к
+//! структура для передачи команды в модуль
 typedef struct
 {
-    int id;
-    TCommand command;
-    char buffer[80];
-}TSend_UDP;
+    //! заголовок пакета
+    THRequest head;
+    TypeCommand com;
+}TCRequest;
 
 class VisUDP:public QObject
 {
@@ -51,7 +61,7 @@ class VisUDP:public QObject
 public:
     VisUDP();
 
-    QVector<TVis> *getObjects()
+    QVector<TSolidObj> *getObjects()
     {
 
         return &flightObjects;
@@ -65,11 +75,11 @@ public:
         blockConnect=value;
     }
 
-    void sendData(int idObject,TCommand command, QByteArray array);
+    //void sendData(int idObject,TCommand command, QByteArray array);
 
     //! проверка наличия буфера для адаптера
     bool testObjInList(unsigned uid);
-    void addToFlightObjList(TVis body);
+    void addToFlightObjList(TSolidObj body);
     //! проверка datagram
     void checkDatagrams();
 private slots:
@@ -79,6 +89,7 @@ signals:
     void sigAirTarget();
     void sigGroundTarget();
     void flightObjChanged();
+    void resetTrajectory();
 
 private:
     QUdpSocket udpSocketRecive;
@@ -86,15 +97,15 @@ private:
     QByteArray datagram;
     //! блокировка соединения
     bool blockConnect;
-    THeadRequest head;
+    THRequest head;
     //! прием объекта
-    TRec_Flight_Obj rec_udp;
+    TMRequest rec_udp;
     //! отправка объекта
-    TSend_UDP send_data;
+    //TMRequest send_data;
     //! графические объекты(если приходит объект уже с сущест. в списке id)
     //! то старый объект заменяется новым
 
-    QVector<TVis> flightObjects;//! объекты который
+    QVector<TSolidObj> flightObjects;//! объекты который
 
 };
 

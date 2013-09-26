@@ -3,7 +3,7 @@
 
 #include <QGLViewer/qglviewer.h>
 
-#include "Matrix3D_D.h"
+#include "math_func.h"
 #include "Vector3D_D.h"
 #include "visudp.h"
 
@@ -15,14 +15,14 @@ public:
     void init();
 
     //! выбор объекта
-    void setCameraToObject(TVis *obj_)
+    void setCameraToObject(TSolidObj *obj_)
     {
         obj=obj_;
     }
     //void draw();
 private:
     VisUDP *vis;
-    TVis *obj;
+    TSolidObj *obj;
 };
 
 #endif // VIEWILS_H

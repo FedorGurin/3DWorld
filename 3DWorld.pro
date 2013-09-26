@@ -36,24 +36,22 @@ SOURCES += main.cpp\
     view3dterrain.cpp \
     view3DArea.cpp \
     visual3D.cpp \
-    gl_func.cpp \
     visudp.cpp \
-    Vector3D_D.cpp \
-    Matrix3D_D.cpp \
     formsettings.cpp \
-    TemplateNASP.cpp
+    TemplateNASP.cpp \
+    math_func.cpp
 
 HEADERS  += \
     view3dterrain.h \
     view3DArea.h \
     visual3D.h \
-    gl_func.h \
     visudp.h \
     Vector3D_D.h \
-    Matrix3D_D.h \
     formsettings.h \
     globalData.h \
-    TemplateNASP.hpp
+    TemplateNASP.hpp \
+    math_func.h \
+    Vector3D_D.h
 
 FORMS    += \
     formsettings.ui

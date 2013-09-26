@@ -15,8 +15,8 @@
 
 #include "view3dTerrain.h"
 
-#include "Matrix3D_D.h"
-#include "Vector3D_D.h"
+#include "math_func.h"
+
 #include "visudp.h"
 #include "viewILS.h"
 #include "formsettings.h"
@@ -122,10 +122,11 @@ public:
     //! поиск времени на интервале
     int searchTimeInterval(double time);
     //! расчет результирующей матрицы поворота
-    Matrix3D_D signleCalcMatrix(TVis *solid);
+    glm::mat3 signleCalcMatrix(TSolidObj *solid);
+    glm::mat3 signleCalcMatrixPsi(TSolidObj *solid);
     //! координаты камеры в СК цели
-    Vector3D_D vecCameraInTargetSystem;
-    Vector3D_D vecCameraInGeoSys;
+    glm::vec3 vecCameraInTargetSystem;
+    glm::vec3 vecCameraInGeoSys;
     //! размер сцены, метры
     double radiusScene;
     //! ограничение на КАИ
@@ -164,7 +165,7 @@ private:
     //! содержимое текстового файла(список строк)
     QVector<TDataRow> rows;
     //! текущий объект на котором установлена камера
-    TVis *cameraToThisObj;
+    TSolidObj *cameraToThisObj;
     //! индекс объекта к которому привязана каера
     int cameraToObjIndex;
     //! признак отрисовки тумана
@@ -185,6 +186,8 @@ private:
     bool terra;
     //! признак отрисовки неба
     bool sky;
+    //! камеры установлена сверху над объектом
+    bool cameraUp;
     //! объект для отрисовки ИЛС
     ViewILS *viewILS;
 
@@ -260,6 +263,8 @@ public slots:
     void setRotateMap(double);
     void setOffsetMapX(double);
     void setOffsetMapZ(double);
+    //! сброс текущего состояния
+    void slotReset();
 };
 
 #endif // VIEW3DAREA_H
