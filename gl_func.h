@@ -1,4 +1,4 @@
-#ifndef GL_FUNC_H
+       #ifndef GL_FUNC_H
 #define GL_FUNC_H
 
 #include "Matrix3D_D.h"

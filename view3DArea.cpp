@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <math.h>
 //#include <GL/glu.h>
-#include <GL/glut.h>
+//#include <GL/glut.h>
 
 #include <QMessageBox>
 #include <QKeyEvent>
@@ -166,6 +166,109 @@ void view3DArea::parserTXTFile()
 
 }
 
+const float vertexData[] = {
+	 0.25f,  0.25f, -1.25f, 1.0f,
+	 0.25f, -0.25f, -1.25f, 1.0f,
+	-0.25f,  0.25f, -1.25f, 1.0f,
+
+	 0.25f, -0.25f, -1.25f, 1.0f,
+	-0.25f, -0.25f, -1.25f, 1.0f,
+	-0.25f,  0.25f, -1.25f, 1.0f,
+
+	 0.25f,  0.25f, -2.75f, 1.0f,
+	-0.25f,  0.25f, -2.75f, 1.0f,
+	 0.25f, -0.25f, -2.75f, 1.0f,
+
+	 0.25f, -0.25f, -2.75f, 1.0f,
+	-0.25f,  0.25f, -2.75f, 1.0f,
+	-0.25f, -0.25f, -2.75f, 1.0f,
+
+	-0.25f,  0.25f, -1.25f, 1.0f,
+	-0.25f, -0.25f, -1.25f, 1.0f,
+	-0.25f, -0.25f, -2.75f, 1.0f,
+
+	-0.25f,  0.25f, -1.25f, 1.0f,
+	-0.25f, -0.25f, -2.75f, 1.0f,
+	-0.25f,  0.25f, -2.75f, 1.0f,
+
+	 0.25f,  0.25f, -1.25f, 1.0f,
+	 0.25f, -0.25f, -2.75f, 1.0f,
+	 0.25f, -0.25f, -1.25f, 1.0f,
+
+	 0.25f,  0.25f, -1.25f, 1.0f,
+	 0.25f,  0.25f, -2.75f, 1.0f,
+	 0.25f, -0.25f, -2.75f, 1.0f,
+
+	 0.25f,  0.25f, -2.75f, 1.0f,
+	 0.25f,  0.25f, -1.25f, 1.0f,
+	-0.25f,  0.25f, -1.25f, 1.0f,
+
+	 0.25f,  0.25f, -2.75f, 1.0f,
+	-0.25f,  0.25f, -1.25f, 1.0f,
+	-0.25f,  0.25f, -2.75f, 1.0f,
+
+	 0.25f, -0.25f, -2.75f, 1.0f,
+	-0.25f, -0.25f, -1.25f, 1.0f,
+	 0.25f, -0.25f, -1.25f, 1.0f,
+
+	 0.25f, -0.25f, -2.75f, 1.0f,
+	-0.25f, -0.25f, -2.75f, 1.0f,
+	-0.25f, -0.25f, -1.25f, 1.0f,
+
+
+
+
+	0.0f, 0.0f, 1.0f, 1.0f,
+	0.0f, 0.0f, 1.0f, 1.0f,
+	0.0f, 0.0f, 1.0f, 1.0f,
+
+	0.0f, 0.0f, 1.0f, 1.0f,
+	0.0f, 0.0f, 1.0f, 1.0f,
+	0.0f, 0.0f, 1.0f, 1.0f,
+
+	0.8f, 0.8f, 0.8f, 1.0f,
+	0.8f, 0.8f, 0.8f, 1.0f,
+	0.8f, 0.8f, 0.8f, 1.0f,
+
+	0.8f, 0.8f, 0.8f, 1.0f,
+	0.8f, 0.8f, 0.8f, 1.0f,
+	0.8f, 0.8f, 0.8f, 1.0f,
+
+	0.0f, 1.0f, 0.0f, 1.0f,
+	0.0f, 1.0f, 0.0f, 1.0f,
+	0.0f, 1.0f, 0.0f, 1.0f,
+
+	0.0f, 1.0f, 0.0f, 1.0f,
+	0.0f, 1.0f, 0.0f, 1.0f,
+	0.0f, 1.0f, 0.0f, 1.0f,
+
+	0.5f, 0.5f, 0.0f, 1.0f,
+	0.5f, 0.5f, 0.0f, 1.0f,
+	0.5f, 0.5f, 0.0f, 1.0f,
+
+	0.5f, 0.5f, 0.0f, 1.0f,
+	0.5f, 0.5f, 0.0f, 1.0f,
+	0.5f, 0.5f, 0.0f, 1.0f,
+
+	1.0f, 0.0f, 0.0f, 1.0f,
+	1.0f, 0.0f, 0.0f, 1.0f,
+	1.0f, 0.0f, 0.0f, 1.0f,
+
+	1.0f, 0.0f, 0.0f, 1.0f,
+	1.0f, 0.0f, 0.0f, 1.0f,
+	1.0f, 0.0f, 0.0f, 1.0f,
+
+	0.0f, 1.0f, 1.0f, 1.0f,
+	0.0f, 1.0f, 1.0f, 1.0f,
+	0.0f, 1.0f, 1.0f, 1.0f,
+
+	0.0f, 1.0f, 1.0f, 1.0f,
+	0.0f, 1.0f, 1.0f, 1.0f,
+	0.0f, 1.0f, 1.0f, 1.0f,
+
+};
+
+
 void view3DArea::slotAccepted()
 {
     QStringList list=dialog->selectedFiles();
@@ -204,37 +307,58 @@ void view3DArea::readAllModels()
 
 void view3DArea::init()
 {
+    printf("Iam in init()\n");
     glewInit();
     prg = new QGLShaderProgram();
     prg->addShaderFromSourceFile(QGLShader::Vertex, "color.vsh.h");
     prg->addShaderFromSourceFile(QGLShader::Fragment, "color.fsh.h");
     prg->link();
 
-    //float buf[6] = { 0, -1, -1,0, 1, 0 };
-    const float vertexData[] = {
-	 0.0f,    0.5f, 0.0f, 1.0f,
-	 0.5f, -0.366f, 0.0f, 1.0f,
-	-0.5f, -0.366f, 0.0f, 1.0f,
-	 1.0f,    0.0f, 0.0f, 1.0f,
-	 0.0f,    1.0f, 0.0f, 1.0f,
-	 0.0f,    0.0f, 1.0f, 1.0f,
-};
-    glGenBuffers(1, &vb);
+    //! получаем ссылки на юниформы
+    offsetUniform =         glGetUniformLocation(prg->programId(), "offset");	
+    //! получаем ссылку на перспективу
+    perspectiveMatrixUnif=  glGetUniformLocation(prg->programId(),"perspectiveMatrix");
+    float fFrustumScale = 1.0f;  float fzNear = 0.5f;  float fzFar=3.0f;
+
+    float m[16];
+    memset(m,0,sizeof(float)*16);
+
+    m[0] = fFrustumScale;
+    m[5] = fFrustumScale;
+    m[10]= (fzFar + fzNear) / (fzNear - fzFar);
+    m[14]= (2* fzFar * fzNear) / (fzNear - fzFar);
+    m[11]= -1.0;
+
+    glUseProgram(prg->programId());
+	glUniformMatrix4fv(perspectiveMatrixUnif, 1, GL_FALSE, m);
 	
-    glBindBuffer(GL_ARRAY_BUFFER, vb);
+	glUseProgram(0);
+
+    glGenBuffers(1, &vb);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vb);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CW);
+
+    //glGenBuffers(1, &vb);
+	
+    //glBindBuffer(GL_ARRAY_BUFFER, vb);
     //glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STREAM_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-   // int color_loc = prg->uniformLocation("color");
-    //glBufferSubData
-
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STREAM_DRAW);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0); 
 }
 void view3DArea::computePositionOffsets(float &fXOffset, float &fYOffset)
 {
 const float fLoopDuration = 5.0f;
 const float fScale = 3.14159f * 2.0f / fLoopDuration;
-float fElapsedTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+float fElapsedTime;// = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 float fCurrTimeThroughLoop = fmodf(fElapsedTime, fLoopDuration);
 fXOffset = cosf(fCurrTimeThroughLoop * fScale) * 0.5f;
 fYOffset = sinf(fCurrTimeThroughLoop * fScale) * 0.5f;
@@ -256,53 +380,29 @@ glBindBuffer(GL_ARRAY_BUFFER, 0);
 }*/
 void view3DArea::draw()
 {
+    static float i=0;
+   
+    i+=0.001;
     float fXOffset = 0.0f, fYOffset = 0.0f;
-    prg->bind();
-    prg->setUniformValue("offset",fXOffset,fYOffset);
-    computePositionOffsets(fXOffset,fYOffset);
-    /////////////////////
-  /*float vertexData[] = {
-	 0.0f,    0.5f, 0.0f, 1.0f,
-	 0.5f, -0.366f, 0.0f, 1.0f,
-	-0.5f, -0.366f, 0.0f, 1.0f,
-	 1.0f,    0.0f, 0.0f, 1.0f,
-	 0.0f,    1.0f, 0.0f, 1.0f,
-	 0.0f,    0.0f, 1.0f, 1.0f,
-    };
-    vertexData[0]+=fXOffset;
-    vertexData[1]+=fYOffset;
-    glBindBuffer(GL_ARRAY_BUFFER, vb);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertexData), vertexData);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);*/
- //   glUniform3f(color_loc, 1, 1, 3);
-    //glUseProgram(id)
-    
-    //QGLMatrix4x4 mat;
-    //map.projection(
-    
+    prg->bind();   
+
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);	
 
-    glBindBuffer(GL_ARRAY_BUFFER, vb);
-    
-    glEnableVertexAttribArray(0); 
-    //glEnableVertexAttribArray(1);
+	glUniform2f(offsetUniform, 0.0f+i, 0.5f);
+
+	size_t colorData = sizeof(vertexData) / 2;
+	glBindBuffer(GL_ARRAY_BUFFER, vb);
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-	//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)48);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)colorData);
 
-    //glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    //glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    
-    glDisableVertexAttribArray(0);    
-    //glDisableVertexAttribArray(1);    
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    
-    //glUseProgram(0);
-    //glutSwapBuffers();
-	//glutPostRedisplay();
-
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	
     prg->release();
 
 }

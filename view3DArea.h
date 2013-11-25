@@ -73,6 +73,15 @@ class view3DArea:public QGLViewer
 {
     QGLShaderProgram *prg;
     quint32 vb;
+    //GLuint theProgram;
+    
+    GLuint offsetUniform;
+    GLuint frustumScaleUnif;
+    GLuint zNearUnif, zFarUnif;
+    //GLuint vertexBufferObject;
+    GLuint vao;
+    GLuint perspectiveMatrixUnif;
+
     Q_OBJECT;
 public:
     //! 3D просмотр области визуализации
