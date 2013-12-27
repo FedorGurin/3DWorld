@@ -19,7 +19,7 @@ typedef struct
     //! идентификатор программного модуля
     unsigned long id;
     //! тип запроса
-    TTypeHead typeRequest;
+    unsigned typeRequest;
     //! размер всего пакета
     unsigned long size;
     //! глобальное время(в тиках)
@@ -35,7 +35,7 @@ typedef struct
     //! признак сжатия буфера данных
     char compressed;
     //! код ошибки
-    char err;
+    int err;
     //! размер структуры в буффере
     unsigned long sizeBuf;
     //! буффер с данными(размер массива указан в sizebuf)

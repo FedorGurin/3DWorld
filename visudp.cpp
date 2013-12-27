@@ -3,7 +3,7 @@
 VisUDP::VisUDP()
 {
     flightObjects.clear();    
-    bool result=udpSocketRecive.bind(4910);
+    bool result=udpSocketRecive.bind(4801);
     if(result==false)
         qDebug("bind is fail\n");
     datagram.resize(sizeof(TMRequest));
