@@ -100,10 +100,10 @@ void ThreadParser::run()
         for(long j=0;j<mapH->nrows;j++)
         {
             double x,z;
-            convertSphereToDekart(GradToRadian(mapH->yllcorner+mapH->ncols/2*mapH->cellsize),
-                                  GradToRadian(mapH->xllcorner+mapH->nrows/2*mapH->cellsize),
-                                  GradToRadian(mapH->yllcorner+i*mapH->cellsize),
-                                  GradToRadian(mapH->xllcorner+j*mapH->cellsize),
+            convertSphereToDekart(gradToRadian(mapH->yllcorner+mapH->ncols/2*mapH->cellsize),
+                                  gradToRadian(mapH->xllcorner+mapH->nrows/2*mapH->cellsize),
+                                  gradToRadian(mapH->yllcorner+i*mapH->cellsize),
+                                  gradToRadian(mapH->xllcorner+j*mapH->cellsize),
                                   x,
                                   z);
             vec.push_back(QVector3D(5*x,mapH->data[i][j],5*z));

@@ -62,8 +62,8 @@ void LimitPositionKAI::checkAngle(double &gorPos,double &verPos,double &gorPosPr
         onLimits=true;
     }else onLimits=false;
 
-    angleCurr.sigma=GradToRadian(angleGor);
-    angleCurr.tau=GradToRadian(angleVer);
+    angleCurr.sigma=gradToRadian(angleGor);
+    angleCurr.tau=gradToRadian(angleVer);
 
 }
 
@@ -71,7 +71,7 @@ void LimitPositionKAI::checkAngle(double &gorPos,double &verPos,double &gorPosPr
 TAngle LimitPositionKAI::limitAngle(TAngle angle)
 {
     TAngle an;
-    if((angle.sigma*angle.sigma+angle.tau*angle.tau)>(GradToRadian(radius)*GradToRadian(radius)))
+    if((angle.sigma*angle.sigma+angle.tau*angle.tau)>(gradToRadian(radius)*gradToRadian(radius)))
     {
         double dx0=cos(angle.tau)*cos(angle.sigma);
         double dy0=sin(angle.tau);
@@ -80,15 +80,15 @@ TAngle LimitPositionKAI::limitAngle(TAngle angle)
         double dyz=sqrt(dy0*dy0+dz0*dz0);
         double k=0;
         double alfa=radius;
-        double salfa=sin(GradToRadian(alfa));
+        double salfa=sin(gradToRadian(alfa));
         if(dx0>=0.0)
         {
             if(dyz<salfa) k=alfa/salfa;
             else k=alfa/dyz;
         }else k=alfa/dyz;
 
-        an.tau=GradToRadian(k*dy0);
-        an.sigma=-GradToRadian(k*dz0);
+        an.tau=gradToRadian(k*dy0);
+        an.sigma=-gradToRadian(k*dz0);
 
         return an;
     }
@@ -105,15 +105,15 @@ TAngle LimitPositionKAI::limitAngle10(TAngle angle, double rad)
     double dyz=sqrt(dy0*dy0+dz0*dz0);
     double k=0;
     double alfa=rad;
-    double salfa=sin(GradToRadian(alfa));
+    double salfa=sin(gradToRadian(alfa));
     if(dx0>=0.0)
     {
         if(dyz<salfa) k=alfa/salfa;
         else k=alfa/dyz;
     }else k=alfa/dyz;
 
-    an.tau=GradToRadian(k*dy0);
-    an.sigma=-GradToRadian(k*dz0);
+    an.tau=gradToRadian(k*dy0);
+    an.sigma=-gradToRadian(k*dz0);
 
     return an;
 }
@@ -121,7 +121,7 @@ TAngle LimitPositionKAI::limitAngle10(TAngle angle, double rad)
 TAngle LimitPositionKAI::limitAngle(TAngle angle, double rad)
 {
     TAngle an;
-    if((angle.sigma*angle.sigma+angle.tau*angle.tau)>(GradToRadian(rad)*GradToRadian(rad)))
+    if((angle.sigma*angle.sigma+angle.tau*angle.tau)>(gradToRadian(rad)*gradToRadian(rad)))
     {
         double dx0=cos(angle.tau)*cos(angle.sigma);
         double dy0=sin(angle.tau);
@@ -130,15 +130,15 @@ TAngle LimitPositionKAI::limitAngle(TAngle angle, double rad)
         double dyz=sqrt(dy0*dy0+dz0*dz0);
         double k=0;
         double alfa=rad;
-        double salfa=sin(GradToRadian(alfa));
+        double salfa=sin(gradToRadian(alfa));
         if(dx0>=0.0)
         {
             if(dyz<salfa) k=alfa/salfa;
             else k=alfa/dyz;
         }else k=alfa/dyz;
 
-        an.tau=GradToRadian(k*dy0);
-        an.sigma=-GradToRadian(k*dz0);
+        an.tau=gradToRadian(k*dy0);
+        an.sigma=-gradToRadian(k*dz0);
 
         return an;
     }
@@ -161,7 +161,7 @@ TAngle LimitPositionKAI::limitAngle1(TAngle angleCenter, TAngle angle_, double R
     double k=0;
 
     double alfa=R;
-    double salfa=sin(GradToRadian(alfa));
+    double salfa=sin(gradToRadian(alfa));
     if(dx0>=0.0)
     {
         if(dyz<salfa)
@@ -171,8 +171,8 @@ TAngle LimitPositionKAI::limitAngle1(TAngle angleCenter, TAngle angle_, double R
     }else
         k=alfa/dyz;
 
-    an.tau=GradToRadian(k*dy0);
-    an.sigma=-GradToRadian(k*dz0);
+    an.tau=gradToRadian(k*dy0);
+    an.sigma=-gradToRadian(k*dz0);
 
     return an;
 }
@@ -183,10 +183,10 @@ TAngle LimitPositionKAI::limitAngle(TAngle angle,           /*точка которую нужн
                                     double radius_grad_min) /*максимальный радиус*/
 {
     TAngle an;
-    double Rmax=GradToRadian(radius_grad_max);
-    double Rmin=GradToRadian(radius_grad_min);
+    double Rmax=gradToRadian(radius_grad_max);
+    double Rmin=gradToRadian(radius_grad_min);
     if(Rmax<0.0)
-        Rmax=GradToRadian(radius);
+        Rmax=gradToRadian(radius);
 
     if((angle.sigma*angle.sigma+angle.tau*angle.tau)>(Rmax*Rmax))
     {
@@ -281,8 +281,8 @@ TAngle LimitPositionKAI::limitAngle(TAngle angle,           /*точка которую нужн
 TAngle LimitPositionKAI::limitAngle(TAngle angle,TAngle angleCenter,double radius_grad)
 {
     TAngle an;
-    double R=GradToRadian(radius);
-    if(radius_grad>0.0) R=GradToRadian(radius_grad);
+    double R=gradToRadian(radius);
+    if(radius_grad>0.0) R=gradToRadian(radius_grad);
 
     if((angle.sigma*angle.sigma+angle.tau*angle.tau)>(R*R))
     {

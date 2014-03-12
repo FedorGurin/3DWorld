@@ -140,6 +140,10 @@ protected :
     virtual void keyPressEvent(QKeyEvent *e);
     virtual void keyReleaseEvent(QKeyEvent *e);
 private:
+    //! управление ручкой
+    TControlStick stick;
+    //! рабочие параметры
+    TSolidObj sW;
     //! приращения к повороту камеры
     double dpsi_camera;
     double dteta_camera;

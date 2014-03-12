@@ -412,8 +412,8 @@ public:
     }
     void setAnglePos(TAngle angle)
     {
-        currentPosHor=limits->mappingAngleGorToGorPos(RadianToGrad(angle.sigma));
-        currentPosVer=limits->mappingAngleVerToVerPos(RadianToGrad(angle.tau));
+        currentPosHor=limits->mappingAngleGorToGorPos(radianToGrad(angle.sigma));
+        currentPosVer=limits->mappingAngleVerToVerPos(radianToGrad(angle.tau));
 
         predPosHor=currentPosHor;
         predPosVer=currentPosVer;

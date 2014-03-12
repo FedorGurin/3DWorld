@@ -22,7 +22,7 @@ using namespace qglviewer;
 #define SIZE_GRID 10
 #define MAX_Y 20000.0
 //#define PERIOD_ANIMATION 50
-#define PERIOD_ANIMATION 100
+#define PERIOD_ANIMATION 1000
 #define DIVIDE 10
 //#define VERT_GRID
 
@@ -70,6 +70,7 @@ view3DArea::view3DArea():QGLViewer()
     globalTime=0.0;
     multTime=1.0;
     dt=((1.0/20)*1000.0);
+    //dt=((1.0/freq)*1000.0);
 
     //! доп. поворот камеры
     dpsi_camera=0.0;
@@ -91,8 +92,8 @@ view3DArea::view3DArea():QGLViewer()
     //! ограничени€ на  ј»
     limit=new LimitPositionKAI;
 
-    horFilter=new FilterAperiodic(0.0,1.0,PERIOD_ANIMATION/1000.0,1.0,-1.0);
-    verFilter=new FilterAperiodic(0.0,1.0,PERIOD_ANIMATION/1000.0,1.0,-1.0);
+    horFilter=new FilterAperiodic(0.0,0.8,PERIOD_ANIMATION/1000.0,1.0,-1.0);
+    verFilter=new FilterAperiodic(0.0,0.8,PERIOD_ANIMATION/1000.0,1.0,-1.0);
 
     camera()->setPosition(Vec(0.0,
                               2000.0,
@@ -216,9 +217,9 @@ void view3DArea::parserTXTFile()
         row.y_g=    tempList[4].toFloat();
         row.z_g=    tempList[5].toFloat();
         //! считывание углов ориентации объекта, град
-        row.psi=    GradToRadian(tempList[6].toFloat());
-        row.tan=    GradToRadian(tempList[7].toFloat());
-        row.gamma=  GradToRadian(tempList[8].toFloat());
+        row.psi=    gradToRadian(tempList[6].toFloat());
+        row.tan=    gradToRadian(tempList[7].toFloat());
+        row.gamma=  gradToRadian(tempList[8].toFloat());
         rows.push_back(row);
     }
 }
@@ -272,6 +273,8 @@ void view3DArea::init()
     terrain->openTerrainMap("/defaultTerrain.asc");
     this->setBackgroundColor(QColor(81,168,255));
     setSceneRadius(radiusScene);
+    //!установить период анимации
+    //setAnimationPeriod(PERIOD_ANIMATION);
     startAnimation();
 }
 
@@ -279,7 +282,13 @@ void view3DArea::draw()
 {
     double d=0;
     glDisable(GL_LIGHTING);
-    net.checkDatagrams();
+
+
+    if(net.checkDatagrams()==true)
+        globalTime=net.synch_time;
+
+    //qDebug("yime=%f\n",globalTime);
+
     if(cameraToThisObj!=0)
     {
         d=6371000.0*atan(sqrt(cameraToThisObj->y_g*(2*6371000.0+cameraToThisObj->y_g))/6371000.0);
@@ -361,8 +370,8 @@ void view3DArea::draw()
         drawText(10,310,"fi="+QString::number(curFi));
         drawText(10,330,"unt="+QString::number(curUnt));
 
-        //drawText(10,120,"HorFilter="+QString::number(horFilter->curValue()));
-        //drawText(10,140,"VerFilter="+QString::number(verFilter->curValue()));
+        drawText(10,120,"HorFilter="+QString::number(horFilter->curValue()));
+        drawText(10,140,"VerFilter="+QString::number(verFilter->curValue()));
 
         QString nameMan="Unknown";
 
@@ -625,23 +634,20 @@ void view3DArea::animate()
 
 
     //! отправка органов управлени€
-   /* if(horFilter->delta()>10e-3 || verFilter->delta()>10e-3)
+    if(horFilter->delta()>10e-3 || verFilter->delta()>10e-3)
     {
         if(cameraToThisObj!=0)
         {
-            QByteArray array;
-            QDataStream in(&array,QIODevice::WriteOnly);
-
-
             float x=horFilter->curValue();
             float y=verFilter->curValue();
 
-            in<<x;
-            in<<y;
-
-            net.sendData(cameraToThisObj->id,CONTROL_STICK,array);
+            stick.gamma_rus=x;
+            stick.tan_rus=y;
+            stick.rud=0;
+            stick.idObj=cameraToThisObj->id;
+            net.sendData(CONTROL_STICK,(char*)&stick,sizeof(TControlStick));
         }
-    }*/
+    }
 }
 
 T3DObject* view3DArea::findObjByCode(int code)
@@ -683,13 +689,49 @@ void view3DArea::drawSolidObjects()
 //                                  solid->z);
 
 
-                drawObject(file3DS,
-                           solid->x_g,
-                           solid->y_g,
-                           solid->z_g,
-                           solid->psi,
-                           solid->gamma,
-                           solid->tan);
+//            sW.x_g=linearInterpolation(globalTime,
+//                                          solid->x_g,
+//                                          solid->x_g_prev,
+//                                          solid->time,
+//                                          solid->time_prev);
+
+//            sW.y_g=linearInterpolation(globalTime,
+//                                       solid->y_g,
+//                                       solid->y_g_prev,
+//                                       solid->time,
+//                                       solid->time_prev);
+
+//            sW.z_g=linearInterpolation(globalTime,
+//                                       solid->z_g,
+//                                       solid->z_g_prev,
+//                                       solid->time,
+//                                       solid->time_prev);
+
+//            sW.psi=linearInterpolation(globalTime,
+//                                       solid->psi,
+//                                       solid->psi_prev,
+//                                       solid->time,
+//                                       solid->time_prev);
+
+//            sW.tan=linearInterpolation(globalTime,
+//                                       solid->tan,
+//                                       solid->tan_prev,
+//                                       solid->time,
+//                                       solid->time_prev);
+
+//            sW.gamma=linearInterpolation(globalTime,
+//                                         solid->gamma,
+//                                         solid->gamma_prev,
+//                                         solid->time,
+//                                         solid->time_prev);
+
+            drawObject(file3DS,
+                       solid->x_g,
+                       solid->y_g,
+                       solid->z_g,
+                       solid->psi,
+                       solid->gamma,
+                       solid->tan);
 
         }
 
@@ -715,9 +757,9 @@ void view3DArea::drawObject(Lib3dsFile *obj,
                  pos_y,
                  pos_z);
 
-    glRotated(RadianToGrad(psi_rad),0.0,1.0,0.0);
-    glRotated(RadianToGrad(tan_rad),0.0,0.0,1.0);
-    glRotated(RadianToGrad(gamma_rad),1.0,0.0,0.0);
+    glRotated(radianToGrad(psi_rad),0.0,1.0,0.0);
+    glRotated(radianToGrad(tan_rad),0.0,0.0,1.0);
+    glRotated(radianToGrad(gamma_rad),1.0,0.0,0.0);
 
     glColor4f(1.0f,1.0f,1.0f,1.0f);
     for (Lib3dsNode* p=obj->nodes; p!=0; p=p->next)
@@ -764,7 +806,7 @@ void view3DArea::drawILS()
         else
             glLineWidth(2.0);
 
-        double hILS=(cameraToThisObj->tan+GradToRadian(10*i))*(height()/camera()->fieldOfView());
+        double hILS=(cameraToThisObj->tan+gradToRadian(10*i))*(height()/camera()->fieldOfView());
 
 
         drawText((width()/2.0)-((width()/5.0)),height()/2.0+hILS,QString::number(-i*10));
@@ -1186,8 +1228,7 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
 }
 void view3DArea::loadFile(QString nameFile,Lib3dsFile **file3ds)
 {
-    //!установить период анимации
-    //setAnimationPeriod(PERIOD_ANIMATION);
+
     //! отрисовка сетки
     setGridIsDrawn(false);
     //! отрисовка осей
@@ -1315,8 +1356,8 @@ glm::mat3 view3DArea::signleCalcMatrix(TSolidObj *solid)
     matrixTan1[2][1]=0.0;
     matrixTan1[2][2]=1.0;
 
-    glm::mat3 tM=matrixTan1*matrixPsi1;
-    glm::mat3 vec=matrixGamma1*tM;
+    glm::mat3 tM=matrixPsi1*matrixTan1;
+    glm::mat3 vec=tM*matrixGamma1;
 
     return vec;
 }
@@ -1338,7 +1379,8 @@ void view3DArea::cameraToObject()
 
         matr=signleCalcMatrixPsi(cameraToThisObj);
     }
-    vecCameraInGeoSys=(vecCameraInTargetSystem*glm::transpose(matr))+vec1;
+    glm::vec3 vecInObj=vecCameraInTargetSystem;
+    vecCameraInGeoSys=vec1+(vecInObj*glm::transpose(matr));
 
 
     camera()->setPosition(Vec(vecCameraInGeoSys.x,
@@ -1349,9 +1391,9 @@ void view3DArea::cameraToObject()
                        0.0,
                        vecCameraInGeoSys.z));
 
-    curGamma=   RadianToGrad(cameraToThisObj->gamma);
-    curPsi=     RadianToGrad(cameraToThisObj->psi);
-    curTeta=    RadianToGrad(cameraToThisObj->tan);
+    curGamma=   radianToGrad(cameraToThisObj->gamma);
+    curPsi=     radianToGrad(cameraToThisObj->psi);
+    curTeta=    radianToGrad(cameraToThisObj->tan);
 
     //! углы повортов камеры в радианах
     double tan_tar_radian=  cameraToThisObj->tan;
@@ -1392,9 +1434,9 @@ void view3DArea::cameraToObject()
         camera()->setPosition(Vec(aircraft.x,aircraft.y,aircraft.z));
 
         //! углы повортов камеры в радианах
-        teta_radian=GradToRadian(aircraft.teta+teta0);
-        gamma_radian=GradToRadian(aircraft.gamma+gamma0);
-        psi_radian=KursToPsi(GradToRadian(aircraft.psi+psi0));
+        teta_radian=gradToRadian(aircraft.teta+teta0);
+        gamma_radian=gradToRadian(aircraft.gamma+gamma0);
+        psi_radian=KursToPsi(gradToRadian(aircraft.psi+psi0));
 
         //! кватернион поворотов
         Quaternion qPI_2(   Vec(0.0, 1.0, 0.0),-M_PI/2.0);
@@ -1418,7 +1460,7 @@ void view3DArea::cameraToObject()
 */
 void view3DArea::initScene(Lib3dsFile *file3ds)
 {
-    camera()->setFieldOfView(GradToRadian(45));
+    camera()->setFieldOfView(gradToRadian(45));
     camera()->setZNearCoefficient(0.0001);
     if (!file3ds)   return;
 
@@ -1552,3 +1594,4 @@ void view3DArea::slotPosWindow(int x,int y)
 {
     move(x,y);
 }
+

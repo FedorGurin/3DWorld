@@ -5,13 +5,14 @@
 #include "math_func.h"
 #include "globalData.h"
 
-#define SIZE_BUF_MAX 2048
+#define SIZE_BUF_DEFAULT 2048
 
 enum TTypeHead
 {
-    FLIGHT_OBJ=0,
+    PARAM_OBJ=0,
     INFO_FLIGHT_OBJ=1,
-    COMMAND=2
+    COMMAND=2,
+    CONTROL_STICK=3    /*управление ручкой указанными объектом*/
 };
 //! структура запроса для отправки/получения
 typedef struct
@@ -39,7 +40,7 @@ typedef struct
     //! размер структуры в буффере
     unsigned long sizeBuf;
     //! буффер с данными(размер массива указан в sizebuf)
-    char buffer[SIZE_BUF_MAX];
+    char buffer[SIZE_BUF_DEFAULT];
 }TMRequest;
 
 enum TypeCommand
@@ -63,25 +64,27 @@ public:
 
     QVector<TSolidObj> *getObjects()
     {
-
         return &flightObjects;
     }
+    //! кол-во объектов
     void setSizeObj(int size)
     {
         flightObjects.resize(size);
     }
+    //! блокировка соединения
     void setBlockConection(bool value)
     {
         blockConnect=value;
     }
 
-    //void sendData(int idObject,TCommand command, QByteArray array);
-
+    //! отправить данные другому сервису
+    void sendData(TTypeHead type,char *buffer, int size);
     //! проверка наличия буфера для адаптера
-    bool testObjInList(unsigned uid);
+    int testObjInList(unsigned uid);
     void addToFlightObjList(TSolidObj body);
     //! проверка datagram
-    void checkDatagrams();
+    bool checkDatagrams();
+    double synch_time;
 private slots:
     void processPendingDatagrams();
 signals:
@@ -92,19 +95,20 @@ signals:
     void resetTrajectory();
 
 private:
+
     QUdpSocket udpSocketRecive;
     QUdpSocket udpSocketSend;
     QByteArray datagram;
     //! блокировка соединения
     bool blockConnect;
+    //! заголовок пакета
     THRequest head;
     //! прием объекта
     TMRequest rec_udp;
     //! отправка объекта
-    //TMRequest send_data;
+    TMRequest send_udp;
     //! графические объекты(если приходит объект уже с сущест. в списке id)
     //! то старый объект заменяется новым
-
     QVector<TSolidObj> flightObjects;//! объекты который
 
 };

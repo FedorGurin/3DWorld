@@ -1,8 +1,8 @@
 /********************************************************************************
 ** Form generated from reading UI file 'formsettings.ui'
 **
-** Created: Wed 25. Dec 17:17:52 2013
-**      by: Qt User Interface Compiler version 4.8.0
+** Created: Tue 11. Mar 22:01:41 2014
+**      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
