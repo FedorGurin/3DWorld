@@ -154,6 +154,7 @@ private:
     float dFog;
     //! глобальное врем€, сек
     double globalTime;
+    double globalTimeDebug;
     //! период анимации, √ц
     int dt;//мсек
     //! глобальный счетчик

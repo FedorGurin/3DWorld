@@ -1,5 +1,5 @@
 #include "visudp.h"
-
+#include <QDataStream>
 VisUDP::VisUDP()
 {
     synch_time=0;
@@ -25,11 +25,14 @@ bool VisUDP::checkDatagrams()
         outHead.readRawData((char*)&head,sizeof(THRequest));
         QDataStream out(&datagram,QIODevice::ReadOnly);
         out.setVersion(QDataStream::Qt_4_6);
+        //out.setByteOrder(QDataStream::BigEndian);
         //! обработка пакетов
         if(head.typeRequest==PARAM_OBJ)
         {
             //! чтение заголовка
             out.readRawData((char*)&rec_udp,head.size);
+            QByteArray compBuf(rec_udp.buffer,rec_udp.sizeBuf);
+
             //! преобразуем буфер в структуру
             TSolidObj *solid=(TSolidObj*)rec_udp.buffer;
 

@@ -13,6 +13,7 @@ QT += gui\
     network \
     opengl \
     xml \
+    widgets \
     svg
 3DSLIB = 3ds
 unix {
@@ -25,12 +26,18 @@ unix {
 }
 win32 {
 
-    QMAKE_CXXFLAGS_RELEASE += -mno-align-double
+    #QMAKE_CXXFLAGS_RELEASE += -mno-align-double
     QGLVIEWER2 = QGLViewer2
-    win32-g++:LIBS += -l$${3DSLIB}
-    win32-g++:LIBS += -l$${QGLVIEWER2}
+    #win32-g++:LIBS += -l$${3DSLIB}
+    #win32-g++:LIBS += -l$${QGLVIEWER2}
 
 }
+LIBS+= "F:\MyProg\Trenager\3DWorld_bpla\QGLViewerd2.lib"
+LIBS+= "F:\MyProg\Trenager\3DWorld_bpla\lib3ds.lib"
+LIBS += -lopengl32 -lglu32
+
+#INCLUDEPATH += lib3ds \
+#               libQGLViewer
 
 SOURCES += main.cpp\
     view3dterrain.cpp \

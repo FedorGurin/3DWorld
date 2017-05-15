@@ -80,6 +80,12 @@ typedef struct
     double gamma;
     double tan;
 
+    double alfa;
+    double ny;
+    double vc;
+
+    double fi;
+    double unt;
 //    double psi_prev;
 //    double gamma_prev;
 //    double tan_prev;

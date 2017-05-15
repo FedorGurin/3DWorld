@@ -1,16 +1,17 @@
 #include "view3DArea.h"
 
-#include <lib3ds/camera.h>
-#include <lib3ds/mesh.h>
-#include <lib3ds/material.h>
-#include <lib3ds/matrix.h>
-#include <lib3ds/vector.h>
-#include <lib3ds/light.h>
+#include "./lib3ds/camera.h"
+#include "./lib3ds/mesh.h"
+#include "./lib3ds/material.h"
+#include "./lib3ds/matrix.h"
+//#include "vector.h"
+#include "./lib3ds/light.h"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include <GL/glu.h>
 
+#include "QGLViewer/manipulatedCameraFrame.h"
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <QApplication>
@@ -68,6 +69,7 @@ view3DArea::view3DArea():QGLViewer()
 
     radiusScene=260000.0;
     globalTime=0.0;
+    globalTimeDebug=0.0;
     multTime=1.0;
     dt=((1.0/20)*1000.0);
     //dt=((1.0/freq)*1000.0);
@@ -270,7 +272,7 @@ void view3DArea::init()
     //setAnimationPeriod(dt);
 #endif
     //! открыть рельеф по умолчанию
-    terrain->openTerrainMap("/defaultTerrain.asc");
+    terrain->openTerrainMap("./defaultTerrain.asc");
     this->setBackgroundColor(QColor(81,168,255));
     setSceneRadius(radiusScene);
     //!установить период анимации
@@ -336,8 +338,8 @@ void view3DArea::draw()
     drawSolidObjects();
 #endif
     //! отрисовка подстилающей поверхности
-    if(terra==true)
-        drawTerra();
+//    if(terra==true)
+//        drawTerra();
     //! отрисовка ИЛС
     if(ils==true)
         drawILS();
@@ -540,6 +542,7 @@ void view3DArea::animate()
     div++;
     //! счетчик времени, сек
     globalTime=globalTime+dt*0.001*multTime;
+    globalTimeDebug=globalTimeDebug+dt*0.001*multTime;
     //! если данные загружены из файла
     if(dataFromTXTFile==true)
     {
@@ -875,6 +878,7 @@ void view3DArea::drawStateLine()
     drawText((width()/2)-20,height()-20,"Current Object="+prefix);
 
     drawText((width()/2)-20,height()-40,"Time="+QString::number(globalTime));
+    drawText((width()/2)-20,height()-10,"Time="+QString::number(globalTimeDebug));
 }
 void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
 {
@@ -1394,6 +1398,9 @@ void view3DArea::cameraToObject()
     curGamma=   radianToGrad(cameraToThisObj->gamma);
     curPsi=     radianToGrad(cameraToThisObj->psi);
     curTeta=    radianToGrad(cameraToThisObj->tan);
+    curAlfa=    radianToGrad(cameraToThisObj->alfa);
+    curNya=     cameraToThisObj->ny;
+    curV=       cameraToThisObj->vc;
 
     //! углы повортов камеры в радианах
     double tan_tar_radian=  cameraToThisObj->tan;
@@ -1476,9 +1483,9 @@ void view3DArea::initScene(Lib3dsFile *file3ds)
         glEnable(li);
         glLightfv(li, GL_POSITION, pos);
     }
-   /* Quaternion qPI_2( Vec(0.0, 1.0, 0.0),M_PI/2.0);
-    camera()->frame()->transformOf(Vec(0.0, 0.0, 1.0));
-    camera()->frame()->rotate(qPI_2);*/
+    Quaternion qPI_2( Vec(0.0, 1.0, 0.0),M_PI/2.0);
+    camera()->frame()->setTranslation(Vec(0.0, 0.0, 1.0));
+    camera()->frame()->setRotation(qPI_2);
     // Camera
     Lib3dsNode* c = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_CAMERA_NODE);
     Lib3dsNode* t = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_TARGET_NODE);
@@ -1594,4 +1601,5 @@ void view3DArea::slotPosWindow(int x,int y)
 {
     move(x,y);
 }
+
 
