@@ -8,7 +8,8 @@
 CONFIG +=thread
 TARGET = 3DWorld
 TEMPLATE = app
-
+CONFIG   +=debug_and_release
+CONFIG +=build_all
 QT += gui\
     network \
     opengl \
@@ -32,8 +33,13 @@ win32 {
     #win32-g++:LIBS += -l$${QGLVIEWER2}
 
 }
-LIBS+= "F:\MyProg\Trenager\3DWorld_bpla\QGLViewerd2.lib"
-LIBS+= "F:\MyProg\Trenager\3DWorld_bpla\lib3ds.lib"
+
+CONFIG(debug, debug|release):LIBS+= "F:\MyProg\SwT\3DWorld_bpla\QGLViewerd2.lib"
+CONFIG(debug, debug|release):LIBS+= "F:\MyProg\SwT\3DWorld_bpla\lib3ds-120sd.lib"
+
+CONFIG(release, debug|release):LIBS+="F:\MyProg\SwT\3DWorld_bpla\QGLViewer2.lib"
+CONFIG(release, debug|release):LIBS+="F:\MyProg\SwT\3DWorld_bpla\lib3ds-120s.lib"
+
 LIBS += -lopengl32 -lglu32
 
 #INCLUDEPATH += lib3ds \

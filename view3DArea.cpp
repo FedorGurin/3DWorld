@@ -20,7 +20,7 @@
 #include <QByteArray>
 
 using namespace qglviewer;
-#define SIZE_GRID 10
+#define SIZE_GRID 100
 #define MAX_Y 20000.0
 //#define PERIOD_ANIMATION 50
 #define PERIOD_ANIMATION 1000
@@ -338,8 +338,8 @@ void view3DArea::draw()
     drawSolidObjects();
 #endif
     //! отрисовка подстилающей поверхности
-//    if(terra==true)
-//        drawTerra();
+    if(terra==true)
+        drawTerra();
     //! отрисовка ИЛС
     if(ils==true)
         drawILS();

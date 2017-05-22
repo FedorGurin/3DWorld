@@ -12,8 +12,10 @@ VisUDP::VisUDP()
 bool VisUDP::checkDatagrams()
 {
     bool value=udpSocketRecive.hasPendingDatagrams();
+
     if(value==false)
         return false;
+
     while(udpSocketRecive.hasPendingDatagrams())
     {
 

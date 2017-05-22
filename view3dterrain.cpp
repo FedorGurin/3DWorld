@@ -84,7 +84,7 @@ void ThreadParser::run()
     tempList=list[4].split(" ",QString::SkipEmptyParts);
     mapH->cellsize=tempList[1].toDouble();
 
-    for(long i=5;i<list.size();i++)
+    for(long i=6;i<list.size();i++)
     {
         QVector<double> vec;
         tempList=list[i].split(" ",QString::SkipEmptyParts);
