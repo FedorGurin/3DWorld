@@ -4,8 +4,9 @@
 #include <QGLViewer/qglviewer.h>
 
 
-#include <lib3ds/file.h>
-#include <lib3ds/node.h>
+#include <lib3ds/lib3ds.h>
+
+//#include <lib3ds/node.h>
 
 #include <QFile>
 #include <QTextStream>
@@ -200,6 +201,7 @@ private:
     double curGamma;
     double curTeta;
     double curVy;
+    double curVy_c;
     double curV;
     double curY;
     double curAlfa;
@@ -224,7 +226,7 @@ private:
     float current_frame_aircraft;
     float current_frame_target;
     float current_frame_rocket;
-    char* camera_name;
+    //char* camera_name;
     //! сетевое взаимодействие
     VisUDP net;
     //! положение ручек

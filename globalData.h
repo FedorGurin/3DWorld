@@ -86,6 +86,10 @@ typedef struct
 
     double fi;
     double unt;
+
+    double vy;
+    double vy_c;
+
 //    double psi_prev;
 //    double gamma_prev;
 //    double tan_prev;

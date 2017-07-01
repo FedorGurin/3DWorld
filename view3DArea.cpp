@@ -1,11 +1,11 @@
 #include "view3DArea.h"
 
-#include "./lib3ds/camera.h"
-#include "./lib3ds/mesh.h"
-#include "./lib3ds/material.h"
-#include "./lib3ds/matrix.h"
+//#include "./lib3ds/camera.h"
+//#include "./lib3ds/mesh.h"
+//#include "./lib3ds/material.h"
+//#include "./lib3ds/matrix.h"
 //#include "vector.h"
-#include "./lib3ds/light.h"
+//#include "./lib3ds/light.h"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
@@ -30,7 +30,7 @@ using namespace qglviewer;
 #define USE_3DMODEL
 #define FOG_OFF 1
 
-extern "C" { LIB3DSAPI void lib3ds_file_bounding_box(Lib3dsFile *fileAirCraft, Lib3dsVector min, Lib3dsVector max); }
+//extern "C" { LIB3DSAPI void lib3ds_file_bounding_box(Lib3dsFile *fileAirCraft, Lib3dsVector min, Lib3dsVector max); }
 
 view3DArea::view3DArea():QGLViewer()
 {
@@ -86,7 +86,7 @@ view3DArea::view3DArea():QGLViewer()
     current_frame_aircraft=0.0;
     current_frame_target=0.0;
 
-    camera_name=0;
+    //camera_name=0;
 
     //! указатель на рельеф
     terrain=new View3DTerrain;
@@ -245,7 +245,7 @@ void view3DArea::slotAccepted()
 }
 void view3DArea::readAllModels()
 {
-    list3DObj.resize(6);
+    list3DObj.resize(8);
     //! коды известных объектов
     list3DObj[0].code=105;
     list3DObj[1].code=101;
@@ -253,13 +253,17 @@ void view3DArea::readAllModels()
     list3DObj[3].code=103;
     list3DObj[4].code=104;
     list3DObj[5].code=100;
+    list3DObj[6].code=106;
+    list3DObj[7].code=107;
     //! чтение моделей из 3ds файлов
     loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
-    loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
-    loadFile("./3dmodels/x55.3ds",       &(list3DObj[2].file));
-    loadFile("./3dmodels/WATER_T2.3ds",  &(list3DObj[3].file));
-    loadFile("./3dmodels/bomb.3ds",      &(list3DObj[4].file));
-    loadFile("./3dmodels/buran.3ds",     &(list3DObj[5].file));
+    //loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
+//    loadFile("./3dmodels/x55.3ds",       &(list3DObj[2].file));
+//    loadFile("./3dmodels/WATER_T2.3ds",  &(list3DObj[3].file));
+//    loadFile("./3dmodels/bomb.3ds",      &(list3DObj[4].file));
+//    loadFile("./3dmodels/buran.3ds",     &(list3DObj[5].file));
+//    loadFile("./3dmodels/il78.3ds",      &(list3DObj[6].file));
+//    loadFile("./3dmodels/su35.3ds",      &(list3DObj[7].file));
 }
 
 void view3DArea::init()
@@ -391,6 +395,8 @@ void view3DArea::draw()
 
         };
         drawText(10,350,"man="+nameMan);
+
+        drawText(10,390,"Vy_c="+QString::number(curVy_c));
     }
     //drawLight(GL_LIGHT0);
 
@@ -1240,7 +1246,7 @@ void view3DArea::loadFile(QString nameFile,Lib3dsFile **file3ds)
     //! Путь к 3D модели
     QString name=qApp->applicationDirPath()+nameFile;
 
-    *file3ds = lib3ds_file_load(name.toLatin1().constData());
+    *file3ds = lib3ds_file_open(name.toLatin1().constData());
 
     if (!(*file3ds))
     {
@@ -1249,8 +1255,10 @@ void view3DArea::loadFile(QString nameFile,Lib3dsFile **file3ds)
         exit(1);
     }
 
-    if ((*file3ds)->cameras) camera_name = (*file3ds)->cameras->name;
-    else camera_name = NULL;
+//    if ((*file3ds)->cameras)
+//        camera_name = (*(*file3ds)->cameras)->name;
+//    else
+//        camera_name = NULL;
 
     lib3ds_file_eval((*file3ds),0);
 
@@ -1399,8 +1407,13 @@ void view3DArea::cameraToObject()
     curPsi=     radianToGrad(cameraToThisObj->psi);
     curTeta=    radianToGrad(cameraToThisObj->tan);
     curAlfa=    radianToGrad(cameraToThisObj->alfa);
+    curVy=      cameraToThisObj->vy;
+    curVy_c=    cameraToThisObj->vy_c;
     curNya=     cameraToThisObj->ny;
     curV=       cameraToThisObj->vc;
+    curY=       cameraToThisObj->y_g;
+    curFi= radianToGrad(cameraToThisObj->fi);
+    curUnt= radianToGrad(cameraToThisObj->unt);
 
     //! углы повортов камеры в радианах
     double tan_tar_radian=  cameraToThisObj->tan;
@@ -1478,7 +1491,8 @@ void view3DArea::initScene(Lib3dsFile *file3ds)
     GLfloat pos[] = {1.0, 1.0, 0.0, 0.0};
     int li=GL_LIGHT0;
 
-    for (Lib3dsLight* l=file3ds->lights; l; l=l->next)
+   // for (Lib3dsLight* l=*((*file3ds).lights); l; l=l->next)
+     for (int i=0; i<file3ds->nlights;i++)
     {
         glEnable(li);
         glLightfv(li, GL_POSITION, pos);
@@ -1487,18 +1501,25 @@ void view3DArea::initScene(Lib3dsFile *file3ds)
     camera()->frame()->setTranslation(Vec(0.0, 0.0, 1.0));
     camera()->frame()->setRotation(qPI_2);
     // Camera
-    Lib3dsNode* c = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_CAMERA_NODE);
-    Lib3dsNode* t = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_TARGET_NODE);
+    Lib3dsCamera* camera3ds = NULL;
+    if(file3ds->ncameras!=0)
+        camera3ds = file3ds->cameras[0];
+//    Lib3dsNode* c = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_NODE_CAMERA);
+//    Lib3dsNode* t = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_NODE_CAMERA_TARGET);
 
-    if (!c || !t) return;
+    if (camera3ds==NULL)
+        return;
 
-    camera()->setPosition(Vec(c->data.camera.pos));
-    camera()->lookAt(Vec(t->data.target.pos));
+
+    camera()->setPosition(Vec(camera3ds->position));
+
+    camera()->lookAt(Vec(camera3ds->target));
+    //camera()->lookAt(Vec(t->data.target.pos));
     Vec up=camera()->frame()->transformOf(Vec(0.0, 0.0, 1.0));
     float angle=atan2(up.x, up.y);
-    Quaternion q(Vec(0.0, 0.0, 1.0), c->data.camera.roll-angle);
+    Quaternion q(Vec(0.0, 0.0, 1.0), camera3ds->roll-angle);
     camera()->frame()->rotate(q);
-    camera()->setFieldOfView(M_PI/180.0*c->data.camera.fov);
+    camera()->setFieldOfView(M_PI/180.0*camera3ds->fov);
     camera()->setZNearCoefficient(0.0);
 
     setSceneRadius(radiusScene);
@@ -1511,86 +1532,86 @@ void view3DArea::renderNode(Lib3dsFile *file,Lib3dsNode *node)
     for (Lib3dsNode* p=node->childs; p!=0; p=p->next)
         renderNode(file,p);
 
-    if (node->type == LIB3DS_OBJECT_NODE)
-    {
-        if (strcmp(node->name,"$$$DUMMY")==0)
-            return;
+//    if (node->type == LIB3DS_OBJECT_NODE)
+//    {
+//        if (strcmp(node->name,"$$$DUMMY")==0)
+//            return;
 
-        if (!node->user.d)
-        {
-            Lib3dsMesh *mesh=lib3ds_file_mesh_by_name(file, node->name);
-            if (!mesh)
-                return;
+//        if (!node->user_ptr)
+//        {
+//            Lib3dsMesh *mesh=lib3ds_file_mesh_by_name(file, node->name);
+//            if (!mesh)
+//                return;
 
-            node->user.d = glGenLists(1);
-            glNewList(node->user.d, GL_COMPILE);
+//            node->user.d = glGenLists(1);
+//            glNewList(node->user.d, GL_COMPILE);
 
-            Lib3dsVector *normalL = new Lib3dsVector[3*mesh->faces];
+//            Lib3dsVector *normalL = new Lib3dsVector[3*mesh->faces];
 
-            Lib3dsMatrix M;
+//            Lib3dsMatrix M;
 
-            lib3ds_matrix_copy(M, mesh->matrix);
-            lib3ds_matrix_inv(M);
+//            lib3ds_matrix_copy(M, mesh->matrix);
+//            lib3ds_matrix_inv(M);
 
-            glMultMatrixf(&M[0][0]);
+//            glMultMatrixf(&M[0][0]);
 
-            lib3ds_mesh_calculate_normals(mesh, normalL);
+//            lib3ds_mesh_calculate_normals(mesh, normalL);
 
-            for (unsigned int p=0; p<mesh->faces; ++p)
-            {
-                Lib3dsFace *f=&mesh->faceL[p];
-                Lib3dsMaterial *mat=0;
+//            for (unsigned int p=0; p<mesh->faces; ++p)
+//            {
+//                Lib3dsFace *f=&mesh->faceL[p];
+//                Lib3dsMaterial *mat=0;
 
-                if (f->material[0])
-                    mat=lib3ds_file_material_by_name(file, f->material);
+//                if (f->material[0])
+//                    mat=lib3ds_file_material_by_name(file, f->material);
 
-                if (mat)
-                {
-                    static GLfloat a[4]={0,0,0,1};
-                    float s;
+//                if (mat)
+//                {
+//                    static GLfloat a[4]={0,0,0,1};
+//                    float s;
 
-                    glMaterialfv(GL_FRONT, GL_AMBIENT, a);//
-                    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat->diffuse);
-                    //  glMaterialfv(GL_FRONT, GL_SPECULAR, mat->specular);
+//                    glMaterialfv(GL_FRONT, GL_AMBIENT, a);//
+//                    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat->diffuse);
+//                    //  glMaterialfv(GL_FRONT, GL_SPECULAR, mat->specular);
 
-                    s = pow(2, 10.0*mat->shininess);
-                    if (s>128.0)
-                        s=128.0;
-                    glMaterialf(GL_FRONT, GL_SHININESS, s);
-                }
-                else
-                {
-                    Lib3dsRgba a={0.2, 0.2, 0.2, 1.0};
-                    Lib3dsRgba d={0.8, 0.8, 0.8, 1.0};
-                    //Lib3dsRgba s={1.0, 1.0, 1.0, 1.0};
-                    glMaterialfv(GL_FRONT, GL_AMBIENT, a);
-                    glMaterialfv(GL_FRONT, GL_DIFFUSE, d);
-                    //	glMaterialfv(GL_FRONT, GL_SPECULAR, s);
-                }
+//                    s = pow(2, 10.0*mat->shininess);
+//                    if (s>128.0)
+//                        s=128.0;
+//                    glMaterialf(GL_FRONT, GL_SHININESS, s);
+//                }
+//                else
+//                {
+//                    Lib3dsRgba a={0.2, 0.2, 0.2, 1.0};
+//                    Lib3dsRgba d={0.8, 0.8, 0.8, 1.0};
+//                    //Lib3dsRgba s={1.0, 1.0, 1.0, 1.0};
+//                    glMaterialfv(GL_FRONT, GL_AMBIENT, a);
+//                    glMaterialfv(GL_FRONT, GL_DIFFUSE, d);
+//                    //	glMaterialfv(GL_FRONT, GL_SPECULAR, s);
+//                }
 
-                glBegin(GL_TRIANGLES);
-                glNormal3fv(f->normal);
-                for (int i=0; i<3; ++i)
-                {
-                    glNormal3fv(normalL[3*p+i]);
-                    glVertex3fv(mesh->pointL[f->points[i]].pos);
-                }
-                glEnd();
-            }
-            delete[] normalL;
-            glEndList();
-        }
-        if (node->user.d)
-        {
-            glPushMatrix();
+//                glBegin(GL_TRIANGLES);
+//                glNormal3fv(f->normal);
+//                for (int i=0; i<3; ++i)
+//                {
+//                    glNormal3fv(normalL[3*p+i]);
+//                    glVertex3fv(mesh->pointL[f->points[i]].pos);
+//                }
+//                glEnd();
+//            }
+//            delete[] normalL;
+//            glEndList();
+//        }
+//        if (node->user_ptr)
+//        {
+//            glPushMatrix();
 
-            Lib3dsObjectData* d = &node->data.object;
-            glMultMatrixf(&node->matrix[0][0]);
-            glTranslatef(-d->pivot[0], -d->pivot[1], -d->pivot[2]);
-            glCallList(node->user.d);
-            glPopMatrix();
-        }
-    }
+//            Lib3dsObjectData* d = &node->data.object;
+//            glMultMatrixf(&node->matrix[0][0]);
+//            glTranslatef(-d->pivot[0], -d->pivot[1], -d->pivot[2]);
+//            glCallList(node->user.d);
+//            glPopMatrix();
+//        }
+//    }
 }
 
 void view3DArea::slotRes(int w,int h)

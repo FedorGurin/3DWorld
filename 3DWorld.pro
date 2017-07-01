@@ -34,11 +34,11 @@ win32 {
 
 }
 
-CONFIG(debug, debug|release):LIBS+= "F:\MyProg\SwT\3DWorld_bpla\QGLViewerd2.lib"
-CONFIG(debug, debug|release):LIBS+= "F:\MyProg\SwT\3DWorld_bpla\lib3ds-120sd.lib"
+CONFIG(debug, debug|release):LIBS+= "C:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewerd2.lib"
+CONFIG(debug, debug|release):LIBS+= "C:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0d.lib"
 
-CONFIG(release, debug|release):LIBS+="F:\MyProg\SwT\3DWorld_bpla\QGLViewer2.lib"
-CONFIG(release, debug|release):LIBS+="F:\MyProg\SwT\3DWorld_bpla\lib3ds-120s.lib"
+CONFIG(release, debug|release):LIBS+="C:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewer2.lib"
+CONFIG(release, debug|release):LIBS+="C:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0.lib"
 
 LIBS += -lopengl32 -lglu32
 
