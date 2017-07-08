@@ -16,34 +16,17 @@ QT += gui\
     xml \
     widgets \
     svg
-3DSLIB = 3ds
-unix {
 
-    #QMAKE_CXXFLAGS_RELEASE += -malign-double
-    QGLVIEWER = QGLViewer
-    unix:LIBS += -l$${3DSLIB}
-    unix:LIBS += -l$${QGLVIEWER}
+INCLUDEPATH += QGLViewer
+INCLUDEPATH += libsX64
 
-}
-win32 {
+CONFIG(debug, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewerd2.lib
+CONFIG(debug, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0d.lib
 
-    #QMAKE_CXXFLAGS_RELEASE += -mno-align-double
-    QGLVIEWER2 = QGLViewer2
-    #win32-g++:LIBS += -l$${3DSLIB}
-    #win32-g++:LIBS += -l$${QGLVIEWER2}
-
-}
-
-CONFIG(debug, debug|release):LIBS+= "C:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewerd2.lib"
-CONFIG(debug, debug|release):LIBS+= "C:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0d.lib"
-
-CONFIG(release, debug|release):LIBS+="C:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewer2.lib"
-CONFIG(release, debug|release):LIBS+="C:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0.lib"
+CONFIG(release, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewer2.lib
+CONFIG(release, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0.lib
 
 LIBS += -lopengl32 -lglu32
-
-#INCLUDEPATH += lib3ds \
-#               libQGLViewer
 
 SOURCES += main.cpp\
     view3dterrain.cpp \
@@ -65,6 +48,7 @@ HEADERS  += \
     TemplateNASP.hpp \
     math_func.h \
     Vector3D_D.h
+    #QGLViewer/qglviewer.h
 
 FORMS    += \
     formsettings.ui

@@ -81,14 +81,29 @@ typedef struct
     double tan;
 
     double alfa;
+    double beta;
+
+    double nx;
     double ny;
+    double nz;
+
     double vc;
 
     double fi;
     double unt;
 
-    double vy;
+    double vx_g;
+    double vy_g;
+    double vz_g;
+
+    double vx_c;
     double vy_c;
+    double vz_c;
+
+    double wx;
+    double wy;
+    double wz;
+
 
 //    double psi_prev;
 //    double gamma_prev;

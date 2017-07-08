@@ -200,12 +200,33 @@ private:
     double curPsi;
     double curGamma;
     double curTeta;
-    double curVy;
+    //! компаненты вектора скорости относительно ЗСК
+    double curVy_g;
+    double curVx_g;
+    double curVz_g;
+
+    double curWx;
+    double curWy;
+    double curWz;
+
+    //! относительно ССК
+    double curVx_c;
     double curVy_c;
+    double curVz_c;
+    //! модуль скорости
     double curV;
+
     double curY;
+    double curX;
+    double curZ;
+
     double curAlfa;
+    double curBeta;
+
+    double curNxa;
     double curNya;
+    double curNza;
+
     double curFi;
     double curUnt;
     int curIdMan;

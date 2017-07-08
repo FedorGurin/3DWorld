@@ -366,15 +366,34 @@ void view3DArea::draw()
         drawText(10,80,"[-] zoom DOWN");
         drawText(10,100,"Current Scale="+QString::number(d)+" meters");
         drawText(10,150,"Psi="+QString::number(curPsi));
-        drawText(10,170,"Gamma="+QString::number(curGamma));
-        drawText(10,190,"Teta="+QString::number(curTeta));
-        drawText(10,210,"Vy="+QString::number(curVy));
-        drawText(10,230,"y="+QString::number(curY));
+        drawText(100,150,"Gamma="+QString::number(curGamma));
+        drawText(190,150,"Teta="+QString::number(curTeta));
+
+        drawText(10,170,"W.x="+QString::number(curWx));
+        drawText(100,170,"W.y="+QString::number(curWy));
+        drawText(190,170,"W.z="+QString::number(curWz));
+
+        drawText(10,190,"Vx_c="+QString::number(curVx_c));
+        drawText(100,190,"Vy_c="+QString::number(curVy_c));
+        drawText(190,190,"Vz_c="+QString::number(curVz_c));
+
+        drawText(10,210,"Vx_g="+QString::number(curVx_g));
+        drawText(100,210,"Vy_g="+QString::number(curVy_g));
+        drawText(190,210,"Vz_g="+QString::number(curVz_g));
+
+        drawText(10,230,"x="+QString::number(curX));
+        drawText(100,230,"y="+QString::number(curY));
+        drawText(190,230,"z="+QString::number(curZ));
+
         drawText(10,250,"V="+QString::number(curV));
         drawText(10,270,"alfa="+QString::number(curAlfa));
-        drawText(10,290,"nya="+QString::number(curNya));
+
+        drawText(10,290, "nxa="+QString::number(curNxa));
+        drawText(100,290,"nya="+QString::number(curNya));
+        drawText(180,290,"nza="+QString::number(curNza));
+
         drawText(10,310,"fi="+QString::number(curFi));
-        drawText(10,330,"unt="+QString::number(curUnt));
+        drawText(180,310,"unt="+QString::number(curUnt));
 
         drawText(10,120,"HorFilter="+QString::number(horFilter->curValue()));
         drawText(10,140,"VerFilter="+QString::number(verFilter->curValue()));
@@ -397,6 +416,8 @@ void view3DArea::draw()
         drawText(10,350,"man="+nameMan);
 
         drawText(10,390,"Vy_c="+QString::number(curVy_c));
+
+        drawText(90,270,"beta="+QString::number(curBeta));
     }
     //drawLight(GL_LIGHT0);
 
@@ -1407,11 +1428,28 @@ void view3DArea::cameraToObject()
     curPsi=     radianToGrad(cameraToThisObj->psi);
     curTeta=    radianToGrad(cameraToThisObj->tan);
     curAlfa=    radianToGrad(cameraToThisObj->alfa);
-    curVy=      cameraToThisObj->vy;
+    curBeta=    radianToGrad(cameraToThisObj->beta);
+    curVx_g=      cameraToThisObj->vx_g;
+    curVy_g=      cameraToThisObj->vy_g;
+    curVz_g=      cameraToThisObj->vz_g;
+
+    curVx_c=    cameraToThisObj->vx_c;
     curVy_c=    cameraToThisObj->vy_c;
+    curVz_c=    cameraToThisObj->vz_c;
+
+    curNxa=     cameraToThisObj->nx;
     curNya=     cameraToThisObj->ny;
+    curNza=     cameraToThisObj->nz;
+
+    curWx=     radianToGrad(cameraToThisObj->wx);
+    curWy=     radianToGrad(cameraToThisObj->wy);
+    curWz=     radianToGrad(cameraToThisObj->wz);
+
+
     curV=       cameraToThisObj->vc;
     curY=       cameraToThisObj->y_g;
+    curX= cameraToThisObj->x_g;
+    curZ= cameraToThisObj->z_g;
     curFi= radianToGrad(cameraToThisObj->fi);
     curUnt= radianToGrad(cameraToThisObj->unt);
 
