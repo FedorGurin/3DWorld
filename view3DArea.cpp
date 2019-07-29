@@ -256,7 +256,7 @@ void view3DArea::readAllModels()
     list3DObj[6].code=106;
     list3DObj[7].code=107;
     //! чтение моделей из 3ds файлов
-    loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
+    //loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
     //loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
 //    loadFile("./3dmodels/x55.3ds",       &(list3DObj[2].file));
 //    loadFile("./3dmodels/WATER_T2.3ds",  &(list3DObj[3].file));
@@ -331,7 +331,7 @@ void view3DArea::draw()
     glScalef(1.0,1.0,1.0);
 
     glBegin(GL_POINTS);
-    qglColor(QColor(Qt::red));
+    //qglColor(QColor(Qt::red));
 
     glEnd();
 
@@ -435,7 +435,7 @@ void view3DArea::draw()
             for(int i=0;i<=SIZE_GRID;i++)
             {
                 /////////сетка при Z=0.0//////////////
-                qglColor(QColor(170,200,160,255));
+                //qglColor(QColor(170,200,160,255));
                 //qglColor(QColor(11,11,11));
 
                 double dY=1.0/MAX_Y;
@@ -516,7 +516,7 @@ void view3DArea::drawTrajectory()
         //! если прочитали файл
         for(long i=0;i<rows.size();i++)
         {
-            qglColor(QColor(80,223,72));
+            //qglColor(QColor(80,223,72));
             glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
         }
         glEnd();
@@ -539,7 +539,7 @@ void view3DArea::drawTrajectory()
         {
             for(long int j=0;j<trs[i].x.size();j++)
             {
-                qglColor(QColor(trs[i].r[j],trs[i].g[j],trs[i].b[j]));
+                //qglColor(QColor(trs[i].r[j],trs[i].g[j],trs[i].b[j]));
                 glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
                 glVertex3f(trs[i].x[j],0,trs[i].z[j]);
             }
@@ -823,7 +823,7 @@ void view3DArea::drawILS()
     glLoadIdentity();
     /////////////////////////////////////////
     //! отрисовка ИЛС линий
-    qglColor(QColor(Qt::green));
+    //qglColor(QColor(Qt::green));
     glLineWidth(5.0);
     glDisable(GL_BLEND);//Уберем прозрачность
     glTranslatef(width()/2.0,height()/2.0,0);
@@ -929,7 +929,7 @@ void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
                 -an.tau,
                 xCenter,
                 yCenter);
-    qglColor(Qt::red);//цвет окружности
+    //qglColor(Qt::red);//цвет окружности
     //! отрисовка точки в центре окружности
     glBegin(GL_POINTS);
         glVertex2i(xCenter,yCenter);
@@ -968,7 +968,7 @@ void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
                 -an.tau,
                 xCenter,
                 yCenter);
-    qglColor(Qt::red);//цвет окружности
+    //qglColor(Qt::red);//цвет окружности
     //! отрисовка точки в центре окружности
     glBegin(GL_POINTS);
         glVertex2i(xCenter,yCenter);
@@ -1257,34 +1257,34 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
             QGLViewer::keyPressEvent(e);}
     };
 }
-void view3DArea::loadFile(QString nameFile,Lib3dsFile **file3ds)
-{
+//void view3DArea::loadFile(QString nameFile,Lib3dsFile **file3ds)
+//{
 
-    //! отрисовка сетки
-    setGridIsDrawn(false);
-    //! отрисовка осей
-    setAxisIsDrawn(false);
-    //! Путь к 3D модели
-    QString name=qApp->applicationDirPath()+nameFile;
+//    //! отрисовка сетки
+//    setGridIsDrawn(false);
+//    //! отрисовка осей
+//    setAxisIsDrawn(false);
+//    //! Путь к 3D модели
+//    QString name=qApp->applicationDirPath()+nameFile;
 
-    *file3ds = lib3ds_file_open(name.toLatin1().constData());
+//    *file3ds = lib3ds_file_open(name.toLatin1().constData());
 
-    if (!(*file3ds))
-    {
-        QMessageBox(QMessageBox::Information,"Information","3ds file not found");
-        qWarning("Error : Unable to open file ");
-        exit(1);
-    }
+//    if (!(*file3ds))
+//    {
+//        QMessageBox(QMessageBox::Information,"Information","3ds file not found");
+//        qWarning("Error : Unable to open file ");
+//        exit(1);
+//    }
 
-//    if ((*file3ds)->cameras)
-//        camera_name = (*(*file3ds)->cameras)->name;
-//    else
-//        camera_name = NULL;
+////    if ((*file3ds)->cameras)
+////        camera_name = (*(*file3ds)->cameras)->name;
+////    else
+////        camera_name = NULL;
 
-    lib3ds_file_eval((*file3ds),0);
+//    lib3ds_file_eval((*file3ds),0);
 
-    initScene(*file3ds);
-}
+//    initScene(*file3ds);
+//}
 void view3DArea::setCameraToObject(int num)
 {
     cameraToBack=false;

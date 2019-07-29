@@ -80,7 +80,7 @@ public:
     //! привязать камеру к объекту
     void cameraToObject();
     //! Загрузить файл с 3D моделью
-    void loadFile(QString nameFile,Lib3dsFile **file3ds);
+    //void loadFile(QString nameFile,Lib3dsFile **file3ds);
     //! чтение всех моделей
     void readAllModels();
     //! поиск объекта по коду
