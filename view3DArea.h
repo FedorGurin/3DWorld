@@ -15,7 +15,7 @@
 #include <QOpenGLFunctions>
 #include <QFileDialog>
 #include <math.h>
-
+#include <QOpenGLFunctions_3_2_Compatibility>
 #include "view3dTerrain.h"
 
 #include "math_func.h"
@@ -135,7 +135,7 @@ public:
     double radiusScene;
     //! ограничение на КАИ
     LimitPositionKAI *limit;
-   QAbstractOpenGLFunctions *glFunc;
+   QOpenGLFunctions_3_2_Compatibility *glFunc;
     //! отрисовка узлов
     void renderNode(Lib3dsFile *,Lib3dsNode *node);
 protected :
