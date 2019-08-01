@@ -12,6 +12,8 @@
 #include <QTextStream>
 #include <QTextCodec>
 #include <QLocale>
+#include <QOpenGLFunctions>
+#include <QFileDialog>
 #include <math.h>
 
 #include "view3dTerrain.h"
@@ -71,8 +73,9 @@ typedef struct
 //! класс 3D визуализации
 class view3DArea:public QGLViewer
 {
-    Q_OBJECT;
+    Q_OBJECT
 public:
+
     //! 3D просмотр области визуализации
     view3DArea();
     //! установка номера камеры
@@ -132,6 +135,7 @@ public:
     double radiusScene;
     //! ограничение на КАИ
     LimitPositionKAI *limit;
+   QAbstractOpenGLFunctions *glFunc;
     //! отрисовка узлов
     void renderNode(Lib3dsFile *,Lib3dsNode *node);
 protected :

@@ -9,7 +9,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <GL/glu.h>
+//#include <GL/glu.h>
+#include <QOpenGLFunctions_3_3_Core>
 
 #include "QGLViewer/manipulatedCameraFrame.h"
 #include <QMessageBox>
@@ -268,6 +269,9 @@ void view3DArea::readAllModels()
 
 void view3DArea::init()
 {
+    glFunc = context()->versionFunctions<QOpenGLFunctions_3_3_Core>();
+    glFunc->initializeOpenGLFunctions();
+
 #ifdef USE_3DMODEL
     readAllModels();
     setAxisIsDrawn(false);
@@ -330,7 +334,7 @@ void view3DArea::draw()
 
     glScalef(1.0,1.0,1.0);
 
-    glBegin(GL_POINTS);
+    glFunc->glBegin(GL_POINTS);
     //qglColor(QColor(Qt::red));
 
     glEnd();
@@ -429,7 +433,7 @@ void view3DArea::draw()
         //glScalef(radiusScene,radiusScene,radiusScene);
         glScalef(d,d,d);
         //glDisable(GL_LIGHTING);//Отключим свет
-        glBegin(GL_LINES);
+        glFunc->glBegin(GL_LINES);
 
             float stepGrid=2.0/SIZE_GRID;//Шаг сетки
             for(int i=0;i<=SIZE_GRID;i++)
@@ -468,7 +472,7 @@ void view3DArea::draw()
             ///            /////glEnable(GL_BLEND);
             ///    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
             /*    qglColor(QColor(Qt::gray));
-            ///    glBegin(GL_QUADS);
+            ///    glFunc->glBegin(GL_QUADS);
             ///    //qglColor(QColor(229,210,175,220));
 
 
@@ -499,7 +503,7 @@ void view3DArea::drawTrajectory()
     if(vertLine==true)
     {
         //! отрисовка вертикальных линий
-        glBegin(GL_LINES);
+        glFunc->glBegin(GL_LINES);
         for(long i=0;i<trs[0].x.size();i=i+5)
         {
             glVertex3f(trs[0].x[i],0.0,trs[0].z[i]);
@@ -512,7 +516,7 @@ void view3DArea::drawTrajectory()
     if(dataFromTXTFile==true)
     {
         //! отрисовка точек
-        glBegin(GL_POINTS);
+        glFunc->glBegin(GL_POINTS);
         //! если прочитали файл
         for(long i=0;i<rows.size();i++)
         {
@@ -523,7 +527,7 @@ void view3DArea::drawTrajectory()
         if(vertLine==true)
         {
             //! отрисовка вертикальных линий
-            glBegin(GL_LINES);
+            glFunc->glBegin(GL_LINES);
             for(long i=0;i<rows.size();i=i+5)
             {
                 glVertex3f(rows[i].x_g,0.0,rows[i].z_g);
@@ -534,7 +538,7 @@ void view3DArea::drawTrajectory()
     }else
     {
         //! отрисовка точек
-        glBegin(GL_POINTS);
+        glFunc->glBegin(GL_POINTS);
         for(long i=0;i<trs.size();i++)
         {
             for(long int j=0;j<trs[i].x.size();j++)
@@ -548,7 +552,7 @@ void view3DArea::drawTrajectory()
         if(vertLine==true)
         {
             //! отрисовка вертикальных линий
-            glBegin(GL_LINES);
+            glFunc->glBegin(GL_LINES);
             for(long i=0;i<trs.size();i++)
             {
                 for(long int j=0;j<trs[i].x.size();j++)
@@ -842,7 +846,7 @@ void view3DArea::drawILS()
         drawText((width()/2.0)-((width()/5.0)),height()/2.0+hILS,QString::number(-i*10));
         drawText((width()/2.0)+((width()/5.0)),height()/2.0+hILS,QString::number(-i*10));
 
-        glBegin(GL_LINES);
+        glFunc->glBegin(GL_LINES);
 
             glVertex2i(-(width()/5.0),hILS);
             glVertex2i((width()/5.0),hILS);
@@ -931,11 +935,11 @@ void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
                 yCenter);
     //qglColor(Qt::red);//цвет окружности
     //! отрисовка точки в центре окружности
-    glBegin(GL_POINTS);
+    glFunc->glBegin(GL_POINTS);
         glVertex2i(xCenter,yCenter);
         glEnd();
     //! толщина пикселей окружности
-    glBegin(GL_LINES);
+    glFunc->glBegin(GL_LINES);
         glVertex2i(xCenter+radius_/2.0,yCenter);
         glVertex2i(xCenter-radius_/2.0,yCenter);
 
@@ -970,11 +974,11 @@ void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
                 yCenter);
     //qglColor(Qt::red);//цвет окружности
     //! отрисовка точки в центре окружности
-    glBegin(GL_POINTS);
+    glFunc->glBegin(GL_POINTS);
         glVertex2i(xCenter,yCenter);
         glEnd();
     //! толщина пикселей окружности
-    glBegin(GL_POINTS);
+    glFunc->glBegin(GL_POINTS);
 
     while(y>=0)
     {
@@ -1038,7 +1042,7 @@ void view3DArea::drawTerra()
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
-        glBegin(GL_QUADS);
+        glFunc->glBegin(GL_QUADS);
 
 //        if(camera()->position().y>25000.0)
 //            step=10;
@@ -1600,8 +1604,8 @@ void view3DArea::renderNode(Lib3dsFile *file,Lib3dsNode *node)
 //                Lib3dsFace *f=&mesh->faceL[p];
 //                Lib3dsMaterial *mat=0;
 
-//                if (f->material[0])
-//                    mat=lib3ds_file_material_by_name(file, f->material);
+//                if (glFunc->material[0])
+//                    mat=lib3ds_file_material_by_name(file, glFunc->material);
 
 //                if (mat)
 //                {
@@ -1627,12 +1631,12 @@ void view3DArea::renderNode(Lib3dsFile *file,Lib3dsNode *node)
 //                    //	glMaterialfv(GL_FRONT, GL_SPECULAR, s);
 //                }
 
-//                glBegin(GL_TRIANGLES);
-//                glNormal3fv(f->normal);
+//                glFunc->glBegin(GL_TRIANGLES);
+//                glNormal3fv(glFunc->normal);
 //                for (int i=0; i<3; ++i)
 //                {
 //                    glNormal3fv(normalL[3*p+i]);
-//                    glVertex3fv(mesh->pointL[f->points[i]].pos);
+//                    glVertex3fv(mesh->pointL[glFunc->points[i]].pos);
 //                }
 //                glEnd();
 //            }

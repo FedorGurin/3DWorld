@@ -32,7 +32,7 @@ CONFIG(debug, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\QG
 CONFIG(release, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\QGLViewer2.lib
 #CONFIG(release, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\lib3ds-2_0.lib
 
-LIBS += -lopengl32 -lglu32
+//LIBS += -lopengl32 -lglu32
 
 SOURCES += main.cpp\
     view3dterrain.cpp \
