@@ -17,8 +17,11 @@ QT += gui\
     widgets \
     svg
 
-INCLUDEPATH += QGLViewer
-INCLUDEPATH += libsX64
+#INCLUDEPATH += QGLViewer
+#INCLUDEPATH += libsX64
+
+INCLUDEPATH *= /home/fedor/Soft/libQGLViewer-2.7.1
+LIBS *= -L/home/fedor/Soft/libQGLViewer-2.7.1/QGLViewer -lQGLViewer-qt5
 
 #CONFIG(debug, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewerd2.lib
 #CONFIG(debug, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0d.lib
@@ -26,17 +29,17 @@ INCLUDEPATH += libsX64
 #CONFIG(release, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewer2.lib
 #CONFIG(release, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0.lib
 
-CONFIG(debug, debug|release):LIBS+= /home/fedor/Prog/3DWorld/QGLViewer/libQGLViewer-qt5.so
+#CONFIG(debug, debug|release):LIBS+= /home/fedor/Soft/libQGLViewer-2.7.1/QGLViewer/libQGLViewer-qt5.so
 #CONFIG(debug, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\lib3ds-2_0d.lib
 
-CONFIG(release, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\QGLViewer2.lib
+#CONFIG(release, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\QGLViewer2.lib
 #CONFIG(release, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\lib3ds-2_0.lib
 
 #LIBS += -lopengl32 -lglu32
 
 SOURCES += main.cpp\
-    view3dterrain.cpp \
     view3DArea.cpp \
+    view3DTerrain.cpp \
     visual3D.cpp \
     visudp.cpp \
     formsettings.cpp \
@@ -44,8 +47,8 @@ SOURCES += main.cpp\
     math_func.cpp
 
 HEADERS  += \
-    view3dterrain.h \
     view3DArea.h \
+    view3DTerrain.h \
     visual3D.h \
     visudp.h \
     Vector3D_D.h \
