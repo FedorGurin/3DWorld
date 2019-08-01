@@ -9,7 +9,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <GL/glu.h>
+//#include <GL/glu.h>
+#include <QOpenGLFunctions_3_3_Core>
 
 #include "QGLViewer/manipulatedCameraFrame.h"
 #include <QMessageBox>
@@ -268,6 +269,9 @@ void view3DArea::readAllModels()
 
 void view3DArea::init()
 {
+    glFunc = context()->versionFunctions<QOpenGLFunctions_3_2_Compatibility>();
+    glFunc->initializeOpenGLFunctions();
+
 #ifdef USE_3DMODEL
     readAllModels();
     setAxisIsDrawn(false);
@@ -287,7 +291,7 @@ void view3DArea::init()
 void view3DArea::draw()
 {
     double d=0;
-    glDisable(GL_LIGHTING);
+    glFunc->glDisable(GL_LIGHTING);
 
 
     if(net.checkDatagrams()==true)
@@ -316,24 +320,24 @@ void view3DArea::draw()
 
     if(fog==true)
     {
-        glEnable(GL_FOG);               // Включает туман (GL_FOG)
-        glFogi(GL_FOG_MODE, GL_LINEAR); // Выбираем тип тумана
-        glFogfv(GL_FOG_COLOR, fogColor);// Устанавливаем цвет тумана
-        glFogf(GL_FOG_DENSITY, dFog);   // Насколько густым будет туман
-        glHint(GL_FOG_HINT, GL_NICEST); // Вспомогательная установка тумана
-        glFogf(GL_FOG_START, d/2);      // Глубина, с которой начинается туман
-        glFogf(GL_FOG_END, d);          // Глубина, где туман заканчивается.
+        glFunc->glEnable(GL_FOG);               // Включает туман (GL_FOG)
+        glFunc->glFogi(GL_FOG_MODE, GL_LINEAR); // Выбираем тип тумана
+        glFunc->glFogfv(GL_FOG_COLOR, fogColor);// Устанавливаем цвет тумана
+        glFunc->glFogf(GL_FOG_DENSITY, dFog);   // Насколько густым будет туман
+        glFunc->glHint(GL_FOG_HINT, GL_NICEST); // Вспомогательная установка тумана
+        glFunc->glFogf(GL_FOG_START, d/2);      // Глубина, с которой начинается туман
+        glFunc->glFogf(GL_FOG_END, d);          // Глубина, где туман заканчивается.
     }else
     {
-        glDisable(GL_FOG);
+        glFunc->glDisable(GL_FOG);
     }
 
-    glScalef(1.0,1.0,1.0);
+    glFunc->glScalef(1.0,1.0,1.0);
 
-    glBegin(GL_POINTS);
+    glFunc->glBegin(GL_POINTS);
     //qglColor(QColor(Qt::red));
 
-    glEnd();
+    glFunc->glEnd();
 
     //! отрисовка траектории
     drawTrajectory();
@@ -351,12 +355,12 @@ void view3DArea::draw()
     if(sky==true)
         drawSky();
     //////////////////////////
-    glDisable(GL_LIGHTING);
-    //glEnable(GL_BLEND);
+    glFunc->glDisable(GL_LIGHTING);
+    //glFunc->glEnable(GL_BLEND);
     //! Полная яркость, 50% альфа (НОВОЕ)
-    glColor4f(1.0f,1.0f,1.0f,0.7f);
+    glFunc->glColor4f(1.0f,1.0f,1.0f,0.7f);
     //! Функция смешивания для непрозрачности
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE);
+    glFunc->glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 
     //if(grid==true) drawGrid();
     drawStateLine();
@@ -423,13 +427,13 @@ void view3DArea::draw()
 
     if(grid==true)
     {
-        glPushMatrix();
-        //glDisable(GL_DEPTH_TEST);
+        glFunc->glPushMatrix();
+        //glFunc->glDisable(GL_DEPTH_TEST);
         ////////Нарисуем плоскость OXZ
-        //glScalef(radiusScene,radiusScene,radiusScene);
-        glScalef(d,d,d);
-        //glDisable(GL_LIGHTING);//Отключим свет
-        glBegin(GL_LINES);
+        //glFunc->glScalef(radiusScene,radiusScene,radiusScene);
+        glFunc->glScalef(d,d,d);
+        //glFunc->glDisable(GL_LIGHTING);//Отключим свет
+        glFunc->glBegin(GL_LINES);
 
             float stepGrid=2.0/SIZE_GRID;//Шаг сетки
             for(int i=0;i<=SIZE_GRID;i++)
@@ -441,48 +445,48 @@ void view3DArea::draw()
                 double dY=1.0/MAX_Y;
 
 #ifdef VERT_GRID
-                glVertex3f(1.0-i*stepGrid,0.0,0.0);
-                glVertex3f(1.0-i*stepGrid,1.0,0.0);
-                glVertex3f(-1.0,fabs(1.0-i*stepGrid),0.0);
-                glVertex3f(1.0,fabs(1.0-i*stepGrid),0.0);
+                glFunc->glVertex3f(1.0-i*stepGrid,0.0,0.0);
+                glFunc->glVertex3f(1.0-i*stepGrid,1.0,0.0);
+                glFunc->glVertex3f(-1.0,fabs(1.0-i*stepGrid),0.0);
+                glFunc->glVertex3f(1.0,fabs(1.0-i*stepGrid),0.0);
                 //////////////////////////////////////
 
                 ///////сетка при X=0.0///////////////
-                glVertex3f(0.0,0.0,1.0-i*stepGrid);
-                glVertex3f(0.0,1.0,1.0-i*stepGrid);
-                glVertex3f(0.0,fabs(1.0-i*stepGrid),-1.0);
-                glVertex3f(0.0,fabs(1.0-i*stepGrid),1.0);
+                glFunc->glVertex3f(0.0,0.0,1.0-i*stepGrid);
+                glFunc->glVertex3f(0.0,1.0,1.0-i*stepGrid);
+                glFunc->glVertex3f(0.0,fabs(1.0-i*stepGrid),-1.0);
+                glFunc->glVertex3f(0.0,fabs(1.0-i*stepGrid),1.0);
                 ////////////////////////////////////
 #endif
                 /////////сетка при Y=0.0///////////////
-                glVertex3f(-1.0,0.001,1.0-i*stepGrid);
-                glVertex3f(1.0,0.001,1.0-i*stepGrid);
+                glFunc->glVertex3f(-1.0,0.001,1.0-i*stepGrid);
+                glFunc->glVertex3f(1.0,0.001,1.0-i*stepGrid);
 
-                glVertex3f(1.0-i*stepGrid,0.001,-1.0);
-                glVertex3f(1.0-i*stepGrid,0.001,1.0);
+                glFunc->glVertex3f(1.0-i*stepGrid,0.001,-1.0);
+                glFunc->glVertex3f(1.0-i*stepGrid,0.001,1.0);
             }
 
-            glDisable(GL_BLEND);//Уберем прозрачность
-            glEnd();
+            glFunc->glDisable(GL_BLEND);//Уберем прозрачность
+            glFunc->glEnd();
             //////////////////////////////////////////
-            ///            /////glEnable(GL_BLEND);
-            ///    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
+            ///            /////glFunc->glEnable(GL_BLEND);
+            ///    //glFunc->glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
             /*    qglColor(QColor(Qt::gray));
-            ///    glBegin(GL_QUADS);
+            ///    glFunc->glBegin(GL_QUADS);
             ///    //qglColor(QColor(229,210,175,220));
 
 
-            glVertex3f(1.0,0.0,-1.0);
-            glVertex3f(-1.0,0.0,-1.0);
-            glVertex3f(-1.0,0.0,1.0);
-            glVertex3f(1.0,0.0,1.0);
-            glEnd();*/
+            glFunc->glVertex3f(1.0,0.0,-1.0);
+            glFunc->glVertex3f(-1.0,0.0,-1.0);
+            glFunc->glVertex3f(-1.0,0.0,1.0);
+            glFunc->glVertex3f(1.0,0.0,1.0);
+            glFunc->glEnd();*/
 
-        glDisable(GL_BLEND);//Уберем прозрачность
+        glFunc->glDisable(GL_BLEND);//Уберем прозрачность
 
-        glLineWidth(1.0);
-        glPointSize(4.0);
-        glPopMatrix();
+        glFunc->glLineWidth(1.0);
+        glFunc->glPointSize(4.0);
+        glFunc->glPopMatrix();
     }
 }
 void view3DArea::drawTrajectory()
@@ -492,72 +496,72 @@ void view3DArea::drawTrajectory()
     /*for(long i=0;i<trs[0].x.size();i++)
     {
         qglColor(QColor(trs[0].r[i],trs[0].g[i],trs[0].b[i]));
-        glVertex3f(trs[0].x[i],trs[0].y[i],trs[0].z[i]);
-        glVertex3f(trs[0].x[i],0,trs[0].z[i]);
+        glFunc->glVertex3f(trs[0].x[i],trs[0].y[i],trs[0].z[i]);
+        glFunc->glVertex3f(trs[0].x[i],0,trs[0].z[i]);
     }
-    glEnd();
+    glFunc->glEnd();
     if(vertLine==true)
     {
         //! отрисовка вертикальных линий
-        glBegin(GL_LINES);
+        glFunc->glBegin(GL_LINES);
         for(long i=0;i<trs[0].x.size();i=i+5)
         {
-            glVertex3f(trs[0].x[i],0.0,trs[0].z[i]);
-            glVertex3f(trs[0].x[i],trs[0].y[i],trs[0].z[i]);
+            glFunc->glVertex3f(trs[0].x[i],0.0,trs[0].z[i]);
+            glFunc->glVertex3f(trs[0].x[i],trs[0].y[i],trs[0].z[i]);
         }
-        glEnd();
+        glFunc->glEnd();
     }*/
 
 
     if(dataFromTXTFile==true)
     {
         //! отрисовка точек
-        glBegin(GL_POINTS);
+        glFunc->glBegin(GL_POINTS);
         //! если прочитали файл
         for(long i=0;i<rows.size();i++)
         {
             //qglColor(QColor(80,223,72));
-            glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
+            glFunc->glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
         }
-        glEnd();
+        glFunc->glEnd();
         if(vertLine==true)
         {
             //! отрисовка вертикальных линий
-            glBegin(GL_LINES);
+            glFunc->glBegin(GL_LINES);
             for(long i=0;i<rows.size();i=i+5)
             {
-                glVertex3f(rows[i].x_g,0.0,rows[i].z_g);
-                glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
+                glFunc->glVertex3f(rows[i].x_g,0.0,rows[i].z_g);
+                glFunc->glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
             }
-            glEnd();
+            glFunc->glEnd();
         }
     }else
     {
         //! отрисовка точек
-        glBegin(GL_POINTS);
+        glFunc->glBegin(GL_POINTS);
         for(long i=0;i<trs.size();i++)
         {
             for(long int j=0;j<trs[i].x.size();j++)
             {
                 //qglColor(QColor(trs[i].r[j],trs[i].g[j],trs[i].b[j]));
-                glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
-                glVertex3f(trs[i].x[j],0,trs[i].z[j]);
+                glFunc->glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
+                glFunc->glVertex3f(trs[i].x[j],0,trs[i].z[j]);
             }
         }
-        glEnd();
+        glFunc->glEnd();
         if(vertLine==true)
         {
             //! отрисовка вертикальных линий
-            glBegin(GL_LINES);
+            glFunc->glBegin(GL_LINES);
             for(long i=0;i<trs.size();i++)
             {
                 for(long int j=0;j<trs[i].x.size();j++)
                 {
-                    glVertex3f(trs[i].x[j],0.0,trs[i].z[j]);
-                    glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
+                    glFunc->glVertex3f(trs[i].x[j],0.0,trs[i].z[j]);
+                    glFunc->glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
                 }
             }
-            glEnd();
+            glFunc->glEnd();
         }
     }
 
@@ -776,27 +780,27 @@ void view3DArea::drawObject(Lib3dsFile *obj,
                             double gamma_rad,
                             double tan_rad)
 {
-    glPushMatrix();
-    glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_COLOR_MATERIAL);
-    glEnable(GL_LIGHTING);
+    glFunc->glPushMatrix();
+    glFunc->glDisable(GL_BLEND);
+    glFunc->glEnable(GL_DEPTH_TEST);
+    glFunc->glDisable(GL_COLOR_MATERIAL);
+    glFunc->glEnable(GL_LIGHTING);
 
 
-    glTranslatef(pos_x,
+    glFunc->glTranslatef(pos_x,
                  pos_y,
                  pos_z);
 
-    glRotated(radianToGrad(psi_rad),0.0,1.0,0.0);
-    glRotated(radianToGrad(tan_rad),0.0,0.0,1.0);
-    glRotated(radianToGrad(gamma_rad),1.0,0.0,0.0);
+    glFunc->glRotated(radianToGrad(psi_rad),0.0,1.0,0.0);
+    glFunc->glRotated(radianToGrad(tan_rad),0.0,0.0,1.0);
+    glFunc->glRotated(radianToGrad(gamma_rad),1.0,0.0,0.0);
 
-    glColor4f(1.0f,1.0f,1.0f,1.0f);
+    glFunc->glColor4f(1.0f,1.0f,1.0f,1.0f);
     for (Lib3dsNode* p=obj->nodes; p!=0; p=p->next)
         renderNode(obj,p);
 
-    glDisable(GL_LIGHTING);
-    glPopMatrix();
+    glFunc->glDisable(GL_LIGHTING);
+    glFunc->glPopMatrix();
 
 }
 //! отрисовка ИЛС
@@ -806,35 +810,35 @@ void view3DArea::drawILS()
         return;
 
     /////////////////////////////////////////
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-    glShadeModel(GL_FLAT);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_TEXTURE_2D);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(0, width(), height(), 0);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    glFunc->glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glFunc->glMatrixMode(GL_PROJECTION);
+    glFunc->glPushMatrix();
+    glFunc->glMatrixMode(GL_MODELVIEW);
+    glFunc->glPushMatrix();
+    glFunc->glDisable(GL_DEPTH_TEST);
+    glFunc->glDisable(GL_LIGHTING);
+    glFunc->glShadeModel(GL_FLAT);
+    glFunc->glDisable(GL_CULL_FACE);
+    glFunc->glDisable(GL_TEXTURE_2D);
+    glFunc->glMatrixMode(GL_PROJECTION);
+    glFunc->glLoadIdentity();
+    //gluOrtho2D(0, width(), height(), 0);
+    glFunc->glMatrixMode(GL_MODELVIEW);
+    glFunc->glLoadIdentity();
     /////////////////////////////////////////
     //! отрисовка ИЛС линий
     //qglColor(QColor(Qt::green));
-    glLineWidth(5.0);
-    glDisable(GL_BLEND);//Уберем прозрачность
-    glTranslatef(width()/2.0,height()/2.0,0);
-    glRotated(-cameraToThisObj->gamma,0.0,0.0,1.0);
+    glFunc->glLineWidth(5.0);
+    glFunc->glDisable(GL_BLEND);//Уберем прозрачность
+    glFunc->glTranslatef(width()/2.0,height()/2.0,0);
+    glFunc->glRotated(-cameraToThisObj->gamma,0.0,0.0,1.0);
 
     for(int i=-10;i<10;i++)
     {
         if(i==0)
-            glLineWidth(5.0);
+            glFunc->glLineWidth(5.0);
         else
-            glLineWidth(2.0);
+            glFunc->glLineWidth(2.0);
 
         double hILS=(cameraToThisObj->tan+gradToRadian(10*i))*(height()/camera()->fieldOfView());
 
@@ -842,23 +846,23 @@ void view3DArea::drawILS()
         drawText((width()/2.0)-((width()/5.0)),height()/2.0+hILS,QString::number(-i*10));
         drawText((width()/2.0)+((width()/5.0)),height()/2.0+hILS,QString::number(-i*10));
 
-        glBegin(GL_LINES);
+        glFunc->glBegin(GL_LINES);
 
-            glVertex2i(-(width()/5.0),hILS);
-            glVertex2i((width()/5.0),hILS);
+            glFunc->glVertex2i(-(width()/5.0),hILS);
+            glFunc->glVertex2i((width()/5.0),hILS);
 
-        glEnd();
+        glFunc->glEnd();
     }
     drawSymbol();
 
-    glTranslatef(0,0,0);
+    glFunc->glTranslatef(0,0,0);
     /////////////////////////////////////////
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glPopAttrib();
+    glFunc->glPopMatrix();
+    glFunc->glMatrixMode(GL_PROJECTION);
+    glFunc->glPopMatrix();
+    glFunc->glMatrixMode(GL_MODELVIEW);
+    glFunc->glPopMatrix();
+    glFunc->glPopAttrib();
     /////////////////////////////////////////
 }
 //! отрисовка прицельной символики
@@ -912,7 +916,7 @@ void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
     //! координаты центра
     int xCenter=0;
     int yCenter=0;
-    glPointSize(width_);
+    glFunc->glPointSize(width_);
     //! перевод
     //TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
 
@@ -931,17 +935,17 @@ void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
                 yCenter);
     //qglColor(Qt::red);//цвет окружности
     //! отрисовка точки в центре окружности
-    glBegin(GL_POINTS);
-        glVertex2i(xCenter,yCenter);
-        glEnd();
+    glFunc->glBegin(GL_POINTS);
+        glFunc->glVertex2i(xCenter,yCenter);
+        glFunc->glEnd();
     //! толщина пикселей окружности
-    glBegin(GL_LINES);
-        glVertex2i(xCenter+radius_/2.0,yCenter);
-        glVertex2i(xCenter-radius_/2.0,yCenter);
+    glFunc->glBegin(GL_LINES);
+        glFunc->glVertex2i(xCenter+radius_/2.0,yCenter);
+        glFunc->glVertex2i(xCenter-radius_/2.0,yCenter);
 
-        glVertex2i(xCenter,yCenter+radius_/2.0);
-        glVertex2i(xCenter,yCenter-radius_/2.0);
-    glEnd();
+        glFunc->glVertex2i(xCenter,yCenter+radius_/2.0);
+        glFunc->glVertex2i(xCenter,yCenter-radius_/2.0);
+    glFunc->glEnd();
 }
 
 void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
@@ -953,7 +957,7 @@ void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
     //! координаты центра
     int xCenter=0;
     int yCenter=0;
-    glPointSize(width_);
+    glFunc->glPointSize(width_);
     //! перевод
     //TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
     TAngle an;
@@ -970,18 +974,18 @@ void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
                 yCenter);
     //qglColor(Qt::red);//цвет окружности
     //! отрисовка точки в центре окружности
-    glBegin(GL_POINTS);
-        glVertex2i(xCenter,yCenter);
-        glEnd();
+    glFunc->glBegin(GL_POINTS);
+        glFunc->glVertex2i(xCenter,yCenter);
+        glFunc->glEnd();
     //! толщина пикселей окружности
-    glBegin(GL_POINTS);
+    glFunc->glBegin(GL_POINTS);
 
     while(y>=0)
     {
-        glVertex2i(xCenter+x,yCenter+y);
-        glVertex2i(xCenter+x,yCenter-y);
-        glVertex2i(xCenter-x,yCenter+y);
-        glVertex2i(xCenter-x,yCenter-y);
+        glFunc->glVertex2i(xCenter+x,yCenter+y);
+        glFunc->glVertex2i(xCenter+x,yCenter-y);
+        glFunc->glVertex2i(xCenter-x,yCenter+y);
+        glFunc->glVertex2i(xCenter-x,yCenter-y);
 
         error= 2*(delta+y)-1;
         if(delta<0 && error<=0)
@@ -1001,7 +1005,7 @@ void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
         delta += 2*(x-y);
         --y;
     }
-    glEnd();
+    glFunc->glEnd();
 
 }
 
@@ -1012,33 +1016,33 @@ void view3DArea::drawTerra()
     {
         int step=1;
 
-        /*glPushMatrix();
-        //glEnable(GL_BLEND);
-        //glEnable(GL_AUTO_NORMAL);
-        //glEnable(GL_NORMALIZE);
+        /*glFunc->glPushMatrix();
+        //glFunc->glEnable(GL_BLEND);
+        //glFunc->glEnable(GL_AUTO_NORMAL);
+        //glFunc->glEnable(GL_NORMALIZE);
         GLfloat pos[4]={0.0,5000.0,0.0,1.0};
         Lib3dsRgba a={0.2, 0.2, 0.2, 1.0};
         Lib3dsRgba d={0.8, 0.8, 0.8, 1.0};
         Lib3dsRgba s={1.0, 1.0, 1.0, 1.0};
-        glLightfv (GL_LIGHT0, GL_AMBIENT, a);
-        glLightfv (GL_LIGHT0, GL_DIFFUSE, d);
-        glLightfv (GL_LIGHT0, GL_SPECULAR, s);
+        glFunc->glLightfv (GL_LIGHT0, GL_AMBIENT, a);
+        glFunc->glLightfv (GL_LIGHT0, GL_DIFFUSE, d);
+        glFunc->glLightfv (GL_LIGHT0, GL_SPECULAR, s);
 
-        glRotated (90.0, 3500.0,0.0, 0.0);
-        glLightfv (GL_LIGHT0, GL_POSITION, pos);
+        glFunc->glRotated (90.0, 3500.0,0.0, 0.0);
+        glFunc->glLightfv (GL_LIGHT0, GL_POSITION, pos);
 
-        glEnable(GL_LIGHTING);
+        glFunc->glEnable(GL_LIGHTING);
 
-        glPopMatrix();*/
+        glFunc->glPopMatrix();*/
 
-        glPushMatrix();
-        glRotated(rotMap,0.0,1.0,0.0);
-        glShadeModel(GL_SMOOTH);
-        glClearDepth(1.0f);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
-        glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
-        glBegin(GL_QUADS);
+        glFunc->glPushMatrix();
+        glFunc->glRotated(rotMap,0.0,1.0,0.0);
+        glFunc->glShadeModel(GL_SMOOTH);
+        glFunc->glClearDepth(1.0f);
+        glFunc->glEnable(GL_DEPTH_TEST);
+        glFunc->glDepthFunc(GL_LEQUAL);
+        glFunc->glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
+        glFunc->glBegin(GL_QUADS);
 
 //        if(camera()->position().y>25000.0)
 //            step=10;
@@ -1063,40 +1067,40 @@ void view3DArea::drawTerra()
                 QVector3D norm;norm.normal(vec2N,vec1N);
 
                 if(vec.y()<100)
-                     glColor3f(0.0f,0.0f,vec.y()/100);
+                     glFunc->glColor3f(0.0f,0.0f,vec.y()/100);
                 else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
-                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
+                    glFunc->glColor3f(0.0f,vec.y()/1500.0,0.0);
+                glFunc->glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
 
                 vec=terrain->mapH->value(j,i+step);
 
                 if(vec.y()<100)
-                    glColor3f(0.0f,0.0f,vec.y()/100);
+                    glFunc->glColor3f(0.0f,0.0f,vec.y()/100);
                 else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
+                    glFunc->glColor3f(0.0f,vec.y()/1500.0,0.0);
 
-                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
+                glFunc->glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
 
                 vec=terrain->mapH->value(j+step,i+step);
                 if(vec.y()<100)
-                      glColor3f(0.0f,0.0f,vec.y()/100);
+                      glFunc->glColor3f(0.0f,0.0f,vec.y()/100);
                 else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
+                    glFunc->glColor3f(0.0f,vec.y()/1500.0,0.0);
 
-                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
+                glFunc->glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
 
                 vec=terrain->mapH->value(j+step,i);
                 if(vec.y()<100)
-                     glColor3f(0.0f,0.0f,vec.y()/100);
+                     glFunc->glColor3f(0.0f,0.0f,vec.y()/100);
                 else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
+                    glFunc->glColor3f(0.0f,vec.y()/1500.0,0.0);
 
-                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
+                glFunc->glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
 
             }
         }
-        glEnd();
-        glPopMatrix();
+        glFunc->glEnd();
+        glFunc->glPopMatrix();
     }
 }
 //! отрисовка неба
@@ -1532,8 +1536,8 @@ void view3DArea::initScene(Lib3dsFile *file3ds)
    // for (Lib3dsLight* l=*((*file3ds).lights); l; l=l->next)
      for (int i=0; i<file3ds->nlights;i++)
     {
-        glEnable(li);
-        glLightfv(li, GL_POSITION, pos);
+        glFunc->glEnable(li);
+        glFunc->glLightfv(li, GL_POSITION, pos);
     }
     Quaternion qPI_2( Vec(0.0, 1.0, 0.0),M_PI/2.0);
     camera()->frame()->setTranslation(Vec(0.0, 0.0, 1.0));
@@ -1600,8 +1604,8 @@ void view3DArea::renderNode(Lib3dsFile *file,Lib3dsNode *node)
 //                Lib3dsFace *f=&mesh->faceL[p];
 //                Lib3dsMaterial *mat=0;
 
-//                if (f->material[0])
-//                    mat=lib3ds_file_material_by_name(file, f->material);
+//                if (glFunc->material[0])
+//                    mat=lib3ds_file_material_by_name(file, glFunc->material);
 
 //                if (mat)
 //                {
@@ -1627,27 +1631,27 @@ void view3DArea::renderNode(Lib3dsFile *file,Lib3dsNode *node)
 //                    //	glMaterialfv(GL_FRONT, GL_SPECULAR, s);
 //                }
 
-//                glBegin(GL_TRIANGLES);
-//                glNormal3fv(f->normal);
+//                glFunc->glBegin(GL_TRIANGLES);
+//                glNormal3fv(glFunc->normal);
 //                for (int i=0; i<3; ++i)
 //                {
 //                    glNormal3fv(normalL[3*p+i]);
-//                    glVertex3fv(mesh->pointL[f->points[i]].pos);
+//                    glFunc->glVertex3fv(mesh->pointL[glFunc->points[i]].pos);
 //                }
-//                glEnd();
+//                glFunc->glEnd();
 //            }
 //            delete[] normalL;
-//            glEndList();
+//            glFunc->glEndList();
 //        }
 //        if (node->user_ptr)
 //        {
-//            glPushMatrix();
+//            glFunc->glPushMatrix();
 
 //            Lib3dsObjectData* d = &node->data.object;
 //            glMultMatrixf(&node->matrix[0][0]);
-//            glTranslatef(-d->pivot[0], -d->pivot[1], -d->pivot[2]);
+//            glFunc->glTranslatef(-d->pivot[0], -d->pivot[1], -d->pivot[2]);
 //            glCallList(node->user.d);
-//            glPopMatrix();
+//            glFunc->glPopMatrix();
 //        }
 //    }
 }
