@@ -38,6 +38,7 @@ LIBS *= -L/home/fedor/Soft/libQGLViewer-2.7.1/QGLViewer -lQGLViewer-qt5
 #LIBS += -lopengl32 -lglu32
 
 SOURCES += main.cpp\
+    OBJ_Loader.cpp \
     view3DArea.cpp \
     view3DTerrain.cpp \
     visual3D.cpp \
@@ -48,6 +49,7 @@ SOURCES += main.cpp\
 
 HEADERS  += \
     view3DArea.h \
+OBJ_Loader.h \
     view3DTerrain.h \
     visual3D.h \
     visudp.h \

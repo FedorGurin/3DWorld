@@ -3,11 +3,6 @@
 
 #include <QGLViewer/qglviewer.h>
 
-
-#include <lib3ds/lib3ds.h>
-
-//#include <lib3ds/node.h>
-
 #include <QFile>
 #include <QTextStream>
 #include <QTextCodec>
@@ -16,14 +11,15 @@
 #include <QFileDialog>
 #include <math.h>
 #include <QOpenGLFunctions_3_2_Compatibility>
+
 #include "view3DTerrain.h"
-
+#include "OBJ_Loader.h"
 #include "math_func.h"
-
 #include "visudp.h"
 #include "viewILS.h"
 #include "formsettings.h"
 #include "TemplateNASP.hpp"
+#include "glm/gtx/projection.hpp"
 //! струтура описывающая траекторию
 typedef struct _TTrajectory
 {
@@ -68,7 +64,7 @@ typedef struct
     //! код объекта
     int code;
     //! загрузка файла с объектом
-    Lib3dsFile *file;
+    objl::Loader file;
 }T3DObject;
 //! класс 3D визуализации
 class view3DArea:public QGLViewer
@@ -89,17 +85,17 @@ public:
     //! поиск объекта по коду
     T3DObject* findObjByCode(int code);
     //! инициализация сцены
-    void initScene(Lib3dsFile *file3ds);
+//    void initScene(Lib3dsFile *file3ds);
     //! отрисовка объектов
     void drawSolidObjects();
     //! отрисовка объекта
-    void drawObject(Lib3dsFile *obj,
-                    double pos_x,
-                    double pos_y,
-                    double pos_z,
-                    double psi_grad,
-                    double gamma_grad,
-                    double tan_grad);
+//    void drawObject(Lib3dsFile *obj,
+//                    double pos_x,
+//                    double pos_y,
+//                    double pos_z,
+//                    double psi_grad,
+//                    double gamma_grad,
+//                    double tan_grad);
     //! перевод градусов в пиксели
     void gradToPixel(double xGrad,
                      double yGrad,
@@ -137,7 +133,7 @@ public:
     LimitPositionKAI *limit;
    QOpenGLFunctions_3_2_Compatibility *glFunc;
     //! отрисовка узлов
-    void renderNode(Lib3dsFile *,Lib3dsNode *node);
+    //void renderNode(Lib3dsFile *,Lib3dsNode *node);
 protected :
     virtual void draw();
     virtual void animate();

@@ -1,15 +1,9 @@
 #include "view3DArea.h"
 
-//#include "./lib3ds/camera.h"
-//#include "./lib3ds/mesh.h"
-//#include "./lib3ds/material.h"
-//#include "./lib3ds/matrix.h"
-//#include "vector.h"
-//#include "./lib3ds/light.h"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-//#include <GL/glu.h>
+
 #include <QOpenGLFunctions_3_3_Core>
 
 #include "QGLViewer/manipulatedCameraFrame.h"
@@ -19,6 +13,7 @@
 #include <QVector3D>
 #include <QDataStream>
 #include <QByteArray>
+
 
 using namespace qglviewer;
 #define SIZE_GRID 100
@@ -31,54 +26,56 @@ using namespace qglviewer;
 #define USE_3DMODEL
 #define FOG_OFF 1
 
-//extern "C" { LIB3DSAPI void lib3ds_file_bounding_box(Lib3dsFile *fileAirCraft, Lib3dsVector min, Lib3dsVector max); }
 
 view3DArea::view3DArea():QGLViewer()
 {
     resize(800,600);
-    cameraToThisObj=0;
-    cameraToObjIndex=-1;
-    cameraToBack=false;
-    dataFromTXTFile=false;
+    cameraToThisObj = nullptr;
+    cameraToObjIndex= -1;
+    cameraToBack    = false;
+    dataFromTXTFile = false;
 
-    dialog=new QFileDialog(this);
+    dialog  = new QFileDialog(this);
     dialog->setFileMode(QFileDialog::AnyFile);
     dialog->setNameFilter(("File with Data (*.txt)"));
     dialog->setDirectory(qApp->applicationDirPath());
 
-    file=new QFile;
-    stream=new QTextStream(file);
-    setting=new FormSettings;
+    file    = new QFile;
+    stream  = new QTextStream(file);
+    setting = new FormSettings;
     connect(dialog,SIGNAL(accepted()),this,SLOT(slotAccepted()));
 
-    lam0=57.0;
-    fi0=33.0;
-    rotMap=90.0;
-    offsetMapX=0.0;
-    offsetMapZ=0.0;
-    dFog=0.5;
-    globalCount=0;
-    ils=true;
-    vertLine=false;
-    //! признаки отрисовки тумана
-    fog=false;
-    info=false;
-    terra=true;
-    sky=false;
-    grid=true;
-    cameraUp=false;
+    lam0    = 57.0;
+    fi0     = 33.0;
+    rotMap  = 90.0;
 
-    radiusScene=260000.0;
-    globalTime=0.0;
-    globalTimeDebug=0.0;
-    multTime=1.0;
-    dt=((1.0/20)*1000.0);
+    offsetMapX = 0.0;
+    offsetMapZ = 0.0;
+
+    dFog        = 0.5;
+
+    globalCount = 0;
+    ils         = true;
+    vertLine    = false;
+    //! признаки отрисовки тумана
+    fog     =  false    ;
+    info    =  false    ;
+    terra   =  true     ;
+    sky     =  false    ;
+    grid    =  true     ;
+    cameraUp=  false    ;
+
+    radiusScene     = 260000.0;
+    globalTime      = 0.0;
+    globalTimeDebug = 0.0;
+    multTime        = 1.0;
+    dt = ((1.0/20)*1000.0);
     //dt=((1.0/freq)*1000.0);
 
     //! доп. поворот камеры
-    dpsi_camera=0.0;
-    dteta_camera=0.0;
-    dgamma_camera=0.0;
+    dpsi_camera     = 0.0;
+    dteta_camera    = 0.0;
+    dgamma_camera   = 0.0;
 
     rows.clear();
     trs.clear();
@@ -256,6 +253,12 @@ void view3DArea::readAllModels()
     list3DObj[5].code=100;
     list3DObj[6].code=106;
     list3DObj[7].code=107;
+
+    // Initialize Loader
+
+
+    // Load .obj File
+    bool loadout = list3DObj[0].file.LoadFile("cone.obj");
     //! чтение моделей из 3ds файлов
     //loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
     //loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
@@ -295,11 +298,10 @@ void view3DArea::draw()
 
 
     if(net.checkDatagrams()==true)
-        globalTime=net.synch_time;
+        globalTime = net.synch_time;
 
-    //qDebug("yime=%f\n",globalTime);
 
-    if(cameraToThisObj!=0)
+    if(cameraToThisObj != nullptr)
     {
         d=6371000.0*atan(sqrt(cameraToThisObj->y_g*(2*6371000.0+cameraToThisObj->y_g))/6371000.0);
         setSceneRadius(d);
@@ -404,17 +406,18 @@ void view3DArea::draw()
 
         QString nameMan="Unknown";
 
+
         switch(curIdMan)
         {
             case 1000:{nameMan="Homing";break;}
-            case 1:{nameMan="left_turn";break;}
-            case 2:{nameMan="right_turn";break;}
-            case 5:{nameMan="halfcross";break;}
-            case 7:{nameMan="gorka";break;}
-            case 9:{nameMan="prividenie";break;}
-            case 10:{nameMan="dive";break;}
-            case 12:{nameMan="battle_allign";break;}
-            case 14:{nameMan="none";break;}
+            case 1   :{nameMan="left_turn";break;}
+            case 2   :{nameMan="right_turn";break;}
+            case 5   :{nameMan="halfcross";break;}
+            case 7   :{nameMan="gorka";break;}
+            case 9   :{nameMan="prividenie";break;}
+            case 10  :{nameMan="dive";break;}
+            case 12  :{nameMan="battle_allign";break;}
+            case 14  :{nameMan="none";break;}
 
         };
         drawText(10,350,"man="+nameMan);
@@ -705,104 +708,104 @@ int view3DArea::searchTimeInterval(double time)
 }
 void view3DArea::drawSolidObjects()
 {
-    Lib3dsFile* file3DS=0;
-    QVector<TSolidObj> *list=net.getObjects();
-    for(int i=0;i<list->size();i++)
-    {
-        TSolidObj *solid=&((*list)[i]);
-        if(findObjByCode(solid->code)!=0)
-            file3DS=findObjByCode(solid->code)->file;
+//    Lib3dsFile* file3DS=0;
+//    QVector<TSolidObj> *list=net.getObjects();
+//    for(int i=0;i<list->size();i++)
+//    {
+//        TSolidObj *solid=&((*list)[i]);
+//        if(findObjByCode(solid->code)!=0)
+//            file3DS=findObjByCode(solid->code)->file;
 
-        if(file3DS!=0)
-        {
-//            convertSphereToDekart(lam0,
-//                                  fi0,
-//                                  solid->lam_geo,
-//                                  solid->fi_geo,
-//                                  solid->x,
-//                                  solid->z);
+//        if(file3DS!=0)
+//        {
+////            convertSphereToDekart(lam0,
+////                                  fi0,
+////                                  solid->lam_geo,
+////                                  solid->fi_geo,
+////                                  solid->x,
+////                                  solid->z);
 
 
-//            sW.x_g=linearInterpolation(globalTime,
-//                                          solid->x_g,
-//                                          solid->x_g_prev,
-//                                          solid->time,
-//                                          solid->time_prev);
+////            sW.x_g=linearInterpolation(globalTime,
+////                                          solid->x_g,
+////                                          solid->x_g_prev,
+////                                          solid->time,
+////                                          solid->time_prev);
 
-//            sW.y_g=linearInterpolation(globalTime,
-//                                       solid->y_g,
-//                                       solid->y_g_prev,
-//                                       solid->time,
-//                                       solid->time_prev);
+////            sW.y_g=linearInterpolation(globalTime,
+////                                       solid->y_g,
+////                                       solid->y_g_prev,
+////                                       solid->time,
+////                                       solid->time_prev);
 
-//            sW.z_g=linearInterpolation(globalTime,
-//                                       solid->z_g,
-//                                       solid->z_g_prev,
-//                                       solid->time,
-//                                       solid->time_prev);
+////            sW.z_g=linearInterpolation(globalTime,
+////                                       solid->z_g,
+////                                       solid->z_g_prev,
+////                                       solid->time,
+////                                       solid->time_prev);
 
-//            sW.psi=linearInterpolation(globalTime,
-//                                       solid->psi,
-//                                       solid->psi_prev,
-//                                       solid->time,
-//                                       solid->time_prev);
+////            sW.psi=linearInterpolation(globalTime,
+////                                       solid->psi,
+////                                       solid->psi_prev,
+////                                       solid->time,
+////                                       solid->time_prev);
 
-//            sW.tan=linearInterpolation(globalTime,
-//                                       solid->tan,
-//                                       solid->tan_prev,
-//                                       solid->time,
-//                                       solid->time_prev);
+////            sW.tan=linearInterpolation(globalTime,
+////                                       solid->tan,
+////                                       solid->tan_prev,
+////                                       solid->time,
+////                                       solid->time_prev);
 
-//            sW.gamma=linearInterpolation(globalTime,
-//                                         solid->gamma,
-//                                         solid->gamma_prev,
-//                                         solid->time,
-//                                         solid->time_prev);
+////            sW.gamma=linearInterpolation(globalTime,
+////                                         solid->gamma,
+////                                         solid->gamma_prev,
+////                                         solid->time,
+////                                         solid->time_prev);
 
-            drawObject(file3DS,
-                       solid->x_g,
-                       solid->y_g,
-                       solid->z_g,
-                       solid->psi,
-                       solid->gamma,
-                       solid->tan);
+//            drawObject(file3DS,
+//                       solid->x_g,
+//                       solid->y_g,
+//                       solid->z_g,
+//                       solid->psi,
+//                       solid->gamma,
+//                       solid->tan);
 
-        }
+//        }
 
-    }
+//    }
 }
 
-void view3DArea::drawObject(Lib3dsFile *obj,
-                            double pos_x,
-                            double pos_y,
-                            double pos_z,
-                            double psi_rad,
-                            double gamma_rad,
-                            double tan_rad)
-{
-    glPushMatrix();
-    glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_COLOR_MATERIAL);
-    glEnable(GL_LIGHTING);
+//void view3DArea::drawObject(Lib3dsFile *obj,
+//                            double pos_x,
+//                            double pos_y,
+//                            double pos_z,
+//                            double psi_rad,
+//                            double gamma_rad,
+//                            double tan_rad)
+//{
+//    glPushMatrix();
+//    glDisable(GL_BLEND);
+//    glEnable(GL_DEPTH_TEST);
+//    glDisable(GL_COLOR_MATERIAL);
+//    glEnable(GL_LIGHTING);
 
 
-    glTranslatef(pos_x,
-                 pos_y,
-                 pos_z);
+//    glTranslatef(pos_x,
+//                 pos_y,
+//                 pos_z);
 
-    glRotated(radianToGrad(psi_rad),0.0,1.0,0.0);
-    glRotated(radianToGrad(tan_rad),0.0,0.0,1.0);
-    glRotated(radianToGrad(gamma_rad),1.0,0.0,0.0);
+//    glRotated(radianToGrad(psi_rad),0.0,1.0,0.0);
+//    glRotated(radianToGrad(tan_rad),0.0,0.0,1.0);
+//    glRotated(radianToGrad(gamma_rad),1.0,0.0,0.0);
 
-    glColor4f(1.0f,1.0f,1.0f,1.0f);
-    for (Lib3dsNode* p=obj->nodes; p!=0; p=p->next)
-        renderNode(obj,p);
+//    glColor4f(1.0f,1.0f,1.0f,1.0f);
+//    for (Lib3dsNode* p=obj->nodes; p!=0; p=p->next)
+//        renderNode(obj,p);
 
-    glDisable(GL_LIGHTING);
-    glPopMatrix();
+//    glDisable(GL_LIGHTING);
+//    glPopMatrix();
 
-}
+//}
 //! отрисовка ИЛС
 void view3DArea::drawILS()
 {
@@ -1520,141 +1523,141 @@ void view3DArea::cameraToObject()
     }
 }
 */
-void view3DArea::initScene(Lib3dsFile *file3ds)
-{
-    camera()->setFieldOfView(gradToRadian(45));
-    camera()->setZNearCoefficient(0.0001);
-    if (!file3ds)   return;
+//void view3DArea::initScene(Lib3dsFile *file3ds)
+//{
+//    camera()->setFieldOfView(gradToRadian(45));
+//    camera()->setZNearCoefficient(0.0001);
+//    if (!file3ds)   return;
 
-    // Lights
-    // GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
-    // GLfloat dif[] = {0.0, 0.0, 0.0, 0.0};
-    // GLfloat spe[] = {1.0, 1.0, 1.0, 1.0};
-    GLfloat pos[] = {1.0, 1.0, 0.0, 0.0};
-    int li=GL_LIGHT0;
+//    // Lights
+//    // GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
+//    // GLfloat dif[] = {0.0, 0.0, 0.0, 0.0};
+//    // GLfloat spe[] = {1.0, 1.0, 1.0, 1.0};
+//    GLfloat pos[] = {1.0, 1.0, 0.0, 0.0};
+//    int li=GL_LIGHT0;
 
-   // for (Lib3dsLight* l=*((*file3ds).lights); l; l=l->next)
-     for (int i=0; i<file3ds->nlights;i++)
-    {
-        glEnable(li);
-        glLightfv(li, GL_POSITION, pos);
-    }
-    Quaternion qPI_2( Vec(0.0, 1.0, 0.0),M_PI/2.0);
-    camera()->frame()->setTranslation(Vec(0.0, 0.0, 1.0));
-    camera()->frame()->setRotation(qPI_2);
-    // Camera
-    Lib3dsCamera* camera3ds = NULL;
-    if(file3ds->ncameras!=0)
-        camera3ds = file3ds->cameras[0];
-//    Lib3dsNode* c = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_NODE_CAMERA);
-//    Lib3dsNode* t = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_NODE_CAMERA_TARGET);
-
-    if (camera3ds==NULL)
-        return;
-
-
-    camera()->setPosition(Vec(camera3ds->position));
-
-    camera()->lookAt(Vec(camera3ds->target));
-    //camera()->lookAt(Vec(t->data.target.pos));
-    Vec up=camera()->frame()->transformOf(Vec(0.0, 0.0, 1.0));
-    float angle=atan2(up.x, up.y);
-    Quaternion q(Vec(0.0, 0.0, 1.0), camera3ds->roll-angle);
-    camera()->frame()->rotate(q);
-    camera()->setFieldOfView(M_PI/180.0*camera3ds->fov);
-    camera()->setZNearCoefficient(0.0);
-
-    setSceneRadius(radiusScene);
-    setFPSIsDisplayed(true);
-
-}
-
-void view3DArea::renderNode(Lib3dsFile *file,Lib3dsNode *node)
-{
-    for (Lib3dsNode* p=node->childs; p!=0; p=p->next)
-        renderNode(file,p);
-
-//    if (node->type == LIB3DS_OBJECT_NODE)
+//   // for (Lib3dsLight* l=*((*file3ds).lights); l; l=l->next)
+//     for (int i=0; i<file3ds->nlights;i++)
 //    {
-//        if (strcmp(node->name,"$$$DUMMY")==0)
-//            return;
-
-//        if (!node->user_ptr)
-//        {
-//            Lib3dsMesh *mesh=lib3ds_file_mesh_by_name(file, node->name);
-//            if (!mesh)
-//                return;
-
-//            node->user.d = glGenLists(1);
-//            glNewList(node->user.d, GL_COMPILE);
-
-//            Lib3dsVector *normalL = new Lib3dsVector[3*mesh->faces];
-
-//            Lib3dsMatrix M;
-
-//            lib3ds_matrix_copy(M, mesh->matrix);
-//            lib3ds_matrix_inv(M);
-
-//            glMultMatrixf(&M[0][0]);
-
-//            lib3ds_mesh_calculate_normals(mesh, normalL);
-
-//            for (unsigned int p=0; p<mesh->faces; ++p)
-//            {
-//                Lib3dsFace *f=&mesh->faceL[p];
-//                Lib3dsMaterial *mat=0;
-
-//                if (material[0])
-//                    mat=lib3ds_file_material_by_name(file, material);
-
-//                if (mat)
-//                {
-//                    static GLfloat a[4]={0,0,0,1};
-//                    float s;
-
-//                    glMaterialfv(GL_FRONT, GL_AMBIENT, a);//
-//                    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat->diffuse);
-//                    //  glMaterialfv(GL_FRONT, GL_SPECULAR, mat->specular);
-
-//                    s = pow(2, 10.0*mat->shininess);
-//                    if (s>128.0)
-//                        s=128.0;
-//                    glMaterialf(GL_FRONT, GL_SHININESS, s);
-//                }
-//                else
-//                {
-//                    Lib3dsRgba a={0.2, 0.2, 0.2, 1.0};
-//                    Lib3dsRgba d={0.8, 0.8, 0.8, 1.0};
-//                    //Lib3dsRgba s={1.0, 1.0, 1.0, 1.0};
-//                    glMaterialfv(GL_FRONT, GL_AMBIENT, a);
-//                    glMaterialfv(GL_FRONT, GL_DIFFUSE, d);
-//                    //	glMaterialfv(GL_FRONT, GL_SPECULAR, s);
-//                }
-
-//                glBegin(GL_TRIANGLES);
-//                glNormal3fv(normal);
-//                for (int i=0; i<3; ++i)
-//                {
-//                    glNormal3fv(normalL[3*p+i]);
-//                    glVertex3fv(mesh->pointL[points[i]].pos);
-//                }
-//                glEnd();
-//            }
-//            delete[] normalL;
-//            glEndList();
-//        }
-//        if (node->user_ptr)
-//        {
-//            glPushMatrix();
-
-//            Lib3dsObjectData* d = &node->data.object;
-//            glMultMatrixf(&node->matrix[0][0]);
-//            glTranslatef(-d->pivot[0], -d->pivot[1], -d->pivot[2]);
-//            glCallList(node->user.d);
-//            glPopMatrix();
-//        }
+//        glEnable(li);
+//        glLightfv(li, GL_POSITION, pos);
 //    }
-}
+//    Quaternion qPI_2( Vec(0.0, 1.0, 0.0),M_PI/2.0);
+//    camera()->frame()->setTranslation(Vec(0.0, 0.0, 1.0));
+//    camera()->frame()->setRotation(qPI_2);
+//    // Camera
+//    Lib3dsCamera* camera3ds = NULL;
+//    if(file3ds->ncameras!=0)
+//        camera3ds = file3ds->cameras[0];
+////    Lib3dsNode* c = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_NODE_CAMERA);
+////    Lib3dsNode* t = lib3ds_file_node_by_name(file3ds, camera_name, LIB3DS_NODE_CAMERA_TARGET);
+
+//    if (camera3ds==NULL)
+//        return;
+
+
+//    camera()->setPosition(Vec(camera3ds->position));
+
+//    camera()->lookAt(Vec(camera3ds->target));
+//    //camera()->lookAt(Vec(t->data.target.pos));
+//    Vec up=camera()->frame()->transformOf(Vec(0.0, 0.0, 1.0));
+//    float angle=atan2(up.x, up.y);
+//    Quaternion q(Vec(0.0, 0.0, 1.0), camera3ds->roll-angle);
+//    camera()->frame()->rotate(q);
+//    camera()->setFieldOfView(M_PI/180.0*camera3ds->fov);
+//    camera()->setZNearCoefficient(0.0);
+
+//    setSceneRadius(radiusScene);
+//    setFPSIsDisplayed(true);
+
+//}
+
+//void view3DArea::renderNode(Lib3dsFile *file,Lib3dsNode *node)
+//{
+//    for (Lib3dsNode* p=node->childs; p!=0; p=p->next)
+//        renderNode(file,p);
+
+////    if (node->type == LIB3DS_OBJECT_NODE)
+////    {
+////        if (strcmp(node->name,"$$$DUMMY")==0)
+////            return;
+
+////        if (!node->user_ptr)
+////        {
+////            Lib3dsMesh *mesh=lib3ds_file_mesh_by_name(file, node->name);
+////            if (!mesh)
+////                return;
+
+////            node->user.d = glGenLists(1);
+////            glNewList(node->user.d, GL_COMPILE);
+
+////            Lib3dsVector *normalL = new Lib3dsVector[3*mesh->faces];
+
+////            Lib3dsMatrix M;
+
+////            lib3ds_matrix_copy(M, mesh->matrix);
+////            lib3ds_matrix_inv(M);
+
+////            glMultMatrixf(&M[0][0]);
+
+////            lib3ds_mesh_calculate_normals(mesh, normalL);
+
+////            for (unsigned int p=0; p<mesh->faces; ++p)
+////            {
+////                Lib3dsFace *f=&mesh->faceL[p];
+////                Lib3dsMaterial *mat=0;
+
+////                if (material[0])
+////                    mat=lib3ds_file_material_by_name(file, material);
+
+////                if (mat)
+////                {
+////                    static GLfloat a[4]={0,0,0,1};
+////                    float s;
+
+////                    glMaterialfv(GL_FRONT, GL_AMBIENT, a);//
+////                    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat->diffuse);
+////                    //  glMaterialfv(GL_FRONT, GL_SPECULAR, mat->specular);
+
+////                    s = pow(2, 10.0*mat->shininess);
+////                    if (s>128.0)
+////                        s=128.0;
+////                    glMaterialf(GL_FRONT, GL_SHININESS, s);
+////                }
+////                else
+////                {
+////                    Lib3dsRgba a={0.2, 0.2, 0.2, 1.0};
+////                    Lib3dsRgba d={0.8, 0.8, 0.8, 1.0};
+////                    //Lib3dsRgba s={1.0, 1.0, 1.0, 1.0};
+////                    glMaterialfv(GL_FRONT, GL_AMBIENT, a);
+////                    glMaterialfv(GL_FRONT, GL_DIFFUSE, d);
+////                    //	glMaterialfv(GL_FRONT, GL_SPECULAR, s);
+////                }
+
+////                glBegin(GL_TRIANGLES);
+////                glNormal3fv(normal);
+////                for (int i=0; i<3; ++i)
+////                {
+////                    glNormal3fv(normalL[3*p+i]);
+////                    glVertex3fv(mesh->pointL[points[i]].pos);
+////                }
+////                glEnd();
+////            }
+////            delete[] normalL;
+////            glEndList();
+////        }
+////        if (node->user_ptr)
+////        {
+////            glPushMatrix();
+
+////            Lib3dsObjectData* d = &node->data.object;
+////            glMultMatrixf(&node->matrix[0][0]);
+////            glTranslatef(-d->pivot[0], -d->pivot[1], -d->pivot[2]);
+////            glCallList(node->user.d);
+////            glPopMatrix();
+////        }
+////    }
+//}
 
 void view3DArea::slotRes(int w,int h)
 {
