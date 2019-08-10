@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <QOpenGLFunctions_3_3_Core>
+#include <QOpenGLFunctions_4_0_Core>
 
 #include "QGLViewer/manipulatedCameraFrame.h"
 #include <QMessageBox>
@@ -258,7 +258,8 @@ void view3DArea::readAllModels()
 
 
     // Load .obj File
-    bool loadout = list3DObj[0].file.LoadFile("cone.obj");
+    bool loadout = list3DObj[0].file.LoadFile("ab.obj");
+
     //! чтение моделей из 3ds файлов
     //loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
     //loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
@@ -770,42 +771,62 @@ void view3DArea::drawSolidObjects()
 //                       solid->gamma,
 //                       solid->tan);
 
+            drawObject(0,
+                       0,
+                       0,
+                       0,
+                       0,
+                       0,
+                       0);
 //        }
 
 //    }
 }
 
-//void view3DArea::drawObject(Lib3dsFile *obj,
-//                            double pos_x,
-//                            double pos_y,
-//                            double pos_z,
-//                            double psi_rad,
-//                            double gamma_rad,
-//                            double tan_rad)
-//{
-//    glPushMatrix();
-//    glDisable(GL_BLEND);
-//    glEnable(GL_DEPTH_TEST);
-//    glDisable(GL_COLOR_MATERIAL);
-//    glEnable(GL_LIGHTING);
+void view3DArea::drawObject(objl::Loader *obj,
+                            double pos_x,
+                            double pos_y,
+                            double pos_z,
+                            double psi_rad,
+                            double gamma_rad,
+                            double tan_rad)
+{
+    glPushMatrix();
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_COLOR_MATERIAL);
+    glEnable(GL_LIGHTING);
 
 
-//    glTranslatef(pos_x,
-//                 pos_y,
-//                 pos_z);
+    glTranslatef(pos_x,
+                 pos_y,
+                 pos_z);
 
-//    glRotated(radianToGrad(psi_rad),0.0,1.0,0.0);
-//    glRotated(radianToGrad(tan_rad),0.0,0.0,1.0);
-//    glRotated(radianToGrad(gamma_rad),1.0,0.0,0.0);
+    glRotated(radianToGrad(psi_rad),0.0,1.0,0.0);
+    glRotated(radianToGrad(tan_rad),0.0,0.0,1.0);
+    glRotated(radianToGrad(gamma_rad),1.0,0.0,0.0);
 
-//    glColor4f(1.0f,1.0f,1.0f,1.0f);
+    glColor4f(1.0f,1.0f,1.0f,1.0f);
+
+    glBegin(GL_TRIANGLES);
+    for(auto i: list3DObj[0].file.LoadedVertices)
+    {
+        //glNormal3fv(i.Normal);
+        //for (int j=0; j<3; ++j)
+        //{
+            glNormal3fv((GLfloat*)&(i.Normal));
+            glVertex3fv((GLfloat*)&(i.Position));
+        //}
+        glEnd();
+    }
+    //glBufferData(GL_ARRAY_BUFFER,list3DObj[0].file.LoadedVertices.size() * sizeof(objl::Vertex), &(list3DObj[0].file.LoadedVertices[0]), GL_STATIC_DRAW);
 //    for (Lib3dsNode* p=obj->nodes; p!=0; p=p->next)
 //        renderNode(obj,p);
 
-//    glDisable(GL_LIGHTING);
-//    glPopMatrix();
+    glDisable(GL_LIGHTING);
+    glPopMatrix();
 
-//}
+}
 //! отрисовка ИЛС
 void view3DArea::drawILS()
 {

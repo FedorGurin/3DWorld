@@ -316,31 +316,31 @@ void calcAngleRotateHeadEarth(glm::vec3 &vecAircraft,   /*вектор на центр самоле
 }
 //! симуляция движения АСП попадание в любую движущуюся цель
 // координаты и скорости заданы относительно земли
-void simulateTrajectoryASP(glm::vec3 s0,       /*координаты АСП в начальный момент времени*/
-                           glm::vec3 v0,       /*компоненты вектора скорости в начальный момент*/
-                           glm::vec3 e0,       /*координаты цели(конечная точка падения АСП)*/
-                           double T,            /*время движения АСП(общее)*/
-                           double E,            /*среднее значение функции сопротивления АСП*/
-                           double t,            /*текущее значение времени*/
-                           glm::vec3 &v,       /*Текущие компоненты скорости АСП-выходная переменная*/
-                           glm::vec3 &coord   /*Текущие координаты АСП-выходная переменная*/
-                           )
-{
-    glm::vec3 p;//управляющий импульс
+//void simulateTrajectoryASP(glm::vec3 s0,       /*координаты АСП в начальный момент времени*/
+//                           glm::vec3 v0,       /*компоненты вектора скорости в начальный момент*/
+//                           glm::vec3 e0,       /*координаты цели(конечная точка падения АСП)*/
+//                           double T,            /*время движения АСП(общее)*/
+//                           double E,            /*среднее значение функции сопротивления АСП*/
+//                           double t,            /*текущее значение времени*/
+//                           glm::vec3 &v,       /*Текущие компоненты скорости АСП-выходная переменная*/
+//                           glm::vec3 &coord   /*Текущие координаты АСП-выходная переменная*/
+//                           )
+//{
+//    glm::vec3 p;//управляющий импульс
 
-    double temp1=exp(-E*T);
-    double temp2=1.0-temp1;
-    double temp3=T-temp2/E;
+//    double temp1=exp(-E*T);
+//    double temp2=1.0-temp1;
+//    double temp3=T-temp2/E;
 
-    double temp4=exp(-E*t);
-    double temp5=1.0-temp4;
+//    double temp4=exp(-E*t);
+//    double temp5=1.0-temp4;
 
 
-    //! в векторном виде
-    p=(E*(e0-s0)-v0*temp2)/temp3;
-    v=p/E+(v0-p/E)*temp4;
-    coord=s0+p*t/E+(1/E)*(v0-p/E)*temp5;
-}
+//    //! в векторном виде
+//    p=(E*(e0-s0)-v0*temp2)/temp3;
+//    v=p/E+(v0-p/E)*temp4;
+//    coord=s0+p*t/E+(1/E)*(v0-p/E)*temp5;
+//}
 
 //! rVectorOut - ; rVectorTo -
 /*TPoint convertToStartAircraft(TPoint rVectorOut, TPoint rVectorTo)

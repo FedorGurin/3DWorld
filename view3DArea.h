@@ -89,13 +89,13 @@ public:
     //! отрисовка объектов
     void drawSolidObjects();
     //! отрисовка объекта
-//    void drawObject(Lib3dsFile *obj,
-//                    double pos_x,
-//                    double pos_y,
-//                    double pos_z,
-//                    double psi_grad,
-//                    double gamma_grad,
-//                    double tan_grad);
+    void drawObject(objl::Loader *obj,
+                    double pos_x,
+                    double pos_y,
+                    double pos_z,
+                    double psi_grad,
+                    double gamma_grad,
+                    double tan_grad);
     //! перевод градусов в пиксели
     void gradToPixel(double xGrad,
                      double yGrad,

@@ -8,7 +8,7 @@
 CONFIG +=thread
 TARGET = 3DWorld
 TEMPLATE = app
-CONFIG   +=debug_and_release
+CONFIG   +=debug
 CONFIG +=build_all
 QT += gui\
     network \
@@ -20,8 +20,8 @@ QT += gui\
 #INCLUDEPATH += QGLViewer
 #INCLUDEPATH += libsX64
 
-INCLUDEPATH *= /home/fedor/Soft/libQGLViewer-2.7.1
-LIBS *= -L/home/fedor/Soft/libQGLViewer-2.7.1/QGLViewer -lQGLViewer-qt5
+INCLUDEPATH *= /home/fedor/Soft/libQGLViewer
+LIBS *= -L/home/fedor/Soft/libQGLViewer/QGLViewer -lQGLViewer-qt5
 
 #CONFIG(debug, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewerd2.lib
 #CONFIG(debug, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0d.lib
