@@ -6,7 +6,7 @@
 namespace Ui {
 class FormSettings;
 }
-//форма с настройками отображения
+//С„РѕСЂРјР° СЃ РЅР°СЃС‚СЂРѕР№РєР°РјРё РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
 class FormSettings : public QWidget
 {
     Q_OBJECT
@@ -16,6 +16,7 @@ public:
     ~FormSettings();
 signals:
     void fog(bool);
+
     void grid(bool);
     void vertical(bool);
     void ils(bool);

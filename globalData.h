@@ -1,56 +1,56 @@
 #ifndef GLOBALDATA_H
 #define GLOBALDATA_H
-
+#include <glm/glm.hpp>
 typedef struct
 {
     double time;
-    //! уникальный идентификатор объекта
+    //! СѓРЅРёРєР°Р»СЊРЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РѕР±СЉРµРєС‚Р°
     int id;
 
-    //! код объекта
+    //! РєРѕРґ РѕР±СЉРµРєС‚Р°
     int code;
-    //! угол атаки
+    //! СѓРіРѕР» Р°С‚Р°РєРё
     float alfa;
-    //! воздушная скорости
+    //! РІРѕР·РґСѓС€РЅР°СЏ СЃРєРѕСЂРѕСЃС‚Рё
     float vc;
 
-    //! углы ориентации вектора скорости в траекторной СК
+    //! СѓРіР»С‹ РѕСЂРёРµРЅС‚Р°С†РёРё РІРµРєС‚РѕСЂР° СЃРєРѕСЂРѕСЃС‚Рё РІ С‚СЂР°РµРєС‚РѕСЂРЅРѕР№ РЎРљ
     float fi;
     float unt;
 
-    //! координаты носителя в географической СК
+    //! РєРѕРѕСЂРґРёРЅР°С‚С‹ РЅРѕСЃРёС‚РµР»СЏ РІ РіРµРѕРіСЂР°С„РёС‡РµСЃРєРѕР№ РЎРљ
     float fi_geo;
     float lam_geo;
 
-    //! координаты старта носителя в географической СК
+    //! РєРѕРѕСЂРґРёРЅР°С‚С‹ СЃС‚Р°СЂС‚Р° РЅРѕСЃРёС‚РµР»СЏ РІ РіРµРѕРіСЂР°С„РёС‡РµСЃРєРѕР№ РЎРљ
     float fi0_geo;
     float lam0_geo;
 
-    //! координаты в земной СК
+    //! РєРѕРѕСЂРґРёРЅР°С‚С‹ РІ Р·РµРјРЅРѕР№ РЎРљ
     float xg;
     float yg;
     float zg;
 
-    //! компоненты вектора скорости относительной земной СК
+    //! РєРѕРјРїРѕРЅРµРЅС‚С‹ РІРµРєС‚РѕСЂР° СЃРєРѕСЂРѕСЃС‚Рё РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕР№ Р·РµРјРЅРѕР№ РЎРљ
     float vxg;
     float vyg;
     float vzg;
 
-    //! компоненты ускорений
+    //! РєРѕРјРїРѕРЅРµРЅС‚С‹ СѓСЃРєРѕСЂРµРЅРёР№
     float axg;
     float ayg;
     float azg;
 
-    //! угловые скорости вращения носителя
+    //! СѓРіР»РѕРІС‹Рµ СЃРєРѕСЂРѕСЃС‚Рё РІСЂР°С‰РµРЅРёСЏ РЅРѕСЃРёС‚РµР»СЏ
     float omega_x;
     float omega_y;
     float omega_z;
 
-    //! ориентация носителя в связанной СК
+    //! РѕСЂРёРµРЅС‚Р°С†РёСЏ РЅРѕСЃРёС‚РµР»СЏ РІ СЃРІСЏР·Р°РЅРЅРѕР№ РЎРљ
     float psi;
     float gamma;
     float tan;
-    //! число Маха
+    //! С‡РёСЃР»Рѕ РњР°С…Р°
     float m;
     //!
     float nya;
@@ -61,20 +61,12 @@ typedef struct
 
     int idManevr;
 }TVis;
-typedef struct
+typedef struct TVisSimple
 {
     int id;
     int code;
-
     double time;
-   // double time_prev;
-    double x_g;
-    double y_g;
-    double z_g;
-
-//    double x_g_prev;
-//    double y_g_prev;
-//    double z_g_prev;
+    glm::vec3 c_g;
 
     double psi;
     double gamma;
@@ -83,44 +75,24 @@ typedef struct
     double alfa;
     double beta;
 
-    double nx;
-    double ny;
-    double nz;
-
+    glm::vec3 n_c;
     double vc;
 
     double fi;
     double unt;
 
-    double vx_g;
-    double vy_g;
-    double vz_g;
-
-    double vx_c;
-    double vy_c;
-    double vz_c;
-
-    double wx;
-    double wy;
-    double wz;
-
-
-//    double psi_prev;
-//    double gamma_prev;
-//    double tan_prev;
-}TSolidObj;
+    glm::vec3 v_g;
+    glm::vec3 v_c;
+    glm::vec3 omega;
+}TVisSimple;
 typedef struct
 {
-    //! идентификатор объекта
+    //! РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РѕР±СЉРµРєС‚Р°
     int idObj;
-    //! положение органов управления
+    //! РїРѕР»РѕР¶РµРЅРёРµ РѕСЂРіР°РЅРѕРІ СѓРїСЂР°РІР»РµРЅРёСЏ
     float tan_rus;  // [-1.0;1.0]
     float gamma_rus;// [-1.0;1.0]
     float rud;      // [ 0.0;1.0]
 }TControlStick;
-typedef struct
-{
-    int sizeObj;
-    TSolidObj obj[17];
-}TTrans3DWorld;
+
 #endif // GLOBALDATA_H

@@ -6,11 +6,11 @@ View3DTerrain::View3DTerrain(QWidget *parent):QGLWidget(parent)
     dialog->setFileMode(QFileDialog::AnyFile);
     dialog->setNameFilter(("File with Height (*.asc)"));
     dialog->setDirectory(qApp->applicationDirPath());
-    file=new QFile;
-    mapH=new TASCII_MAP;
-    stream=new QTextStream(file);
-    threadParser=new ThreadParser;
-    loadCompleate=false;
+    file    = new QFile;
+    mapH    = new TASCII_MAP;
+    stream  = new QTextStream(file);
+    threadParser  = new ThreadParser;
+    loadCompleate = false;
     connect(dialog,SIGNAL(accepted()),this,SLOT(slotAccepted()));
     connect(threadParser,SIGNAL(finished()),this,SLOT(slotThreadFinished()));
 }

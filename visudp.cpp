@@ -1,63 +1,60 @@
 #include "visudp.h"
+#include <iostream>
 #include <QDataStream>
 VisUDP::VisUDP()
 {
-    synch_time=0;
-    flightObjects.clear();    
-    bool result=udpSocketRecive.bind(4999);
-    if(result==false)
-        qDebug("bind is fail\n");
+    synch_time = 0;
+    flightObjects.clear();        
+    if(udpSocketRecive.bind(4999) == false)
+        std::cout<<"Can`t bind to socket port" << std::endl;
     datagram.resize(sizeof(TMRequest));
 }
 bool VisUDP::checkDatagrams()
 {
-    bool value=udpSocketRecive.hasPendingDatagrams();
 
-    if(value==false)
+    if(udpSocketRecive.hasPendingDatagrams() == false)
         return false;
 
     while(udpSocketRecive.hasPendingDatagrams())
     {
-
-        int size_data=udpSocketRecive.pendingDatagramSize();
-        udpSocketRecive.readDatagram(datagram.data(), size_data);
-        //! чтение заголовка
+        udpSocketRecive.readDatagram(datagram.data(), udpSocketRecive.pendingDatagramSize());
+        //! С‡С‚РµРЅРёРµ Р·Р°РіРѕР»РѕРІРєР°
         QDataStream outHead(&datagram,QIODevice::ReadOnly);
         outHead.setVersion(QDataStream::Qt_4_6);
-        outHead.readRawData((char*)&head,sizeof(THRequest));
+        outHead.readRawData(reinterpret_cast<char* >(&head),sizeof(THRequest));
         QDataStream out(&datagram,QIODevice::ReadOnly);
         out.setVersion(QDataStream::Qt_4_6);
         //out.setByteOrder(QDataStream::BigEndian);
-        //! обработка пакетов
+        //! РѕР±СЂР°Р±РѕС‚РєР° РїР°РєРµС‚РѕРІ
         if(head.typeRequest==PARAM_OBJ)
         {
-            //! чтение заголовка
-            out.readRawData((char*)&rec_udp,head.size);
-            QByteArray compBuf(rec_udp.buffer,rec_udp.sizeBuf);
+            //! С‡С‚РµРЅРёРµ Р·Р°РіРѕР»РѕРІРєР°
+            out.readRawData(reinterpret_cast<char* >(&rec_udp),head.size);
+            QByteArray compBuf(reinterpret_cast<char* >(rec_udp.buffer),rec_udp.sizeBuf);
 
-            //! преобразуем буфер в структуру
-            TSolidObj *solid=(TSolidObj*)rec_udp.buffer;
+            //! РїСЂРµРѕР±СЂР°Р·СѓРµРј Р±СѓС„РµСЂ РІ СЃС‚СЂСѓРєС‚СѓСЂСѓ
+            TVisSimple *solid = reinterpret_cast<TVisSimple* > (rec_udp.buffer);
 
             /*if(rec_udp.compressed==1)
             {
                 qDebug("find compress\n");
-                //! распаковать буфер
+                //! СЂР°СЃРїР°РєРѕРІР°С‚СЊ Р±СѓС„РµСЂ
                 QByteArray compBuf(rec_udp.buffer,rec_udp.sizeBuf);
                 QByteArray uncompBuf=qUncompress(compBuf);
                 TTrans3DWorld* solid_obj=(TTrans3DWorld*)(uncompBuf.data());
             }*/
 
-            int index=testObjInList(solid->id);
-            if(index>=0 )
+            int index = testObjInList(solid->id);
+            if(index >= 0 )
             {
-                flightObjects[index]=*solid;
+                flightObjects[index] = *solid;
             }else if(index<0)
             {
-                qDebug("Сreate new obj=%d\n",solid->id);
+                qDebug("РЎreate new obj=%d\n",solid->id);
                 flightObjects.push_back(*solid);
             }
-            synch_time=solid->time;
-        }else if(head.typeRequest==COMMAND)
+            synch_time = solid->time;
+        }else if(head.typeRequest == COMMAND)
         {
             TCRequest req;
             //out.readRawData((char*)&req,head.size);
@@ -78,7 +75,7 @@ void VisUDP::processPendingDatagrams()
 //        udpSocketRecive.readDatagram(datagram.data(), datagram.size());
 //    }while (udpSocketRecive.hasPendingDatagrams());
 
-//    //! чтение заголовка
+//    //! С‡С‚РµРЅРёРµ Р·Р°РіРѕР»РѕРІРєР°
 //    QDataStream outHead(&datagram,QIODevice::ReadOnly);
 //    outHead.setVersion(QDataStream::Qt_4_2);
 //    outHead.readRawData((char*)&head,sizeof(THeadRequest));
@@ -100,7 +97,7 @@ void VisUDP::processPendingDatagrams()
 }
 int VisUDP::testObjInList(unsigned uid)
 {
-    //! поиск объекта с уже существующим ID
+    //! РїРѕРёСЃРє РѕР±СЉРµРєС‚Р° СЃ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРј ID
     for(int i=0;i<flightObjects.size();i++)
     {
         if(flightObjects[i].id==uid)
@@ -113,9 +110,9 @@ int VisUDP::testObjInList(unsigned uid)
 
 //void VisUDP::addToFlightObjList(TVis body)
 //{
-//    //! признак обнаружения объектов с одинаковыми id
+//    //! РїСЂРёР·РЅР°Рє РѕР±РЅР°СЂСѓР¶РµРЅРёСЏ РѕР±СЉРµРєС‚РѕРІ СЃ РѕРґРёРЅР°РєРѕРІС‹РјРё id
 //    bool find=false;
-//    //! поиск объекта с уже существующим ID
+//    //! РїРѕРёСЃРє РѕР±СЉРµРєС‚Р° СЃ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРј ID
 //    for(int i=0;i<flightObjects.size();i++)
 //    {
 //        if(flightObjects[i].id==body.id)

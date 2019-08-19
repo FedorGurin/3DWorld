@@ -9,7 +9,7 @@ CONFIG +=thread
 TARGET = 3DWorld
 TEMPLATE = app
 CONFIG   +=debug
-CONFIG +=build_all
+#CONFIG +=build_all
 QT += gui\
     network \
     opengl \
@@ -19,7 +19,7 @@ QT += gui\
 
 #INCLUDEPATH += QGLViewer
 #INCLUDEPATH += libsX64
-
+DEFINES += GLM_PRECISION_MEDIUMP_FLOAT
 INCLUDEPATH *= /home/fedor/Soft/libQGLViewer
 LIBS *= -L/home/fedor/Soft/libQGLViewer/QGLViewer -lQGLViewer-qt5
 
@@ -41,17 +41,16 @@ SOURCES += main.cpp\
     OBJ_Loader.cpp \
     view3DArea.cpp \
     view3DTerrain.cpp \
-    visual3D.cpp \
     visudp.cpp \
     formsettings.cpp \
     TemplateNASP.cpp \
     math_func.cpp
 
 HEADERS  += \
+    glm/glm.hpp \
     view3DArea.h \
 OBJ_Loader.h \
     view3DTerrain.h \
-    visual3D.h \
     visudp.h \
     Vector3D_D.h \
     formsettings.h \
@@ -63,6 +62,10 @@ OBJ_Loader.h \
 
 FORMS    += \
     formsettings.ui
+
+DISTFILES += \
+    ../../Soft/libQGLViewer/QGLViewer/libQGLViewer-qt5.so \
+    libQGLViewer-qt5.a
 
 
 

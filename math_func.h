@@ -1,7 +1,7 @@
 #ifndef GL_FUNC_H
 #define GL_FUNC_H
 
-//#define GLM_PRECISION_HIGHP_FLOAT
+//#define GLM_PRECISION_MEDIUMP_FLOAT
 //#define GLM_FORCE_RADIANS
 
 #include <glm/glm.hpp>
