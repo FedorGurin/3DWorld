@@ -8,32 +8,32 @@ LimitPositionKAI::LimitPositionKAI(double radius_,
                                    double maxHRight,
                                    double maxHLeft)
 {
-    radius=radius_;
-    maxVerUpAngle=maxVUp;
-    maxVerDownAngle=maxVDown;
+    radius          = radius_;
+    maxVerUpAngle   = maxVUp;
+    maxVerDownAngle = maxVDown;
 
-    maxGorLeftAngle=maxHLeft;
-    maxGorRightAngle=maxHRight;
+    maxGorLeftAngle = maxHLeft;
+    maxGorRightAngle= maxHRight;
 
     init();
 }
 void LimitPositionKAI::init()
 {
-    angle.sigma=0.0;
-    angle.tau=0.0;
+    angle.sigma = 0.0;
+    angle.tau   = 0.0;
 
-    angleCurr.sigma=0.0;
-    angleCurr.tau=0.0;
+    angleCurr.sigma = 0.0;
+    angleCurr.tau   = 0.0;
 
-    angleGor=0.0;
-    angleVer=0.0;
+    angleGor    = 0.0;
+    angleVer    = 0.0;
 
-    gorPos_=0.0;
-    verPos_=0.0;
-    onLimits=false;
+    gorPos_     = 0.0;
+    verPos_     = 0.0;
+    onLimits    = false;
 }
 
-//! проверить углы
+//! РїСЂРѕРІРµСЂРёС‚СЊ СѓРіР»С‹
 void LimitPositionKAI::checkAngle(double &gorPos,double &verPos,double &gorPosPred,double &verPosPred)
 {
     if(verPos<=0.0)
@@ -67,7 +67,7 @@ void LimitPositionKAI::checkAngle(double &gorPos,double &verPos,double &gorPosPr
 
 }
 
-/* углы передаваемые этой функции должны быть в градусах*/
+/* СѓРіР»С‹ РїРµСЂРµРґР°РІР°РµРјС‹Рµ СЌС‚РѕР№ С„СѓРЅРєС†РёРё РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РІ РіСЂР°РґСѓСЃР°С…*/
 TAngle LimitPositionKAI::limitAngle(TAngle angle)
 {
     TAngle an;
@@ -177,10 +177,10 @@ TAngle LimitPositionKAI::limitAngle1(TAngle angleCenter, TAngle angle_, double R
     return an;
 }
 
-TAngle LimitPositionKAI::limitAngle(TAngle angle,           /*точка которую нужно ограничить*/
-                                    TAngle angleCenter,     /*центральная точка от которой будут строятся ограничения*/
-                                    double radius_grad_max, /*минимальный радиус*/
-                                    double radius_grad_min) /*максимальный радиус*/
+TAngle LimitPositionKAI::limitAngle(TAngle angle,           /*С‚РѕС‡РєР° РєРѕС‚РѕСЂСѓСЋ РЅСѓР¶РЅРѕ РѕРіСЂР°РЅРёС‡РёС‚СЊ*/
+                                    TAngle angleCenter,     /*С†РµРЅС‚СЂР°Р»СЊРЅР°СЏ С‚РѕС‡РєР° РѕС‚ РєРѕС‚РѕСЂРѕР№ Р±СѓРґСѓС‚ СЃС‚СЂРѕСЏС‚СЃСЏ РѕРіСЂР°РЅРёС‡РµРЅРёСЏ*/
+                                    double radius_grad_max, /*РјРёРЅРёРјР°Р»СЊРЅС‹Р№ СЂР°РґРёСѓСЃ*/
+                                    double radius_grad_min) /*РјР°РєСЃРёРјР°Р»СЊРЅС‹Р№ СЂР°РґРёСѓСЃ*/
 {
     TAngle an;
     double Rmax=gradToRadian(radius_grad_max);

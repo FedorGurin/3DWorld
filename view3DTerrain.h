@@ -24,7 +24,7 @@ typedef struct
 
 
 
-    double cellsize;//шаг сетки в градусах
+    double cellsize;//С€Р°Рі СЃРµС‚РєРё РІ РіСЂР°РґСѓСЃР°С…
     QVector<QVector<double> >data;
     QVector<QVector<QVector3D> > dataVectors;
     QVector3D value(int col,int row)
@@ -61,12 +61,12 @@ class View3DTerrain : public QGLWidget
     Q_OBJECT;
 public:
     View3DTerrain(QWidget *parent=0);
-    //! открыть файл с катрой цветов
+    //! РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р» СЃ РєР°С‚СЂРѕР№ С†РІРµС‚РѕРІ
     void openFileWithMapColor();
 
-    //! открыть ранее сохраненную карту
+    //! РѕС‚РєСЂС‹С‚СЊ СЂР°РЅРµРµ СЃРѕС…СЂР°РЅРµРЅРЅСѓСЋ РєР°СЂС‚Сѓ
     bool openTerrainMap(QString nameFile);
-    //! процесс загрузки карты высот в реальном времени
+    //! РїСЂРѕС†РµСЃСЃ Р·Р°РіСЂСѓР·РєРё РєР°СЂС‚С‹ РІС‹СЃРѕС‚ РІ СЂРµР°Р»СЊРЅРѕРј РІСЂРµРјРµРЅРё
     void processLoading();
     bool loadCompleate;
     ~View3DTerrain();
@@ -80,9 +80,9 @@ private:
 
 public slots:
     void slotAccepted();
-    //! загрузка потока
+    //! Р·Р°РіСЂСѓР·РєР° РїРѕС‚РѕРєР°
     void slotThreadFinished();
-    //! открыть файл с ландшафтом
+    //! РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р» СЃ Р»Р°РЅРґС€Р°С„С‚РѕРј
     void openFileWithTerrain();
 };
 

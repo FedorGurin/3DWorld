@@ -10,7 +10,7 @@
 #endif
 
 #ifdef USE_GAUSS_KRUGGER
-//! преобразование долготы и широты в координаты
+//! РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РґРѕР»РіРѕС‚С‹ Рё С€РёСЂРѕС‚С‹ РІ РєРѕРѕСЂРґРёРЅР°С‚С‹
 void convertBLtoXY(double fi, double lam, double &n, double &e);
 void convertXYtoBL(double n, double e, double &fi, double &lam);
 #endif
@@ -24,19 +24,19 @@ void convertXYtoBL(double n, double e, double &fi, double &lam);
     return value;
 }*/
 
-//! ограничение сверху
+//! РѕРіСЂР°РЅРёС‡РµРЅРёРµ СЃРІРµСЂС…Сѓ
 double limitMax(double value,double max)
 {
     if(value>max) value=max;
     return  value;
 }
-//! ограничение снизу
+//! РѕРіСЂР°РЅРёС‡РµРЅРёРµ СЃРЅРёР·Сѓ
 double limitMin(double value,double min)
 {
     if(value>min) value=min;
     return  value;
 }
-//! линейная интерполяция между двумя значениями
+//! Р»РёРЅРµР№РЅР°СЏ РёРЅС‚РµСЂРїРѕР»СЏС†РёСЏ РјРµР¶РґСѓ РґРІСѓРјСЏ Р·РЅР°С‡РµРЅРёСЏРјРё
 double linearInterpolation(double Y,double Y2,double Y1,double X2,double X1)
 {
     double a=0.0,b=0.0;
@@ -60,13 +60,13 @@ int searchColIndexInRow(double X,
 
     }
 }
-//! поиск индекса строки в столбце
-int searchRowIndexIn2DTable(double Y,           /*тек. значение в столбце 0*/
-                            double *mas,        /*указатель на массив*/
-                            unsigned sizeCol,   /*кол-во столбцов*/
-                            unsigned sizeRow)   /*кол-во строк*/
+//! РїРѕРёСЃРє РёРЅРґРµРєСЃР° СЃС‚СЂРѕРєРё РІ СЃС‚РѕР»Р±С†Рµ
+int searchRowIndexIn2DTable(double Y,           /*С‚РµРє. Р·РЅР°С‡РµРЅРёРµ РІ СЃС‚РѕР»Р±С†Рµ 0*/
+                            double *mas,        /*СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РјР°СЃСЃРёРІ*/
+                            unsigned sizeCol,   /*РєРѕР»-РІРѕ СЃС‚РѕР»Р±С†РѕРІ*/
+                            unsigned sizeRow)   /*РєРѕР»-РІРѕ СЃС‚СЂРѕРє*/
 {
-    //! вычислим индексы
+    //! РІС‹С‡РёСЃР»РёРј РёРЅРґРµРєСЃС‹
     for(unsigned i=0;i<sizeRow;i++)
     {
         if(mas[i*sizeCol]>=Y)
@@ -74,13 +74,13 @@ int searchRowIndexIn2DTable(double Y,           /*тек. значение в столбце 0*/
     }
     return 0;
 }
-//! поиск индекса столбца в строке
-int searchColIndexIn2DTable(double X,           /*тек. значение в строке 0*/
-                            double *mas,        /*указатель на массив*/
-                            unsigned sizeCol)   /*кол-во столбцов*/
+//! РїРѕРёСЃРє РёРЅРґРµРєСЃР° СЃС‚РѕР»Р±С†Р° РІ СЃС‚СЂРѕРєРµ
+int searchColIndexIn2DTable(double X,           /*С‚РµРє. Р·РЅР°С‡РµРЅРёРµ РІ СЃС‚СЂРѕРєРµ 0*/
+                            double *mas,        /*СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РјР°СЃСЃРёРІ*/
+                            unsigned sizeCol)   /*РєРѕР»-РІРѕ СЃС‚РѕР»Р±С†РѕРІ*/
 {
     X=limitMinMax(X,mas[1],mas[sizeCol-1]);
-    //! вычислим индексы
+    //! РІС‹С‡РёСЃР»РёРј РёРЅРґРµРєСЃС‹
     for(unsigned i=1;i<sizeCol;i++)
     {
         if(mas[i]>=X)
@@ -88,7 +88,7 @@ int searchColIndexIn2DTable(double X,           /*тек. значение в строке 0*/
     }
     return 0;
 }
-//! интерполяция только в одной строке
+//! РёРЅС‚РµСЂРїРѕР»СЏС†РёСЏ С‚РѕР»СЊРєРѕ РІ РѕРґРЅРѕР№ СЃС‚СЂРѕРєРµ
 double rowInterpolation(double Y,const TTable1D &table,int indexCol, int indexRow)
 {
     if(indexCol==-1)
@@ -104,17 +104,17 @@ double rowInterpolation(double Y,const TTable1D &table,int indexCol, int indexRo
         }
     }
 
-    //! если индекс столбца вышел за левую границу, то вернуть крайнее значение левой границы
+    //! РµСЃР»Рё РёРЅРґРµРєСЃ СЃС‚РѕР»Р±С†Р° РІС‹С€РµР» Р·Р° Р»РµРІСѓСЋ РіСЂР°РЅРёС†Сѓ, С‚Рѕ РІРµСЂРЅСѓС‚СЊ РєСЂР°Р№РЅРµРµ Р·РЅР°С‡РµРЅРёРµ Р»РµРІРѕР№ РіСЂР°РЅРёС†С‹
     if(indexCol<=0) return table.m[table.sizeCol];
-    //! если индекс столбца вышел за правую границу, то вернуть крайнее значение правой границы
+    //! РµСЃР»Рё РёРЅРґРµРєСЃ СЃС‚РѕР»Р±С†Р° РІС‹С€РµР» Р·Р° РїСЂР°РІСѓСЋ РіСЂР°РЅРёС†Сѓ, С‚Рѕ РІРµСЂРЅСѓС‚СЊ РєСЂР°Р№РЅРµРµ Р·РЅР°С‡РµРЅРёРµ РїСЂР°РІРѕР№ РіСЂР°РЅРёС†С‹
     if(indexCol>(table.sizeCol-1)) return table.m[2*table.sizeCol-1];
 
-    //! иначе считаем линейку
-    int index=indexCol+indexRow*table.sizeCol;//! индекс для перемещения в двухмерном массиве
+    //! РёРЅР°С‡Рµ СЃС‡РёС‚Р°РµРј Р»РёРЅРµР№РєСѓ
+    int index=indexCol+indexRow*table.sizeCol;//! РёРЅРґРµРєСЃ РґР»СЏ РїРµСЂРµРјРµС‰РµРЅРёСЏ РІ РґРІСѓС…РјРµСЂРЅРѕРј РјР°СЃСЃРёРІРµ
 
     return linearInterpolation(Y,table.m[index],table.m[index-1],table.m[indexCol],table.m[indexCol-1]);
 }
-//! интерполяция только в одной строке
+//! РёРЅС‚РµСЂРїРѕР»СЏС†РёСЏ С‚РѕР»СЊРєРѕ РІ РѕРґРЅРѕР№ СЃС‚СЂРѕРєРµ
 double rowInterpolation(double Y,double *masY, int sizeCol,int indexCol, int indexRow)
 {
     if(indexCol==-1)
@@ -130,13 +130,13 @@ double rowInterpolation(double Y,double *masY, int sizeCol,int indexCol, int ind
         }
     }
 
-    //! если индекс столбца вышел за левую границу, то вернуть крайнее значение левой границы
+    //! РµСЃР»Рё РёРЅРґРµРєСЃ СЃС‚РѕР»Р±С†Р° РІС‹С€РµР» Р·Р° Р»РµРІСѓСЋ РіСЂР°РЅРёС†Сѓ, С‚Рѕ РІРµСЂРЅСѓС‚СЊ РєСЂР°Р№РЅРµРµ Р·РЅР°С‡РµРЅРёРµ Р»РµРІРѕР№ РіСЂР°РЅРёС†С‹
     if(indexCol<=0) return masY[sizeCol];
-    //! если индекс столбца вышел за правую границу, то вернуть крайнее значение правой границы
+    //! РµСЃР»Рё РёРЅРґРµРєСЃ СЃС‚РѕР»Р±С†Р° РІС‹С€РµР» Р·Р° РїСЂР°РІСѓСЋ РіСЂР°РЅРёС†Сѓ, С‚Рѕ РІРµСЂРЅСѓС‚СЊ РєСЂР°Р№РЅРµРµ Р·РЅР°С‡РµРЅРёРµ РїСЂР°РІРѕР№ РіСЂР°РЅРёС†С‹
     if(indexCol>(sizeCol-1)) return masY[2*sizeCol-1];
 
-    //! иначе считаем линейку
-    int index=indexCol+indexRow*sizeCol;//! индекс для перемещения в двухмерном массиве
+    //! РёРЅР°С‡Рµ СЃС‡РёС‚Р°РµРј Р»РёРЅРµР№РєСѓ
+    int index=indexCol+indexRow*sizeCol;//! РёРЅРґРµРєСЃ РґР»СЏ РїРµСЂРµРјРµС‰РµРЅРёСЏ РІ РґРІСѓС…РјРµСЂРЅРѕРј РјР°СЃСЃРёРІРµ
 
     return linearInterpolation(Y,masY[index],masY[index-1],masY[indexCol],masY[indexCol-1]);
 }
@@ -148,7 +148,7 @@ double linearInter2DTable(double X,double Y,double *masXY,unsigned sizeRow,unsig
     if(indexCol==-1)
     {
         X=limitMinMax(X,masXY[1],masXY[sizeCol-1]);
-        //! вычислим индексы
+        //! РІС‹С‡РёСЃР»РёРј РёРЅРґРµРєСЃС‹
         for(unsigned i=1;i<sizeCol;i++)
         {
             if(masXY[i]>=X)
@@ -160,7 +160,7 @@ double linearInter2DTable(double X,double Y,double *masXY,unsigned sizeRow,unsig
     }
     if(indexRow==-1)
     {
-        //! вычислим индексы
+        //! РІС‹С‡РёСЃР»РёРј РёРЅРґРµРєСЃС‹
         for(unsigned i=0;i<sizeRow;i++)
         {
             if(masXY[i*sizeCol]>=Y)
@@ -187,7 +187,7 @@ double linearInter2DTable(double X, double Y, const TTable2D &table, int indexRo
     if(indexCol==-1)
     {
         X=limitMinMax(X,table.m[1],table.m[table.sizeCol-1]);
-        //! вычислим индексы
+        //! РІС‹С‡РёСЃР»РёРј РёРЅРґРµРєСЃС‹
         for(unsigned i=1;i<table.sizeCol;i++)
         {
             if(table.m[i]>=X)
@@ -199,7 +199,7 @@ double linearInter2DTable(double X, double Y, const TTable2D &table, int indexRo
     }
     if(indexRow==-1)
     {
-        //! вычислим индексы
+        //! РІС‹С‡РёСЃР»РёРј РёРЅРґРµРєСЃС‹
         for(unsigned i=0;i<table.sizeRow;i++)
         {
             if(table.m[i*table.sizeCol]>=Y)
@@ -223,10 +223,10 @@ double linearInter2DTable(double X, double Y, const TTable2D &table, int indexRo
 
 //}
 
-//! определение двух углов направления вектора заданного в земной системе координат
+//! РѕРїСЂРµРґРµР»РµРЅРёРµ РґРІСѓС… СѓРіР»РѕРІ РЅР°РїСЂР°РІР»РµРЅРёСЏ РІРµРєС‚РѕСЂР° Р·Р°РґР°РЅРЅРѕРіРѕ РІ Р·РµРјРЅРѕР№ СЃРёСЃС‚РµРјРµ РєРѕРѕСЂРґРёРЅР°С‚
 void earthTo2Angles(glm::vec3 inVec,TAngle *anglesVec)
 {
-    //! Нормируем вектор D, т.е. и находим единичный вектор D0;
+    //! РќРѕСЂРјРёСЂСѓРµРј РІРµРєС‚РѕСЂ D, С‚.Рµ. Рё РЅР°С…РѕРґРёРј РµРґРёРЅРёС‡РЅС‹Р№ РІРµРєС‚РѕСЂ D0;
     double length=glm::length(inVec);
 
     double D0x1,D0y1,D0z1;
@@ -236,7 +236,7 @@ void earthTo2Angles(glm::vec3 inVec,TAngle *anglesVec)
     D0z1=inVec.z/length;
 
     //double d=D0x1*D0x1+D0y1*D0y1+D0z1*D0z1;
-    //Находим выражения компонент единичного вектора   через углы sigma, tau
+    //РќР°С…РѕРґРёРј РІС‹СЂР°Р¶РµРЅРёСЏ РєРѕРјРїРѕРЅРµРЅС‚ РµРґРёРЅРёС‡РЅРѕРіРѕ РІРµРєС‚РѕСЂР°   С‡РµСЂРµР· СѓРіР»С‹ sigma, tau
 
     double sigma,tau;
 
@@ -248,99 +248,99 @@ void earthTo2Angles(glm::vec3 inVec,TAngle *anglesVec)
     anglesVec->tau=tau;
 }
 
-//! расчет углов поворота головы относительно контейнера
-void calcAgnleRotateHead(glm::vec3 &vecAircraft,     /* вектор на центр самолета относительно земли*/
-                         glm::vec3 &vecDevice,       /* вектор на центр устройства(контейнера) относит. самолета*/
-                         glm::vec3 &vecOnHead,       /* вектор на головку относительно центра контейнера*/
-                         glm::vec3 &vecTarget,       /* вектор на цель(точка привязки) относительно земли*/
-                         glm::mat3 &matrixAircraft,  /* матрица поворота самолета относительно земли*/
-                         glm::mat3 &matrixDevice,    /* матрица поворота устройства относ. самолета*/
-                         TAngle &angle,               /* углы поворота головы контейнера на цель tau=(-90;90) sigma=(-180;180)*/
-                         TAngle &angleNeg             /* углы поворота головы контейнера на цель tau=(-180;180) sigma=(-90;90)*/)
+//! СЂР°СЃС‡РµС‚ СѓРіР»РѕРІ РїРѕРІРѕСЂРѕС‚Р° РіРѕР»РѕРІС‹ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РєРѕРЅС‚РµР№РЅРµСЂР°
+void calcAgnleRotateHead(glm::vec3 &vecAircraft,     /* РІРµРєС‚РѕСЂ РЅР° С†РµРЅС‚СЂ СЃР°РјРѕР»РµС‚Р° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·РµРјР»Рё*/
+                         glm::vec3 &vecDevice,       /* РІРµРєС‚РѕСЂ РЅР° С†РµРЅС‚СЂ СѓСЃС‚СЂРѕР№СЃС‚РІР°(РєРѕРЅС‚РµР№РЅРµСЂР°) РѕС‚РЅРѕСЃРёС‚. СЃР°РјРѕР»РµС‚Р°*/
+                         glm::vec3 &vecOnHead,       /* РІРµРєС‚РѕСЂ РЅР° РіРѕР»РѕРІРєСѓ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ С†РµРЅС‚СЂР° РєРѕРЅС‚РµР№РЅРµСЂР°*/
+                         glm::vec3 &vecTarget,       /* РІРµРєС‚РѕСЂ РЅР° С†РµР»СЊ(С‚РѕС‡РєР° РїСЂРёРІСЏР·РєРё) РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·РµРјР»Рё*/
+                         glm::mat3 &matrixAircraft,  /* РјР°С‚СЂРёС†Р° РїРѕРІРѕСЂРѕС‚Р° СЃР°РјРѕР»РµС‚Р° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·РµРјР»Рё*/
+                         glm::mat3 &matrixDevice,    /* РјР°С‚СЂРёС†Р° РїРѕРІРѕСЂРѕС‚Р° СѓСЃС‚СЂРѕР№СЃС‚РІР° РѕС‚РЅРѕСЃ. СЃР°РјРѕР»РµС‚Р°*/
+                         TAngle &angle,               /* СѓРіР»С‹ РїРѕРІРѕСЂРѕС‚Р° РіРѕР»РѕРІС‹ РєРѕРЅС‚РµР№РЅРµСЂР° РЅР° С†РµР»СЊ tau=(-90;90) sigma=(-180;180)*/
+                         TAngle &angleNeg             /* СѓРіР»С‹ РїРѕРІРѕСЂРѕС‚Р° РіРѕР»РѕРІС‹ РєРѕРЅС‚РµР№РЅРµСЂР° РЅР° С†РµР»СЊ tau=(-180;180) sigma=(-90;90)*/)
 {
-    // вектор расположения головки относительно контейнера
+    // РІРµРєС‚РѕСЂ СЂР°СЃРїРѕР»РѕР¶РµРЅРёСЏ РіРѕР»РѕРІРєРё РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РєРѕРЅС‚РµР№РЅРµСЂР°
     glm::vec3 vecDeviceHead(0.0,0.0,0.0);
     vecDeviceHead=vecDevice+vecOnHead;
-    // результирующая матрица поворота
+    // СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰Р°СЏ РјР°С‚СЂРёС†Р° РїРѕРІРѕСЂРѕС‚Р°
     glm::mat3 matrixDevice_Aircraft=matrixAircraft*matrixDevice;
-    //Вычисляем компоненты вектора смещения deltaRxdD   относительно связанной СК устройства
+    //Р’С‹С‡РёСЃР»СЏРµРј РєРѕРјРїРѕРЅРµРЅС‚С‹ РІРµРєС‚РѕСЂР° СЃРјРµС‰РµРЅРёСЏ deltaRxdD   РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃРІСЏР·Р°РЅРЅРѕР№ РЎРљ СѓСЃС‚СЂРѕР№СЃС‚РІР°
     glm::vec3 vecDeltaRxdD=matrixDevice*vecDeviceHead;
 
-    //Вычисляем компоненты вспомогательного вектора deltaRp  относительно полигонной СК
+    //Р’С‹С‡РёСЃР»СЏРµРј РєРѕРјРїРѕРЅРµРЅС‚С‹ РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅРѕРіРѕ РІРµРєС‚РѕСЂР° deltaRp  РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РїРѕР»РёРіРѕРЅРЅРѕР№ РЎРљ
     glm::vec3 vecDeltaRxp=vecTarget-vecAircraft;
 
-    //Вычисляем компоненты вспомогательного вектора deltaRd  относительно связанной СК устройства
+    //Р’С‹С‡РёСЃР»СЏРµРј РєРѕРјРїРѕРЅРµРЅС‚С‹ РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅРѕРіРѕ РІРµРєС‚РѕСЂР° deltaRd  РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃРІСЏР·Р°РЅРЅРѕР№ РЎРљ СѓСЃС‚СЂРѕР№СЃС‚РІР°
     glm::vec3 vecDeltaRxd=vecDeltaRxp*matrixDevice_Aircraft;
 
-    //Вычисляем компоненты вектора дальности Dt  относительно связанной СК устройства
+    //Р’С‹С‡РёСЃР»СЏРµРј РєРѕРјРїРѕРЅРµРЅС‚С‹ РІРµРєС‚РѕСЂР° РґР°Р»СЊРЅРѕСЃС‚Рё Dt  РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃРІСЏР·Р°РЅРЅРѕР№ РЎРљ СѓСЃС‚СЂРѕР№СЃС‚РІР°
     glm::vec3 vecDt=vecDeltaRxd-vecDeltaRxdD;
-    //Длина вектора
+    //Р”Р»РёРЅР° РІРµРєС‚РѕСЂР°
     double Dt=glm::length(vecDt);
-    //Вычисляем углы
+    //Р’С‹С‡РёСЃР»СЏРµРј СѓРіР»С‹
     angle.sigma=-atan2(vecDt.z,vecDt.x);
     angle.tau=asin(vecDt.y/Dt);
-    //вычисляем другую пару углов
+    //РІС‹С‡РёСЃР»СЏРµРј РґСЂСѓРіСѓСЋ РїР°СЂСѓ СѓРіР»РѕРІ
     angleNeg.sigma=-asin(vecDt.z/Dt);
     angleNeg.tau=atan2(vecDt.y,vecDt.x);
 }
-//! вычисление углов поворота относительно земли(нужно для индикации камеры)
-void calcAngleRotateHeadEarth(glm::vec3 &vecAircraft,   /*вектор на центр самолета относительно земли*/
-                              glm::vec3 &vecDevice,     /*вектор на центр устройства(контейнера) относит. самолета*/
-                              glm::vec3 &vecOnHead,     /*вектор на головку относительно центра контейнера*/
-                              glm::vec3 &vecTarget,     /*вектор на цель(точка привязки) относительно земли*/
-                              glm::mat3 &matrixAircraft,/*матрица поворота самолета относительно земли*/
-                              TAngle &angle              /*углы поворота головы контейнера на цель*/)
+//! РІС‹С‡РёСЃР»РµРЅРёРµ СѓРіР»РѕРІ РїРѕРІРѕСЂРѕС‚Р° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·РµРјР»Рё(РЅСѓР¶РЅРѕ РґР»СЏ РёРЅРґРёРєР°С†РёРё РєР°РјРµСЂС‹)
+void calcAngleRotateHeadEarth(glm::vec3 &vecAircraft,   /*РІРµРєС‚РѕСЂ РЅР° С†РµРЅС‚СЂ СЃР°РјРѕР»РµС‚Р° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·РµРјР»Рё*/
+                              glm::vec3 &vecDevice,     /*РІРµРєС‚РѕСЂ РЅР° С†РµРЅС‚СЂ СѓСЃС‚СЂРѕР№СЃС‚РІР°(РєРѕРЅС‚РµР№РЅРµСЂР°) РѕС‚РЅРѕСЃРёС‚. СЃР°РјРѕР»РµС‚Р°*/
+                              glm::vec3 &vecOnHead,     /*РІРµРєС‚РѕСЂ РЅР° РіРѕР»РѕРІРєСѓ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ С†РµРЅС‚СЂР° РєРѕРЅС‚РµР№РЅРµСЂР°*/
+                              glm::vec3 &vecTarget,     /*РІРµРєС‚РѕСЂ РЅР° С†РµР»СЊ(С‚РѕС‡РєР° РїСЂРёРІСЏР·РєРё) РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·РµРјР»Рё*/
+                              glm::mat3 &matrixAircraft,/*РјР°С‚СЂРёС†Р° РїРѕРІРѕСЂРѕС‚Р° СЃР°РјРѕР»РµС‚Р° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·РµРјР»Рё*/
+                              TAngle &angle              /*СѓРіР»С‹ РїРѕРІРѕСЂРѕС‚Р° РіРѕР»РѕРІС‹ РєРѕРЅС‚РµР№РЅРµСЂР° РЅР° С†РµР»СЊ*/)
 {
-    // вектор расположения головки относительно контейнера
+    // РІРµРєС‚РѕСЂ СЂР°СЃРїРѕР»РѕР¶РµРЅРёСЏ РіРѕР»РѕРІРєРё РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РєРѕРЅС‚РµР№РЅРµСЂР°
     glm::vec3 vecDeviceHead=vecDevice;/*+vecOnHead;*/
 
-    //Вычисляем компоненты вектора смещения delta_r_d  относительно полигонной СК
+    //Р’С‹С‡РёСЃР»СЏРµРј РєРѕРјРїРѕРЅРµРЅС‚С‹ РІРµРєС‚РѕСЂР° СЃРјРµС‰РµРЅРёСЏ delta_r_d  РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РїРѕР»РёРіРѕРЅРЅРѕР№ РЎРљ
     glm::mat3 tempMatrix=glm::transpose(matrixAircraft);
     glm::vec3 vecDeltaRdp=vecDeviceHead*tempMatrix;
 
-    //Вычисляем компоненты вектора дальности Dt  относительно полигонной СК
+    //Р’С‹С‡РёСЃР»СЏРµРј РєРѕРјРїРѕРЅРµРЅС‚С‹ РІРµРєС‚РѕСЂР° РґР°Р»СЊРЅРѕСЃС‚Рё Dt  РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РїРѕР»РёРіРѕРЅРЅРѕР№ РЎРљ
     glm::vec3 vecDtp=vecTarget-vecAircraft-vecDeltaRdp;
 
-    //Длина вектора
+    //Р”Р»РёРЅР° РІРµРєС‚РѕСЂР°
     double Dt=glm::length(vecDtp);
 
-    //Вычисляем углы
+    //Р’С‹С‡РёСЃР»СЏРµРј СѓРіР»С‹
     angle.sigma=-atan2(vecDtp.z,vecDtp.x);
     angle.tau=asin(vecDtp.y/Dt);
 
     //glm::mat3 tempMatrix1=matrixAircraft*matrixHeadOnAircraft;
     //glm::mat3 tempMatrix2=tempMatrix1*matrixSigmaTau;
 
-    //! определяем третий угол(поворот вокруг оси)
+    //! РѕРїСЂРµРґРµР»СЏРµРј С‚СЂРµС‚РёР№ СѓРіРѕР»(РїРѕРІРѕСЂРѕС‚ РІРѕРєСЂСѓРі РѕСЃРё)
     //angle_tek_target_mu=atan2(tempMatrix2.x[2][1],tempMatrix2.x[1][1]);
 }
-//! симуляция движения АСП попадание в любую движущуюся цель
-// координаты и скорости заданы относительно земли
-void simulateTrajectoryASP(glm::vec3 s0,       /*координаты АСП в начальный момент времени*/
-                           glm::vec3 v0,       /*компоненты вектора скорости в начальный момент*/
-                           glm::vec3 e0,       /*координаты цели(конечная точка падения АСП)*/
-                           double T,            /*время движения АСП(общее)*/
-                           double E,            /*среднее значение функции сопротивления АСП*/
-                           double t,            /*текущее значение времени*/
-                           glm::vec3 &v,       /*Текущие компоненты скорости АСП-выходная переменная*/
-                           glm::vec3 &coord   /*Текущие координаты АСП-выходная переменная*/
-                           )
-{
-    glm::vec3 p;//управляющий импульс
+//! СЃРёРјСѓР»СЏС†РёСЏ РґРІРёР¶РµРЅРёСЏ РђРЎРџ РїРѕРїР°РґР°РЅРёРµ РІ Р»СЋР±СѓСЋ РґРІРёР¶СѓС‰СѓСЋСЃСЏ С†РµР»СЊ
+// РєРѕРѕСЂРґРёРЅР°С‚С‹ Рё СЃРєРѕСЂРѕСЃС‚Рё Р·Р°РґР°РЅС‹ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·РµРјР»Рё
+//void simulateTrajectoryASP(glm::vec3 s0,       /*РєРѕРѕСЂРґРёРЅР°С‚С‹ РђРЎРџ РІ РЅР°С‡Р°Р»СЊРЅС‹Р№ РјРѕРјРµРЅС‚ РІСЂРµРјРµРЅРё*/
+//                           glm::vec3 v0,       /*РєРѕРјРїРѕРЅРµРЅС‚С‹ РІРµРєС‚РѕСЂР° СЃРєРѕСЂРѕСЃС‚Рё РІ РЅР°С‡Р°Р»СЊРЅС‹Р№ РјРѕРјРµРЅС‚*/
+//                           glm::vec3 e0,       /*РєРѕРѕСЂРґРёРЅР°С‚С‹ С†РµР»Рё(РєРѕРЅРµС‡РЅР°СЏ С‚РѕС‡РєР° РїР°РґРµРЅРёСЏ РђРЎРџ)*/
+//                           double T,            /*РІСЂРµРјСЏ РґРІРёР¶РµРЅРёСЏ РђРЎРџ(РѕР±С‰РµРµ)*/
+//                           double E,            /*СЃСЂРµРґРЅРµРµ Р·РЅР°С‡РµРЅРёРµ С„СѓРЅРєС†РёРё СЃРѕРїСЂРѕС‚РёРІР»РµРЅРёСЏ РђРЎРџ*/
+//                           double t,            /*С‚РµРєСѓС‰РµРµ Р·РЅР°С‡РµРЅРёРµ РІСЂРµРјРµРЅРё*/
+//                           glm::vec3 &v,       /*РўРµРєСѓС‰РёРµ РєРѕРјРїРѕРЅРµРЅС‚С‹ СЃРєРѕСЂРѕСЃС‚Рё РђРЎРџ-РІС‹С…РѕРґРЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ*/
+//                           glm::vec3 &coord   /*РўРµРєСѓС‰РёРµ РєРѕРѕСЂРґРёРЅР°С‚С‹ РђРЎРџ-РІС‹С…РѕРґРЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ*/
+//                           )
+//{
+//    glm::vec3 p;//СѓРїСЂР°РІР»СЏСЋС‰РёР№ РёРјРїСѓР»СЊСЃ
 
-    double temp1=exp(-E*T);
-    double temp2=1.0-temp1;
-    double temp3=T-temp2/E;
+//    double temp1=exp(-E*T);
+//    double temp2=1.0-temp1;
+//    double temp3=T-temp2/E;
 
-    double temp4=exp(-E*t);
-    double temp5=1.0-temp4;
+//    double temp4=exp(-E*t);
+//    double temp5=1.0-temp4;
 
 
-    //! в векторном виде
-    p=(E*(e0-s0)-v0*temp2)/temp3;
-    v=p/E+(v0-p/E)*temp4;
-    coord=s0+p*t/E+(1/E)*(v0-p/E)*temp5;
-}
+//    //! РІ РІРµРєС‚РѕСЂРЅРѕРј РІРёРґРµ
+//    p=(E*(e0-s0)-v0*temp2)/temp3;
+//    v=p/E+(v0-p/E)*temp4;
+//    coord=s0+p*t/E+(1/E)*(v0-p/E)*temp5;
+//}
 
 //! rVectorOut - ; rVectorTo -
 /*TPoint convertToStartAircraft(TPoint rVectorOut, TPoint rVectorTo)
@@ -354,7 +354,7 @@ void simulateTrajectoryASP(glm::vec3 s0,       /*координаты АСП в начальный моме
     return startAircraft;
 }*/
 
-//! метод Рунге-Кутты 4 порядка
+//! РјРµС‚РѕРґ Р СѓРЅРіРµ-РљСѓС‚С‚С‹ 4 РїРѕСЂСЏРґРєР°
 /*double* rk41(short nsdu, double d,double *fb, double *SDU(double f[]))
 {
     short i,j;
@@ -383,7 +383,7 @@ void simulateTrajectoryASP(glm::vec3 s0,       /*координаты АСП в начальный моме
 }*/
 
 
-double cutValues(double x)//отрезать дробную чпсть
+double cutValues(double x)//РѕС‚СЂРµР·Р°С‚СЊ РґСЂРѕР±РЅСѓСЋ С‡РїСЃС‚СЊ
 {
     if(fabs(x)<1e-30) return 0.0;
     return x;
@@ -450,29 +450,29 @@ double meterToKm(double x)
 {
     return x*3.6;
 }
-//! проверка выхода за [180;-180]
-double checkPI(double angle/*в рад*/)
+//! РїСЂРѕРІРµСЂРєР° РІС‹С…РѕРґР° Р·Р° [180;-180]
+double checkPI(double angle/*РІ СЂР°Рґ*/)
 {
     if(angle>M_PI) angle+=-2.0*M_PI;
     else if(angle<-M_PI)angle+=2.0*M_PI;
     return angle;
 }
-//! проверка выхода за [0;-360]
-double check2PI(double angle/*в рад.*/)
+//! РїСЂРѕРІРµСЂРєР° РІС‹С…РѕРґР° Р·Р° [0;-360]
+double check2PI(double angle/*РІ СЂР°Рґ.*/)
 {
     if(angle>(2.0*M_PI)) angle-=2.0*M_PI;
     else if(angle<0.0)angle+=2.0*M_PI;
     return angle;
 }
-//! проверка выхода за [180;-180]
-double check180(double angle/*в град*/)
+//! РїСЂРѕРІРµСЂРєР° РІС‹С…РѕРґР° Р·Р° [180;-180]
+double check180(double angle/*РІ РіСЂР°Рґ*/)
 {
     if(angle>180.0) angle+=-2.0*180.0;
     else if(angle<-180.0)angle+=2.0*180.0;
     return angle;
 }
-//! проверка выхода за [0;-360]
-double check360(double angle/*в град.*/)
+//! РїСЂРѕРІРµСЂРєР° РІС‹С…РѕРґР° Р·Р° [0;-360]
+double check360(double angle/*РІ РіСЂР°Рґ.*/)
 {
     if(angle>(2.0*180.0)) angle-=2.0*180.0;
     else if(angle<0.0)angle+=2.0*180.0;
@@ -495,18 +495,18 @@ double kursToPsi(double kurs)
     return psi ;
 }
 
-//! преобразование из земной СК в горизонтированную самолетную СК
+//! РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РёР· Р·РµРјРЅРѕР№ РЎРљ РІ РіРѕСЂРёР·РѕРЅС‚РёСЂРѕРІР°РЅРЅСѓСЋ СЃР°РјРѕР»РµС‚РЅСѓСЋ РЎРљ
 void convertEarthToGorizontAircraft(glm::vec3 inAircraft,
                                     glm::mat3 matrixPsi,
                                     glm::vec3 inPoint,
                                     glm::vec3 &outPointGor)
 {
-    //! относительно самолета
+    //! РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃР°РјРѕР»РµС‚Р°
     outPointGor=(inPoint-inAircraft)*matrixPsi;
     //outPointGor=matrixPsi*outPointGor;
 }
 
-//! преобразование из горизонтированной самолетной СК в земную СК
+//! РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РёР· РіРѕСЂРёР·РѕРЅС‚РёСЂРѕРІР°РЅРЅРѕР№ СЃР°РјРѕР»РµС‚РЅРѕР№ РЎРљ РІ Р·РµРјРЅСѓСЋ РЎРљ
 void convertGorizontAircraftToEarth(glm::vec3 inPointGor,
                                     glm::vec3 inAircraft,
                                     glm::mat3 matrixPsi,
@@ -520,7 +520,7 @@ void convertGorizontAircraftToEarth(glm::vec3 inPointGor,
 {
     outPointEarth=inPointGor*glm::transpose(matrixPsi);
 }
-//! обертка преобразование географических в декартовые
+//! РѕР±РµСЂС‚РєР° РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РіРµРѕРіСЂР°С„РёС‡РµСЃРєРёС… РІ РґРµРєР°СЂС‚РѕРІС‹Рµ
 void convertGeoToDekart(double lambda0,double fi0,
                         double lambda,double fi,
                         double &x,double &z)
@@ -541,7 +541,7 @@ void convertGeoToDekart(double lambda0,double fi0,
 #endif
 }
 
-//! обертка преобразование географических в декартовые
+//! РѕР±РµСЂС‚РєР° РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РіРµРѕРіСЂР°С„РёС‡РµСЃРєРёС… РІ РґРµРєР°СЂС‚РѕРІС‹Рµ
 void convertDekartToGeo(double lambda0,double fi0,
                         double x,double z,
                         double &lambda,double &fi)
@@ -574,7 +574,7 @@ void convertDekartToGeo(double lambda0,double fi0,
 #endif
 }
 
-//! Преобразование сферических в декартовы
+//! РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ СЃС„РµСЂРёС‡РµСЃРєРёС… РІ РґРµРєР°СЂС‚РѕРІС‹
 void convertSphereToDekart(double lambda0,double fi0,
                            double lambda,double fi,
                            double &x,double &z)
@@ -645,12 +645,12 @@ void convertSphereToDekart(double lambda0,double fi0,
 
 }
 
-//! Преобразование декартовых в сферические
-//! положение стартовой СК относительно земной СК
+//! РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РґРµРєР°СЂС‚РѕРІС‹С… РІ СЃС„РµСЂРёС‡РµСЃРєРёРµ
+//! РїРѕР»РѕР¶РµРЅРёРµ СЃС‚Р°СЂС‚РѕРІРѕР№ РЎРљ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·РµРјРЅРѕР№ РЎРљ
 //!                                             -lambda
 //!                                             -fi
 
-//! Декартовы координаты объекта относительно стартовой СК
+//! Р”РµРєР°СЂС‚РѕРІС‹ РєРѕРѕСЂРґРёРЅР°С‚С‹ РѕР±СЉРµРєС‚Р° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃС‚Р°СЂС‚РѕРІРѕР№ РЎРљ
 //!                                             -x
 //!                                             -z
 void convertDekartToSphere(double lambda0,double fi0,
@@ -766,7 +766,7 @@ void sgfToEarthDirectionVec(TAngle inAngleSGF,glm::vec3 inAircraft,glm::mat3 &in
     matrixTau[2][1]=0.0;
     matrixTau[2][2]=1.0;
 
-    //! результирующая матрица поворота
+    //! СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰Р°СЏ РјР°С‚СЂРёС†Р° РїРѕРІРѕСЂРѕС‚Р°
     glm::mat3 matrixResultRotate;
     glm::mat3 tempMatrix;
 
@@ -790,7 +790,7 @@ void sgfToEarthDirectionVec(TAngle inAngleSGF,glm::vec3 inAircraft,glm::mat3 &in
     outDirectionVec->z=D0zg;
 }
 
-//! преобразование точки(в земной системе кординат) в координаты КАИ(два угла относительно строительной оси)
+//! РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ С‚РѕС‡РєРё(РІ Р·РµРјРЅРѕР№ СЃРёСЃС‚РµРјРµ РєРѕСЂРґРёРЅР°С‚) РІ РєРѕРѕСЂРґРёРЅР°С‚С‹ РљРђР(РґРІР° СѓРіР»Р° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃС‚СЂРѕРёС‚РµР»СЊРЅРѕР№ РѕСЃРё)
 void earthToSGF(const glm::vec3 &inCoord,const glm::vec3 &inAircraft, const glm::mat3 &inMatrixAircraft,  TAngle *outAngleSGF)
 {
     double Dxg,Dyg,Dzg;
@@ -799,7 +799,7 @@ void earthToSGF(const glm::vec3 &inCoord,const glm::vec3 &inAircraft, const glm:
     Dyg=(inCoord.y)-(inAircraft.y);
     Dzg=(inCoord.z)-(inAircraft.z);
 
-    //! Находим компоненты вектора D  относительно связанной системы координат
+    //! РќР°С…РѕРґРёРј РєРѕРјРїРѕРЅРµРЅС‚С‹ РІРµРєС‚РѕСЂР° D  РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃРІСЏР·Р°РЅРЅРѕР№ СЃРёСЃС‚РµРјС‹ РєРѕРѕСЂРґРёРЅР°С‚
     double Dx1,Dy1,Dz1;
     Dx1=Dxg*inMatrixAircraft[0][0]+Dyg*inMatrixAircraft[0][1]+Dzg*inMatrixAircraft[0][2];
     Dy1=Dxg*inMatrixAircraft[1][0]+Dyg*inMatrixAircraft[1][1]+Dzg*inMatrixAircraft[1][2];
@@ -815,7 +815,7 @@ void earthToSGF(const glm::vec3 &inCoord,const glm::vec3 &inAircraft, const glm:
     Dz1=Dxg*inMatrixAircraft.x[0][2]+Dyg*inMatrixAircraft.x[1][2]+Dzg*inMatrixAircraft.x[2][2];*/
 
 
-    //! Нормируем вектор D, т.е. и находим единичный вектор D0;
+    //! РќРѕСЂРјРёСЂСѓРµРј РІРµРєС‚РѕСЂ D, С‚.Рµ. Рё РЅР°С…РѕРґРёРј РµРґРёРЅРёС‡РЅС‹Р№ РІРµРєС‚РѕСЂ D0;
     double length=sqrt(Dx1*Dx1+Dy1*Dy1+Dz1*Dz1);
 
     double D0x1,D0y1,D0z1;
@@ -823,7 +823,7 @@ void earthToSGF(const glm::vec3 &inCoord,const glm::vec3 &inAircraft, const glm:
     D0y1=Dy1/length;
     D0z1=Dz1/length;
     //double d=D0x1*D0x1+D0y1*D0y1+D0z1*D0z1;
-    //Находим выражения компонент единичного вектора   через углы sigma, tau
+    //РќР°С…РѕРґРёРј РІС‹СЂР°Р¶РµРЅРёСЏ РєРѕРјРїРѕРЅРµРЅС‚ РµРґРёРЅРёС‡РЅРѕРіРѕ РІРµРєС‚РѕСЂР°   С‡РµСЂРµР· СѓРіР»С‹ sigma, tau
 
     double sigma,tau;
 
@@ -838,7 +838,7 @@ double dTo(glm::vec3 &vecBegin,glm::vec3 &vecEnd)
 {
     return (glm::length(vecEnd)-glm::length(vecBegin));
 }
-//! преобразование двух углов(относительно СГФ) в прямую заданную параметрическим способом
+//! РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РґРІСѓС… СѓРіР»РѕРІ(РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РЎР“Р¤) РІ РїСЂСЏРјСѓСЋ Р·Р°РґР°РЅРЅСѓСЋ РїР°СЂР°РјРµС‚СЂРёС‡РµСЃРєРёРј СЃРїРѕСЃРѕР±РѕРј
 void sgfToEarth(const TAngle &inAngleSGF,const glm::vec3 &inAircraft,const glm::mat3 &inMatrixAircraft,const double &dH,glm::vec3 *outCoord)
 {
     //===================================================
@@ -869,7 +869,7 @@ void sgfToEarth(const TAngle &inAngleSGF,const glm::vec3 &inAircraft,const glm::
     matrixTau[2][1]=0.0;
     matrixTau[2][2]=1.0;
 
-    //! результирующая матрица поворота
+    //! СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰Р°СЏ РјР°С‚СЂРёС†Р° РїРѕРІРѕСЂРѕС‚Р°
     glm::mat3 matrixResultRotate;
     glm::mat3 tempMatrix;
 
@@ -937,7 +937,7 @@ glm::mat3 calcTAngleMatrix(TAngle angle)
     matrixTau[2][1]=0.0;
     matrixTau[2][2]=1.0;
 
-    //! результирующая матрица поворота
+    //! СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰Р°СЏ РјР°С‚СЂРёС†Р° РїРѕРІРѕСЂРѕС‚Р°
 
     glm::mat3 tempMatrix;
 
@@ -945,7 +945,7 @@ glm::mat3 calcTAngleMatrix(TAngle angle)
     tempMatrix=matrixTau*matrixSigma;
     return tempMatrix;
 }
-//! чтение данных в 2D таблицу
+//! С‡С‚РµРЅРёРµ РґР°РЅРЅС‹С… РІ 2D С‚Р°Р±Р»РёС†Сѓ
 void readDataToMatrix(const QDomElement& root, const QString& nameMatrix,TTable2D &pM)
 {
     QDomElement ele=root.firstChildElement(nameMatrix);
@@ -970,7 +970,7 @@ void readDataToMatrix(const QDomElement& root, const QString& nameMatrix,TTable2
         indexRow++;
     }while(row.isNull()==false);
 }
-//! чтение данных в 2D таблицу
+//! С‡С‚РµРЅРёРµ РґР°РЅРЅС‹С… РІ 2D С‚Р°Р±Р»РёС†Сѓ
 void readDataToVector(const QDomElement& root, const QString& nameVector,TTable1D &pM)
 {
     QDomElement ele=root.firstChildElement(nameVector);
@@ -995,7 +995,7 @@ void readDataToVector(const QDomElement& root, const QString& nameVector,TTable1
         indexRow++;
     }while(indexRow<2);
 }
-//! Апериодический фильтр
+//! РђРїРµСЂРёРѕРґРёС‡РµСЃРєРёР№ С„РёР»СЊС‚СЂ
 FilterAperiodic::FilterAperiodic(double valueStart_,double k_,double step_,double maxValue_, double minValue_)
 {
     k=k_;
@@ -1007,12 +1007,12 @@ FilterAperiodic::FilterAperiodic(double valueStart_,double k_,double step_,doubl
     valueCurrent=valueStart;
     delta_=fabs(valueCurrent-value);
 }
-//! сброс фильтра (задать текущее значение фильтра)
+//! СЃР±СЂРѕСЃ С„РёР»СЊС‚СЂР° (Р·Р°РґР°С‚СЊ С‚РµРєСѓС‰РµРµ Р·РЅР°С‡РµРЅРёРµ С„РёР»СЊС‚СЂР°)
 void FilterAperiodic::resetFilter(double valueStart_)
 {
     value=valueStart_;
 }
-//! возврат текущего значения фильтра
+//! РІРѕР·РІСЂР°С‚ С‚РµРєСѓС‰РµРіРѕ Р·РЅР°С‡РµРЅРёСЏ С„РёР»СЊС‚СЂР°
 double FilterAperiodic::filterValue(double valueCurr)
 {
     value=value+(k*cutValues(valueCurr-value)*step);
@@ -1023,7 +1023,7 @@ void FilterAperiodic::setK(double k_)
 {
     k=k_;
 }
-//! обновление фильтра(с заданной частотой)
+//! РѕР±РЅРѕРІР»РµРЅРёРµ С„РёР»СЊС‚СЂР°(СЃ Р·Р°РґР°РЅРЅРѕР№ С‡Р°СЃС‚РѕС‚РѕР№)
 void FilterAperiodic::refresh()
 {
     delta_=fabs(valueCurrent-value);
@@ -1035,25 +1035,25 @@ void FilterAperiodic::refresh()
         value=limitMinMax(value,minValue,maxValue);
     }
 }
-//! установка текущего значения фильтра
+//! СѓСЃС‚Р°РЅРѕРІРєР° С‚РµРєСѓС‰РµРіРѕ Р·РЅР°С‡РµРЅРёСЏ С„РёР»СЊС‚СЂР°
 double FilterAperiodic::setFilterValue(double v)
 {
     valueCurrent=v;
     return value;
 }
-//! Апериодический фильтр
+//! РђРїРµСЂРёРѕРґРёС‡РµСЃРєРёР№ С„РёР»СЊС‚СЂ
 FiltersAperiodicAngle::FiltersAperiodicAngle(TAngle valueStart_,double k_,double step_,double maxValue_, double minValue_)
 {
     filterSigma=new FilterAperiodic(valueStart_.sigma,k_,step_,maxValue_,minValue_);
     filterTau=new FilterAperiodic(valueStart_.tau,k_,step_,maxValue_,minValue_);
 }
-//! сброс фильтра
+//! СЃР±СЂРѕСЃ С„РёР»СЊС‚СЂР°
 void FiltersAperiodicAngle::resetFilter(TAngle valueStart_)
 {
 
 }
 
-//! установка текущего значения фильтра
+//! СѓСЃС‚Р°РЅРѕРІРєР° С‚РµРєСѓС‰РµРіРѕ Р·РЅР°С‡РµРЅРёСЏ С„РёР»СЊС‚СЂР°
 TAngle FiltersAperiodicAngle::filterValue(TAngle valueCurr)
 {
     TAngle angl(0.0,0.0);
@@ -1064,33 +1064,33 @@ TAngle FiltersAperiodicAngle::filterValue(TAngle valueCurr)
 
 }
 
-//! обновление фильтра(с заданной частотой)
+//! РѕР±РЅРѕРІР»РµРЅРёРµ С„РёР»СЊС‚СЂР°(СЃ Р·Р°РґР°РЅРЅРѕР№ С‡Р°СЃС‚РѕС‚РѕР№)
 void FiltersAperiodicAngle::refresh()
 {
 
 }
 
-//! возврат текущего значения фильтра
+//! РІРѕР·РІСЂР°С‚ С‚РµРєСѓС‰РµРіРѕ Р·РЅР°С‡РµРЅРёСЏ С„РёР»СЊС‚СЂР°
 TAngle FiltersAperiodicAngle::setFilterValue(TAngle currentValue)
 {
     return currentValue;
 }
 
-//! задать коэффициент при звене
+//! Р·Р°РґР°С‚СЊ РєРѕСЌС„С„РёС†РёРµРЅС‚ РїСЂРё Р·РІРµРЅРµ
 void FiltersAperiodicAngle::setK(double k_)
 {
     filterSigma->setK(k_);
     filterTau->setK(k_);
 }
-////////////////РАБОТА С БИТАМИ
+////////////////Р РђР‘РћРўРђ РЎ Р‘РРўРђРњР
 //=============================================================================
-//! чтение группы битов, нумерация битов с 0...31
-//! hBit старший бит(слева)
-//! lBit младший бит(справо)
-//! value32 число из которого читаются биты с [hBit31 по lBit0] включительно
-template <class Type> Type readCode0(Type value31,  /*число из которого читается код*/
-                                     int hBit31,    /*старший бит(hight bit)*/
-                                     int lBit0)     /*младший бит(low bit)*/
+//! С‡С‚РµРЅРёРµ РіСЂСѓРїРїС‹ Р±РёС‚РѕРІ, РЅСѓРјРµСЂР°С†РёСЏ Р±РёС‚РѕРІ СЃ 0...31
+//! hBit СЃС‚Р°СЂС€РёР№ Р±РёС‚(СЃР»РµРІР°)
+//! lBit РјР»Р°РґС€РёР№ Р±РёС‚(СЃРїСЂР°РІРѕ)
+//! value32 С‡РёСЃР»Рѕ РёР· РєРѕС‚РѕСЂРѕРіРѕ С‡РёС‚Р°СЋС‚СЃСЏ Р±РёС‚С‹ СЃ [hBit31 РїРѕ lBit0] РІРєР»СЋС‡РёС‚РµР»СЊРЅРѕ
+template <class Type> Type readCode0(Type value31,  /*С‡РёСЃР»Рѕ РёР· РєРѕС‚РѕСЂРѕРіРѕ С‡РёС‚Р°РµС‚СЃСЏ РєРѕРґ*/
+                                     int hBit31,    /*СЃС‚Р°СЂС€РёР№ Р±РёС‚(hight bit)*/
+                                     int lBit0)     /*РјР»Р°РґС€РёР№ Р±РёС‚(low bit)*/
 {
     Type tempValue=0;
     if(hBit31<lBit0)
@@ -1107,13 +1107,13 @@ template <class Type> Type readCode0(Type value31,  /*число из которого читается
     }
     return ((((value31)&(tempValue<<(lBit0))))>>(lBit0));
 }
-//! чтение битов, нумерация битов с 1...32
-//! hBit старший бит(слева)
-//! lBit младший бит(справо)
-//! value32 число из которого читаются биты с [hBit32 по lBit1] включительно
-template <class Type> Type readCode(Type value32,/*число из которого читается код*/
-                                    int hBit32,/*старший бит(hight bit)*/
-                                    int lBit1)/*младший бит(low bit)*/
+//! С‡С‚РµРЅРёРµ Р±РёС‚РѕРІ, РЅСѓРјРµСЂР°С†РёСЏ Р±РёС‚РѕРІ СЃ 1...32
+//! hBit СЃС‚Р°СЂС€РёР№ Р±РёС‚(СЃР»РµРІР°)
+//! lBit РјР»Р°РґС€РёР№ Р±РёС‚(СЃРїСЂР°РІРѕ)
+//! value32 С‡РёСЃР»Рѕ РёР· РєРѕС‚РѕСЂРѕРіРѕ С‡РёС‚Р°СЋС‚СЃСЏ Р±РёС‚С‹ СЃ [hBit32 РїРѕ lBit1] РІРєР»СЋС‡РёС‚РµР»СЊРЅРѕ
+template <class Type> Type readCode(Type value32,/*С‡РёСЃР»Рѕ РёР· РєРѕС‚РѕСЂРѕРіРѕ С‡РёС‚Р°РµС‚СЃСЏ РєРѕРґ*/
+                                    int hBit32,/*СЃС‚Р°СЂС€РёР№ Р±РёС‚(hight bit)*/
+                                    int lBit1)/*РјР»Р°РґС€РёР№ Р±РёС‚(low bit)*/
 {
     hBit32--;
     lBit1--;
@@ -1121,17 +1121,17 @@ template <class Type> Type readCode(Type value32,/*число из которого читается ко
     return readCode0(value32,hBit32,lBit1);
 }
 //=============================================================================
-//! чтение бита, нумерация битов с 0...31
-template <class Type> Type rBit0(Type value31,  /*число из которого читается бит*/
-                                    int bit)       /*позиция бита (31...0)*/
+//! С‡С‚РµРЅРёРµ Р±РёС‚Р°, РЅСѓРјРµСЂР°С†РёСЏ Р±РёС‚РѕРІ СЃ 0...31
+template <class Type> Type rBit0(Type value31,  /*С‡РёСЃР»Рѕ РёР· РєРѕС‚РѕСЂРѕРіРѕ С‡РёС‚Р°РµС‚СЃСЏ Р±РёС‚*/
+                                    int bit)       /*РїРѕР·РёС†РёСЏ Р±РёС‚Р° (31...0)*/
 {
     return readCode0(value31,bit,bit);
 }
 //===============================================================================================
-//! запись кода образованного битами [hBit31from,lBit0from]
-//! из value32_from в value32_to в биты с позицией [hBit31to,lBit0to] с учетом, что нумерация битов стандартная(Intel)
-//! [c 31(старший),по 0(младший)] бит
-//! если интервалы [hBit31from,lBit0from] и [hBit31to,lBit0to] не совпадают, то.....
+//! Р·Р°РїРёСЃСЊ РєРѕРґР° РѕР±СЂР°Р·РѕРІР°РЅРЅРѕРіРѕ Р±РёС‚Р°РјРё [hBit31from,lBit0from]
+//! РёР· value32_from РІ value32_to РІ Р±РёС‚С‹ СЃ РїРѕР·РёС†РёРµР№ [hBit31to,lBit0to] СЃ СѓС‡РµС‚РѕРј, С‡С‚Рѕ РЅСѓРјРµСЂР°С†РёСЏ Р±РёС‚РѕРІ СЃС‚Р°РЅРґР°СЂС‚РЅР°СЏ(Intel)
+//! [c 31(СЃС‚Р°СЂС€РёР№),РїРѕ 0(РјР»Р°РґС€РёР№)] Р±РёС‚
+//! РµСЃР»Рё РёРЅС‚РµСЂРІР°Р»С‹ [hBit31from,lBit0from] Рё [hBit31to,lBit0to] РЅРµ СЃРѕРІРїР°РґР°СЋС‚, С‚Рѕ.....
 template <class Type> void writeCode(Type &value32_to,
                                      int hBit31to,
                                      int lBit0to,
@@ -1146,9 +1146,9 @@ template <class Type> void writeCode(Type &value32_to,
     value32_from=(value32_from & mask_from)<<lBit0to;
     value32_to=(value32_to & ~mask_to) | value32_from;
 }
-//! запись кода образованного битами [hBit,lBit]
-//! из value32_from в value32_to с учетом, что нумерация битов стандартная(Intel)
-//! [c 31(старший),по 0(младший)] бит
+//! Р·Р°РїРёСЃСЊ РєРѕРґР° РѕР±СЂР°Р·РѕРІР°РЅРЅРѕРіРѕ Р±РёС‚Р°РјРё [hBit,lBit]
+//! РёР· value32_from РІ value32_to СЃ СѓС‡РµС‚РѕРј, С‡С‚Рѕ РЅСѓРјРµСЂР°С†РёСЏ Р±РёС‚РѕРІ СЃС‚Р°РЅРґР°СЂС‚РЅР°СЏ(Intel)
+//! [c 31(СЃС‚Р°СЂС€РёР№),РїРѕ 0(РјР»Р°РґС€РёР№)] Р±РёС‚
 template <class Type> void writeCode(Type &value32_to,
                                      Type value32_from,
                                      int hBit31,
@@ -1159,7 +1159,7 @@ template <class Type> void writeCode(Type &value32_to,
     value32_from=(value32_from<<(lBit0)) & mask;
     value32_to=(value32_to & ~mask) | value32_from;
 }
-//! нумерация 32..1
+//! РЅСѓРјРµСЂР°С†РёСЏ 32..1
 template <class Type> void writeCode32(Type &value32_to,
                                        Type value32_from,
                                        int hBit32,
@@ -1173,13 +1173,13 @@ template <class Type> void writeCode32(Type &value32_to,
     value32_to=(value32_to & mask) | value32_from;
 }
 
-//! запись кода образованного битами [hBit,lBit]
-//! из value32_from в value32_to с учетом, что нумерация битов
-//! подчиняется нумерации МКИО; [c 19,по 4] бит
-template <class Type> void writeCodeMKIO(Type &value32_to, /*в число*/
-                                         Type value32_from,/*из числа*/
-                                         int hBit,/*с старшего бита(включительно)*/
-                                         int lBit)/*по младший бит (включительно)*/
+//! Р·Р°РїРёСЃСЊ РєРѕРґР° РѕР±СЂР°Р·РѕРІР°РЅРЅРѕРіРѕ Р±РёС‚Р°РјРё [hBit,lBit]
+//! РёР· value32_from РІ value32_to СЃ СѓС‡РµС‚РѕРј, С‡С‚Рѕ РЅСѓРјРµСЂР°С†РёСЏ Р±РёС‚РѕРІ
+//! РїРѕРґС‡РёРЅСЏРµС‚СЃСЏ РЅСѓРјРµСЂР°С†РёРё РњРљРРћ; [c 19,РїРѕ 4] Р±РёС‚
+template <class Type> void writeCodeMKIO(Type &value32_to, /*РІ С‡РёСЃР»Рѕ*/
+                                         Type value32_from,/*РёР· С‡РёСЃР»Р°*/
+                                         int hBit,/*СЃ СЃС‚Р°СЂС€РµРіРѕ Р±РёС‚Р°(РІРєР»СЋС‡РёС‚РµР»СЊРЅРѕ)*/
+                                         int lBit)/*РїРѕ РјР»Р°РґС€РёР№ Р±РёС‚ (РІРєР»СЋС‡РёС‚РµР»СЊРЅРѕ)*/
 {
     hBit=19-hBit;
     lBit=19-lBit;

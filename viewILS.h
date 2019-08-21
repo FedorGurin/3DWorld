@@ -7,22 +7,22 @@
 #include "Vector3D_D.h"
 #include "visudp.h"
 
-//! класс для отображения ИЛС
+//! РєР»Р°СЃСЃ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РР›РЎ
 class ViewILS:public QGLViewer
 {
 public:
     ViewILS(VisUDP *v_);
     void init();
 
-    //! выбор объекта
-    void setCameraToObject(TSolidObj *obj_)
+    //! РІС‹Р±РѕСЂ РѕР±СЉРµРєС‚Р°
+    void setCameraToObject(TVisSimple *obj_)
     {
         obj=obj_;
     }
     //void draw();
 private:
     VisUDP *vis;
-    TSolidObj *obj;
+    TVisSimple *obj;
 };
 
 #endif // VIEWILS_H
