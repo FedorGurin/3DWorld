@@ -66,7 +66,9 @@ typedef struct TVisSimple
     int id;
     int code;
     double time;
-    glm::vec3 c_g;
+    double cg_x;
+    double cg_y;
+    double cg_z;
 
     double psi;
     double gamma;
@@ -75,15 +77,32 @@ typedef struct TVisSimple
     double alfa;
     double beta;
 
-    glm::vec3 n_c;
+    double nx;
+    double ny;
+    double nz;
+
     double vc;
 
     double fi;
     double unt;
 
-    glm::vec3 v_g;
-    glm::vec3 v_c;
-    glm::vec3 omega;
+    double fi0_geo;
+    double lam0_geo;
+
+    double fi_geo;
+    double lam_geo;
+
+    double vg_x;
+    double vg_y;
+    double vg_z;
+
+    double vc_x;
+    double vc_y;
+    double vc_z;
+
+    double omega_x;
+    double omega_y;
+    double omega_z;
 }TVisSimple;
 typedef struct
 {

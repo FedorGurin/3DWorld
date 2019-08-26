@@ -46,8 +46,8 @@ view3DArea::view3DArea():QGLViewer()
     setting = new FormSettings;
     connect(dialog,SIGNAL(accepted()),this,SLOT(slotAccepted()));
 
-    lam0    = 57.0;
-    fi0     = 33.0;
+    lam0    = gradToRad * 57.0;
+    fi0     = gradToRad * 33.0;
     rotMap  = 90.0;
 
     offsetMapX = 0.0;
@@ -246,8 +246,8 @@ void view3DArea::readAllModels()
 {
     list3DObj.resize(8);
     //! коды известных объектов
-    list3DObj[0].code=105;
-    list3DObj[1].code=101;
+    list3DObj[0].code=105;//конус
+    list3DObj[1].code=101;//f15
     list3DObj[2].code=102;
     list3DObj[3].code=103;
     list3DObj[4].code=104;
@@ -259,12 +259,14 @@ void view3DArea::readAllModels()
 
 
     // Load .obj File
-    bool loadout = list3DObj[0].file.LoadFile("./x.obj");
+    bool loadout = list3DObj[0].file.LoadFile("./cone.obj");
+    list3DObj[1].file.LoadFile("./f15.obj");
+    list3DObj[2].file.LoadFile("./f15.obj");
 
     if(loadout == false)
-        std::cout<<"fail\n";
+        std::cout<<"fail" << std::endl;
     else
-        std::cout<<"ok\n";
+        std::cout<<"ok\n" << std::endl;
 
     //! чтение моделей из 3ds файлов
     //loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
@@ -323,7 +325,7 @@ void view3DArea::draw()
 
     if(cameraToThisObj != nullptr)
     {
-        d=6371000.0*atan(sqrt(cameraToThisObj->c_g.y*(2*6371000.0+cameraToThisObj->c_g.y))/6371000.0);
+        d = 6371000.0*atan(sqrt(cameraToThisObj->cg_y*(2*6371000.0+cameraToThisObj->cg_y))/6371000.0);
         setSceneRadius(d);
     }else
     {
@@ -617,19 +619,19 @@ void view3DArea::animate()
 
 
         //! эти параметры нужно прогнать через блок интерполяции
-        solid->c_g.x = linearInterpolation(globalTime,
+        solid->cg_x = linearInterpolation(globalTime,
                                       rows[index].x_g,
                                       rows[index-1].x_g,
                                       rows[index].time,
                                       rows[index-1].time);
 
-        solid->c_g.y = linearInterpolation(globalTime,
+        solid->cg_y = linearInterpolation(globalTime,
                                       rows[index].y_g,
                                       rows[index-1].y_g,
                                       rows[index].time,
                                       rows[index-1].time);
 
-        solid->c_g.z = linearInterpolation(globalTime,
+        solid->cg_z = linearInterpolation(globalTime,
                                       rows[index].z_g,
                                       rows[index-1].z_g,
                                       rows[index].time,
@@ -654,9 +656,9 @@ void view3DArea::animate()
                                          rows[index-1].time);
 
         //! заполнение траектории
-        trs[0].x.push_back(solid->c_g.x);
-        trs[0].y.push_back(solid->c_g.y);
-        trs[0].z.push_back(solid->c_g.z);
+        trs[0].x.push_back(solid->cg_x);
+        trs[0].y.push_back(solid->cg_y);
+        trs[0].z.push_back(solid->cg_z);
         //! цвет траектории
         trs[0].r.push_back(rows[index].r);
         trs[0].g.push_back(rows[index].g);
@@ -671,9 +673,9 @@ void view3DArea::animate()
             for(auto i:*list)
             {
                 //! координаты объектов
-                trs[j].x.push_back(i.c_g.x);
-                trs[j].y.push_back(i.c_g.y);
-                trs[j].z.push_back(i.c_g.z);
+                trs[j].x.push_back(i.cg_x);
+                trs[j].y.push_back(i.cg_y);
+                trs[j].z.push_back(i.cg_z);
                 //! цвет траектории
                 trs[j].r.push_back(80);
                 trs[j].g.push_back(223);
@@ -790,14 +792,30 @@ void view3DArea::drawSolidObjects()
 //                       solid->gamma,
 //                       solid->tan);
 
-            drawObject(0,
-                       0,
-                       0,
-                       0,
-                       0,
-                       0,
-                       0);
-//        }
+        QVector<TVisSimple> *list=net.getObjects();
+        for(int i = 0;i < list->size();i++)
+        {
+            TVisSimple *solid = &((*list)[i]);
+            objl::Loader *model = 0;
+            if(findObjByCode(solid->code) != 0)
+                      model = &(findObjByCode(solid->code)->file);
+            if(model != 0)
+            {
+                convertSphereToDekart(solid->lam0_geo,
+                                      solid->fi0_geo,
+                                      solid->lam_geo,
+                                      solid->fi_geo,
+                                      solid->cg_x,
+                                      solid->cg_z);
+                drawObject(model,
+                           solid->cg_x,
+                           solid->cg_y,
+                           solid->cg_z,
+                           solid->psi,
+                           solid->gamma,
+                           solid->tan);
+            }
+        }
 
 //    }
 }
@@ -829,12 +847,10 @@ void view3DArea::drawObject(objl::Loader *obj,
     glLightfv(GL_LIGHT0, GL_DIFFUSE, difLight);
     glLightfv(GL_LIGHT0, GL_SPECULAR, specLight);
 
-
-
-    glScalef(100,100,100);
-//    glTranslatef(pos_x,
-//                 pos_y,
-//                 pos_z);
+    glTranslatef(pos_x,
+                 pos_y,
+                 pos_z);
+    glScalef(10,10,10);
 
     glRotated(radianToGrad(psi_rad),0.0,1.0,0.0);
     glRotated(radianToGrad(tan_rad),0.0,0.0,1.0);
@@ -854,7 +870,7 @@ void view3DArea::drawObject(objl::Loader *obj,
 //    }
 //    glEnd();
 
-    for(auto i: list3DObj[0].file.LoadedMeshes)
+    for(auto i: obj->LoadedMeshes)
     {
         // Copy one of the loaded meshes to be our current mesh
         objl::Mesh curMesh = i;
@@ -990,9 +1006,9 @@ void view3DArea::drawSymbol()
         //TVisSimple *solid=&((*list)[i]);
         if(i.id != cameraToThisObj->id)
         {
-            glm::vec3 vecTarget(i.c_g.x,
-                                i.c_g.y,
-                                i.c_g.z);
+            glm::vec3 vecTarget(i.cg_x,
+                                i.cg_y,
+                                i.cg_z);
             TAngle angle;
             earthToSGF(vecTarget,vecCameraInGeoSys,m,&angle);
 
@@ -1518,9 +1534,9 @@ void view3DArea::cameraToObject()
         return;
 
     glm::mat3 matr=signleCalcMatrix(cameraToThisObj);
-    glm::vec3 vec1(cameraToThisObj->c_g.x,
-                   cameraToThisObj->c_g.y,
-                   cameraToThisObj->c_g.z);
+    glm::vec3 vec1(cameraToThisObj->cg_x,
+                   cameraToThisObj->cg_y,
+                   cameraToThisObj->cg_z);
 
     if(cameraUp==true)
     {
@@ -1548,27 +1564,27 @@ void view3DArea::cameraToObject()
 
     curAlfa=    radToGrad * cameraToThisObj->alfa;
     curBeta=    radToGrad * cameraToThisObj->beta;
-    curVx_g=      cameraToThisObj->v_g.x;
-    curVy_g=      cameraToThisObj->v_g.y;
-    curVz_g=      cameraToThisObj->v_g.z;
+    curVx_g=      cameraToThisObj->vg_x;
+    curVy_g=      cameraToThisObj->vg_y;
+    curVz_g=      cameraToThisObj->vg_z;
 
-    curVx_c=    cameraToThisObj->v_c.x;
-    curVy_c=    cameraToThisObj->v_c.y;
-    curVz_c=    cameraToThisObj->v_c.z;
+    curVx_c=    cameraToThisObj->vc_x;
+    curVy_c=    cameraToThisObj->vc_y;
+    curVz_c=    cameraToThisObj->vc_z;
 
-    curNxa=     cameraToThisObj->n_c.x;
-    curNya=     cameraToThisObj->n_c.y;
-    curNza=     cameraToThisObj->n_c.z;
+    curNxa=     cameraToThisObj->nx;
+    curNya=     cameraToThisObj->ny;
+    curNza=     cameraToThisObj->nz;
 
-    curWx=     radianToGrad(cameraToThisObj->omega.x);
-    curWy=     radianToGrad(cameraToThisObj->omega.y);
-    curWz=     radianToGrad(cameraToThisObj->omega.z);
+    curWx=     radianToGrad(cameraToThisObj->omega_x);
+    curWy=     radianToGrad(cameraToThisObj->omega_y);
+    curWz=     radianToGrad(cameraToThisObj->omega_z);
 
 
     curV = cameraToThisObj->vc;
-    curY = cameraToThisObj->c_g.y;
-    curX = cameraToThisObj->c_g.x;
-    curZ = cameraToThisObj->c_g.z;
+    curY = cameraToThisObj->cg_y;
+    curX = cameraToThisObj->cg_x;
+    curZ = cameraToThisObj->cg_z;
 
     curFi= radianToGrad(cameraToThisObj->fi);
     curUnt= radianToGrad(cameraToThisObj->unt);
