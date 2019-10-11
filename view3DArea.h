@@ -122,8 +122,8 @@ public:
     //! поиск времени на интервале
     int searchTimeInterval(double time);
     //! расчет результирующей матрицы поворота
-    glm::mat3 signleCalcMatrix(TVisSimple *solid);
-    glm::mat3 signleCalcMatrixPsi(TVisSimple *solid);
+    glm::mat3 signleCalcMatrix(TSendVehicleVisSimple *solid);
+    glm::mat3 signleCalcMatrixPsi(TSendVehicleVisSimple *solid);
     //! координаты камеры в СК цели
     glm::vec3 vecCameraInTargetSystem;
     glm::vec3 vecCameraInGeoSys;
@@ -144,7 +144,7 @@ private:
     //! управление ручкой
     TControlStick stick;
     //! рабочие параметры
-    TVisSimple sW;
+    TSendVehicleVisSimple sW;
     //! приращения к повороту камеры
     double dpsi_camera;
     double dteta_camera;
@@ -171,7 +171,7 @@ private:
     //! содержимое текстового файла(список строк)
     QVector<TDataRow> rows;
     //! текущий объект на котором установлена камера
-    TVisSimple *cameraToThisObj;
+    TSendVehicleVisSimple *cameraToThisObj;
     //! индекс объекта к которому привязана каера
     int cameraToObjIndex;
     //! признак отрисовки тумана

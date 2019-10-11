@@ -55,13 +55,15 @@ typedef struct
     TypeCommand com;
 }TCRequest;
 
+//! класс для приема данных по UDP
 class VisUDP:public QObject
 {
     Q_OBJECT;
 public:
     VisUDP();
 
-    QVector<TVisSimple> *getObjects()
+    //! список воздушных объектов
+    QVector<TSendVehicleVisSimple> *getObjects()
     {
         return &flightObjects;
     }
@@ -80,7 +82,7 @@ public:
     void sendData(TTypeHead type,char *buffer, int size);
     //! проверка наличия буфера для адаптера
     int testObjInList(unsigned uid);
-    void addToFlightObjList(TVisSimple body);
+    void addToFlightObjList(TSendVehicleVisSimple body);
     //! проверка datagram
     bool checkDatagrams();
     double synch_time;
@@ -108,7 +110,7 @@ private:
     TMRequest send_udp;
     //! графические объекты(если приходит объект уже с сущест. в списке id)
     //! то старый объект заменяется новым
-    QVector<TVisSimple> flightObjects;//! объекты который
+    QVector<TSendVehicleVisSimple> flightObjects;//! объекты воздушных целей
 
 };
 

@@ -613,8 +613,8 @@ void view3DArea::animate()
 
         int index = searchTimeInterval(globalTime);
         //! записываем параметры
-        QVector<TVisSimple> *list = net.getObjects();
-        TVisSimple *solid = &((*list)[0]);
+        QVector<TSendVehicleVisSimple> *list = net.getObjects();
+        TSendVehicleVisSimple *solid = &((*list)[0]);
         solid->code = rows[index].code;
 
 
@@ -668,7 +668,7 @@ void view3DArea::animate()
         if(div==DIVIDE)
         {
             div=0;
-            QVector<TVisSimple> *list = net.getObjects();
+            QVector<TSendVehicleVisSimple> *list = net.getObjects();
             int j = 0;
             for(auto i:*list)
             {
@@ -792,17 +792,18 @@ void view3DArea::drawSolidObjects()
 //                       solid->gamma,
 //                       solid->tan);
 
-        QVector<TVisSimple> *list=net.getObjects();
+        QVector<TSendVehicleVisSimple> *list = net.getObjects();
         for(int i = 0;i < list->size();i++)
         {
-            TVisSimple *solid = &((*list)[i]);
+            TSendVehicleVisSimple *solid = &((*list)[i]);
+            TSendVehicleVisSimple *solidCenter = &(list->first());
             objl::Loader *model = 0;
             if(findObjByCode(solid->code) != 0)
-                      model = &(findObjByCode(solid->code)->file);
+                model = &(findObjByCode(solid->code)->file);
             if(model != 0)
             {
-                convertSphereToDekart(solid->lam0_geo,
-                                      solid->fi0_geo,
+                convertSphereToDekart(solidCenter->lam0_geo,
+                                      solidCenter->fi0_geo,
                                       solid->lam_geo,
                                       solid->fi_geo,
                                       solid->cg_x,
@@ -1000,10 +1001,10 @@ void view3DArea::drawSymbol()
 {
     glm::mat3 m=signleCalcMatrix(cameraToThisObj);
 
-    QVector<TVisSimple> *list = net.getObjects();
+    QVector<TSendVehicleVisSimple> *list = net.getObjects();
     for(auto  i : *list)
     {
-        //TVisSimple *solid=&((*list)[i]);
+        //TSendVehicleVisSimple *solid=&((*list)[i]);
         if(i.id != cameraToThisObj->id)
         {
             glm::vec3 vecTarget(i.cg_x,
@@ -1430,7 +1431,7 @@ void view3DArea::setCameraToObject(int num)
 
     if(num>=0)
     {
-        QVector<TVisSimple> *list = net.getObjects();
+        QVector<TSendVehicleVisSimple> *list = net.getObjects();
 
         if(num<list->size())
         {
@@ -1455,7 +1456,7 @@ void view3DArea::slotReadRes()
     QSize s=this->size();
 
 }
-glm::mat3 view3DArea::signleCalcMatrixPsi(TVisSimple *solid)
+glm::mat3 view3DArea::signleCalcMatrixPsi(TSendVehicleVisSimple *solid)
 {
     double psi=solid->psi;
 
@@ -1476,7 +1477,7 @@ glm::mat3 view3DArea::signleCalcMatrixPsi(TVisSimple *solid)
     return matrixPsi1;
 }
 
-glm::mat3 view3DArea::signleCalcMatrix(TVisSimple *solid)
+glm::mat3 view3DArea::signleCalcMatrix(TSendVehicleVisSimple *solid)
 {
     double psi=solid->psi;
     double gamma=solid->gamma;

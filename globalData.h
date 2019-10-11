@@ -1,6 +1,7 @@
 #ifndef GLOBALDATA_H
 #define GLOBALDATA_H
 #include <glm/glm.hpp>
+#include <stdint.h>
 typedef struct
 {
     double time;
@@ -61,7 +62,8 @@ typedef struct
 
     int idManevr;
 }TVis;
-typedef struct TVisSimple
+
+typedef struct TSendVehicleVisSimple_
 {
     int id;
     int code;
@@ -69,6 +71,7 @@ typedef struct TVisSimple
     double cg_x;
     double cg_y;
     double cg_z;
+
 
     double psi;
     double gamma;
@@ -103,7 +106,72 @@ typedef struct TVisSimple
     double omega_x;
     double omega_y;
     double omega_z;
-}TVisSimple;
+}TSendVehicleVisSimple;
+typedef struct TSendArrayVisSimple_
+{
+    int id;
+    int code;
+    double time;
+
+    //! координаты опорной точки
+    double fi0_geo;
+    double lam0_geo;
+
+    //! кол-во элементов
+    uint8_t num;
+
+    typedef struct TGeoCoord_
+    {
+        double fi_geo;
+        double lam_geo;
+    }TGeoCoord;
+    //! список объектов элемента
+    TGeoCoord coord[256];
+}TSendArrayVisSimple;
+
+//typedef struct TSendVehicleVisSimple
+//{
+//    int id;
+//    int code;
+//    double time;
+//    double cg_x;
+//    double cg_y;
+//    double cg_z;
+
+//    double psi;
+//    double gamma;
+//    double tan;
+
+//    double alfa;
+//    double beta;
+
+//    double nx;
+//    double ny;
+//    double nz;
+
+//    double vc;
+
+//    double fi;
+//    double unt;
+
+//    double fi0_geo;
+//    double lam0_geo;
+
+//    double fi_geo;
+//    double lam_geo;
+
+//    double vg_x;
+//    double vg_y;
+//    double vg_z;
+
+//    double vc_x;
+//    double vc_y;
+//    double vc_z;
+
+//    double omega_x;
+//    double omega_y;
+//    double omega_z;
+//}TSendVehicleVisSimple;
 typedef struct
 {
     //! идентификатор объекта

@@ -15,14 +15,14 @@ public:
     void init();
 
     //! выбор объекта
-    void setCameraToObject(TVisSimple *obj_)
+    void setCameraToObject(TSendVehicleVisSimple *obj_)
     {
-        obj=obj_;
+        obj = obj_;
     }
     //void draw();
 private:
     VisUDP *vis;
-    TVisSimple *obj;
+    TSendVehicleVisSimple *obj;
 };
 
 #endif // VIEWILS_H

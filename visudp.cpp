@@ -33,7 +33,7 @@ bool VisUDP::checkDatagrams()
             QByteArray compBuf(reinterpret_cast<char* >(rec_udp.buffer),rec_udp.sizeBuf);
 
             //! преобразуем буфер в структуру
-            TVisSimple *solid = reinterpret_cast<TVisSimple* > (rec_udp.buffer);
+            TSendVehicleVisSimple *solid = reinterpret_cast<TSendVehicleVisSimple* > (rec_udp.buffer);
 
             /*if(rec_udp.compressed==1)
             {

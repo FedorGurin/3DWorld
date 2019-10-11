@@ -14,8 +14,7 @@ QT += gui\
     network \
     opengl \
     xml \
-    widgets \
-    svg
+    widgets
 
 #INCLUDEPATH += QGLViewer
 #INCLUDEPATH += libsX64
