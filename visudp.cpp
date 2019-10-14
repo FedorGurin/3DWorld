@@ -26,7 +26,7 @@ bool VisUDP::checkDatagrams()
         out.setVersion(QDataStream::Qt_4_6);
         //out.setByteOrder(QDataStream::BigEndian);
         //! обработка пакетов
-        if(head.typeRequest==PARAM_OBJ)
+        if(head.typeRequest == PARAM_OBJ)
         {
             //! чтение заголовка
             out.readRawData(reinterpret_cast<char* >(&rec_udp),head.size);
@@ -44,7 +44,7 @@ bool VisUDP::checkDatagrams()
                 TTrans3DWorld* solid_obj=(TTrans3DWorld*)(uncompBuf.data());
             }*/
 
-            int index = testObjInList(solid->id);
+            int index = testFlightObjInList(solid->id);
             if(index >= 0 )
             {
                 flightObjects[index] = *solid;
@@ -54,6 +54,35 @@ bool VisUDP::checkDatagrams()
                 flightObjects.push_back(*solid);
             }
             synch_time = solid->time;
+        }else if(head.typeRequest == PARAM_ARRAY)
+        {
+            //! чтение заголовка
+            out.readRawData(reinterpret_cast<char* >(&rec_udp),head.size);
+            QByteArray compBuf(reinterpret_cast<char* >(rec_udp.buffer),rec_udp.sizeBuf);
+
+            //! преобразуем буфер в структуру
+            TSendArrayVisSimple *arrayObj = reinterpret_cast<TSendArrayVisSimple* > (rec_udp.buffer);
+
+            /*if(rec_udp.compressed==1)
+            {
+                qDebug("find compress\n");
+                //! распаковать буфер
+                QByteArray compBuf(rec_udp.buffer,rec_udp.sizeBuf);
+                QByteArray uncompBuf=qUncompress(compBuf);
+                TTrans3DWorld* solid_obj=(TTrans3DWorld*)(uncompBuf.data());
+            }*/
+
+            int index = testArrayObjInList(arrayObj->id);
+            if(index >= 0 )
+            {
+                arrayObjects[index] = *arrayObj;
+            }else if(index<0)
+            {
+                qDebug("Сreate new obj=%d\n",arrayObj->id);
+                arrayObjects.push_back(*arrayObj);
+            }
+            //synch_time = solid->time;
+
         }else if(head.typeRequest == COMMAND)
         {
             TCRequest req;
@@ -95,19 +124,30 @@ void VisUDP::processPendingDatagrams()
 //       outHead.readRawData((char*)&(flightObjects.back()),sizeof(TVis));
 //    }
 }
-int VisUDP::testObjInList(unsigned uid)
+int VisUDP::testFlightObjInList(unsigned uid)
 {
     //! поиск объекта с уже существующим ID
-    for(int i=0;i<flightObjects.size();i++)
+    for(int i = 0;i < flightObjects.size();i++)
     {
-        if(flightObjects[i].id==uid)
+        if(flightObjects[i].id == uid)
         {
             return i;
         }
     }
     return -1;
 }
-
+int VisUDP::testArrayObjInList(unsigned uid)
+{
+    //! поиск объекта с уже существующим ID
+    for(int i = 0;i < arrayObjects.size();i++)
+    {
+        if(arrayObjects[i].id == uid)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
 //void VisUDP::addToFlightObjList(TVis body)
 //{
 //    //! признак обнаружения объектов с одинаковыми id
@@ -127,15 +167,15 @@ int VisUDP::testObjInList(unsigned uid)
 
 void VisUDP::sendData(TTypeHead type,char *ptr, int size)
 {
-    send_udp.head.typeRequest=type;
-    send_udp.head.tics=0;
-    send_udp.head.dtTics=0;
-    send_udp.head.id=0;
-    send_udp.head.size=sizeof(TMRequest)-(SIZE_BUF_DEFAULT-size);
+    send_udp.head.typeRequest   = type;
+    send_udp.head.tics          = 0;
+    send_udp.head.dtTics        = 0;
+    send_udp.head.id            = 0;
+    send_udp.head.size          = sizeof(TMRequest) - (SIZE_BUF_DEFAULT - size);
 
-    send_udp.compressed=0;
-    send_udp.sizeBuf=size;
-    send_udp.err=0;
+    send_udp.compressed = 0;
+    send_udp.sizeBuf    = size;
+    send_udp.err        = 0;
     memcpy((void*)send_udp.buffer,(void*)ptr,size);
 
     udpSocketSend.writeDatagram((char*)&send_udp,

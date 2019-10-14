@@ -88,6 +88,8 @@ public:
 //    void initScene(Lib3dsFile *file3ds);
     //! отрисовка объектов
     void drawSolidObjects();
+    //! отрисовка состовного объекта
+    void drawArrayObjects();
     //! отрисовка объекта
     void drawObject(objl::Loader *obj,
                     double pos_x,

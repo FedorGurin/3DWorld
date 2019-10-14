@@ -10,10 +10,10 @@
 enum TTypeHead
 {
     PARAM_OBJ       = 0,
+    PARAM_ARRAY     = 4,
     INFO_FLIGHT_OBJ = 1,
     COMMAND         = 2,
-    CONTROL_STICK   = 3    /*управление ручкой указанными объектом*/
-};
+    CONTROL_STICK   = 3    /*управление ручкой указанными объектом*/};
 //! структура запроса для отправки/получения
 typedef struct
 {
@@ -63,9 +63,13 @@ public:
     VisUDP();
 
     //! список воздушных объектов
-    QVector<TSendVehicleVisSimple> *getObjects()
+    QVector<TSendVehicleVisSimple> *getVehicleObj()
     {
         return &flightObjects;
+    }
+    QVector<TSendArrayVisSimple> *getArrayObj()
+    {
+        return &arrayObjects;
     }
     //! кол-во объектов
     void setSizeObj(int size)
@@ -75,14 +79,16 @@ public:
     //! блокировка соединения
     void setBlockConection(bool value)
     {
-        blockConnect=value;
+        blockConnect = value;
     }
 
     //! отправить данные другому сервису
     void sendData(TTypeHead type,char *buffer, int size);
-    //! проверка наличия буфера для адаптера
-    int testObjInList(unsigned uid);
+    //! проверка наличия объекта в списке
+    int testFlightObjInList(unsigned uid);
+    int testArrayObjInList(unsigned uid);
     void addToFlightObjList(TSendVehicleVisSimple body);
+    void addToArrayObjList(TSendArrayVisSimple body);
     //! проверка datagram
     bool checkDatagrams();
     double synch_time;
@@ -110,7 +116,8 @@ private:
     TMRequest send_udp;
     //! графические объекты(если приходит объект уже с сущест. в списке id)
     //! то старый объект заменяется новым
-    QVector<TSendVehicleVisSimple> flightObjects;//! объекты воздушных целей
+    QVector<TSendVehicleVisSimple>  flightObjects;//! объекты воздушных целей
+    QVector<TSendArrayVisSimple>    arrayObjects; //! объекты состоящие из нескольких точках
 
 };
 

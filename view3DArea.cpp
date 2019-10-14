@@ -613,7 +613,7 @@ void view3DArea::animate()
 
         int index = searchTimeInterval(globalTime);
         //! записываем параметры
-        QVector<TSendVehicleVisSimple> *list = net.getObjects();
+        QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
         TSendVehicleVisSimple *solid = &((*list)[0]);
         solid->code = rows[index].code;
 
@@ -668,7 +668,7 @@ void view3DArea::animate()
         if(div==DIVIDE)
         {
             div=0;
-            QVector<TSendVehicleVisSimple> *list = net.getObjects();
+            QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
             int j = 0;
             for(auto i:*list)
             {
@@ -711,20 +711,52 @@ void view3DArea::animate()
 
 T3DObject* view3DArea::findObjByCode(int code)
 {
-    for(int i=0;i<list3DObj.size();i++)
+    for(int i = 0;i < list3DObj.size();i++)
     {
-        if(list3DObj[i].code==code)
+        if(list3DObj[i].code == code)
             return &list3DObj[i];
     }
     return nullptr;
 }
 int view3DArea::searchTimeInterval(double time)
 {
-    for(int i=0;i<rows.size();i++)
+    for(int i = 0;i < rows.size();i++)
     {
-        if(rows[i].time>time)
+        if(rows[i].time > time)
         {
            return i;
+        }
+    }
+    return -1;
+}
+void view3DArea::drawArrayObjects()
+{
+    QVector<TSendArrayVisSimple> *list = net.getArrayObj();
+    for(auto i: *list)
+    {
+        //TSendArrayVisSimple *array = &((*list)[i]);
+        //TSendVehicleVisSimple *solidCenter = &(list->first());
+        //objl::Loader *model = 0;
+        //if(findObjByCode(solid->code) != 0)
+        //    model = &(findObjByCode(solid->code)->file);
+        //if(model != 0)
+        //{
+        for (size_t j = 0; j<i.num)
+        {
+            convertSphereToDekart(solidCenter->lam0_geo,
+                                  solidCenter->fi0_geo,
+                                  solid->lam_geo,
+                                  solid->fi_geo,
+                                  solid->cg_x,
+                                  solid->cg_z);
+            drawObject(model,
+                       solid->cg_x,
+                       solid->cg_y,
+                       solid->cg_z,
+                       solid->psi,
+                       solid->gamma,
+                       solid->tan);
+        }
         }
     }
 }
@@ -792,7 +824,7 @@ void view3DArea::drawSolidObjects()
 //                       solid->gamma,
 //                       solid->tan);
 
-        QVector<TSendVehicleVisSimple> *list = net.getObjects();
+        QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
         for(int i = 0;i < list->size();i++)
         {
             TSendVehicleVisSimple *solid = &((*list)[i]);
@@ -853,9 +885,9 @@ void view3DArea::drawObject(objl::Loader *obj,
                  pos_z);
     glScalef(10,10,10);
 
-    glRotated(radianToGrad(psi_rad),0.0,1.0,0.0);
-    glRotated(radianToGrad(tan_rad),0.0,0.0,1.0);
-    glRotated(radianToGrad(gamma_rad),1.0,0.0,0.0);
+    glRotated(radToGrad * psi_rad,0.0,1.0,0.0);
+    glRotated(radToGrad * tan_rad,0.0,0.0,1.0);
+    glRotated(radToGrad * gamma_rad,1.0,0.0,0.0);
 
     glColor4f(1.0f,1.0f,1.0f,1.0f);
 
@@ -1001,7 +1033,7 @@ void view3DArea::drawSymbol()
 {
     glm::mat3 m=signleCalcMatrix(cameraToThisObj);
 
-    QVector<TSendVehicleVisSimple> *list = net.getObjects();
+    QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
     for(auto  i : *list)
     {
         //TSendVehicleVisSimple *solid=&((*list)[i]);
@@ -1029,7 +1061,7 @@ void view3DArea::gradToPixel(double xRad,
 void view3DArea::drawStateLine()
 {
     QString prefix=tr("our aircraft");
-    if(cameraToObjIndex==0)
+    if(cameraToObjIndex == 0)
     {
         prefix=tr("our aircraft");
     }else if(cameraToObjIndex>0)
@@ -1431,7 +1463,7 @@ void view3DArea::setCameraToObject(int num)
 
     if(num>=0)
     {
-        QVector<TSendVehicleVisSimple> *list = net.getObjects();
+        QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
 
         if(num<list->size())
         {
