@@ -731,34 +731,34 @@ int view3DArea::searchTimeInterval(double time)
 }
 void view3DArea::drawArrayObjects()
 {
-    QVector<TSendArrayVisSimple> *list = net.getArrayObj();
-    for(auto i: *list)
-    {
-        //TSendArrayVisSimple *array = &((*list)[i]);
-        //TSendVehicleVisSimple *solidCenter = &(list->first());
-        //objl::Loader *model = 0;
-        //if(findObjByCode(solid->code) != 0)
-        //    model = &(findObjByCode(solid->code)->file);
-        //if(model != 0)
-        //{
-        for (size_t j = 0; j<i.num)
-        {
-            convertSphereToDekart(solidCenter->lam0_geo,
-                                  solidCenter->fi0_geo,
-                                  solid->lam_geo,
-                                  solid->fi_geo,
-                                  solid->cg_x,
-                                  solid->cg_z);
-            drawObject(model,
-                       solid->cg_x,
-                       solid->cg_y,
-                       solid->cg_z,
-                       solid->psi,
-                       solid->gamma,
-                       solid->tan);
-        }
-        }
-    }
+//    QVector<TSendArrayVisSimple> *list = net.getArrayObj();
+//    for(auto i: *list)
+//    {
+//        TSendArrayVisSimple *array = &((*list)[i]);
+//        TSendVehicleVisSimple *solidCenter = &(list->first());
+//        objl::Loader *model = 0;
+//        if(findObjByCode(solid->code) != 0)
+//            model = &(findObjByCode(solid->code)->file);
+//        if(model != 0)
+//        {
+//        for (size_t j = 0; j<i.num; j++)
+//        {
+//            convertSphereToDekart(solidCenter->lam0_geo,
+//                                  solidCenter->fi0_geo,
+//                                  solid->lam_geo,
+//                                  solid->fi_geo,
+//                                  solid->cg_x,
+//                                  solid->cg_z);
+//            drawObject(model,
+//                       solid->cg_x,
+//                       solid->cg_y,
+//                       solid->cg_z,
+//                       solid->psi,
+//                       solid->gamma,
+//                       solid->tan);
+//        }
+//        }
+//    }
 }
 void view3DArea::drawSolidObjects()
 {

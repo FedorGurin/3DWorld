@@ -8,7 +8,7 @@
 CONFIG +=thread
 TARGET = 3DWorld
 TEMPLATE = app
-CONFIG   +=debug
+CONFIG   +=  qt opengl warn_on thread rtti console
 #CONFIG +=build_all
 QT += gui\
     network \
@@ -16,25 +16,33 @@ QT += gui\
     xml \
     widgets
 
+LIB_DIR = ./libs
+LIB_DIR_ABSOLUTE_PATH = $$dirname(PWD)/libs
+
+
+#LIBS *= -L/home/fedor/MyProg/libQGLViewer-2.7.2/QGLViewer -lQGLViewer-qt5
+
+unix {
+        # The absolute path where the library or framework was found
+        LIB_DIR_ABSOLUTE_PATH = $$dirname(PWD)/libs
+
+        LIB_NAME = QGLViewer-qt5
+
+       isEmpty(QMAKE_LFLAGS_RPATH) {
+                            !plugin:QMAKE_LFLAGS += -Wl,-rpath,$${LIB_DIR_ABSOLUTE_PATH}
+                        }else {
+                            !plugin:QMAKE_RPATHDIR *= $${LIB_DIR_ABSOLUTE_PATH}
+                        }
+                        LIBS *= -L$${LIB_DIR} -l$${LIB_NAME}
+
+
+}
+
+
 #INCLUDEPATH += QGLViewer
 #INCLUDEPATH += libsX64
 DEFINES += GLM_PRECISION_MEDIUMP_FLOAT
-INCLUDEPATH *= /home/fedor/Soft/libQGLViewer
-LIBS *= -L/home/fedor/Soft/libQGLViewer/QGLViewer -lQGLViewer-qt5
 
-#CONFIG(debug, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewerd2.lib
-#CONFIG(debug, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0d.lib
-
-#CONFIG(release, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\QGLViewer2.lib
-#CONFIG(release, debug|release):LIBS+= F:\MyProg\SwT\3DWorld_bpla\libsX64\lib3ds-2_0.lib
-
-#CONFIG(debug, debug|release):LIBS+= /home/fedor/Soft/libQGLViewer-2.7.1/QGLViewer/libQGLViewer-qt5.so
-#CONFIG(debug, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\lib3ds-2_0d.lib
-
-#CONFIG(release, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\QGLViewer2.lib
-#CONFIG(release, debug|release):LIBS+= D:\fromWork\JOB\diskF\SwT\3DWorld\libsX64\lib3ds-2_0.lib
-
-#LIBS += -lopengl32 -lglu32
 
 SOURCES += main.cpp\
     OBJ_Loader.cpp \
@@ -62,9 +70,9 @@ OBJ_Loader.h \
 FORMS    += \
     formsettings.ui
 
-DISTFILES += \
-    ../../Soft/libQGLViewer/QGLViewer/libQGLViewer-qt5.so \
-    libQGLViewer-qt5.a
+#DISTFILES += \
+#    ../../Soft/libQGLViewer/QGLViewer/libQGLViewer-qt5.so \
+#    libQGLViewer-qt5.a
 
 
 
