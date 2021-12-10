@@ -337,10 +337,10 @@ void view3DArea::draw()
 
     QColor c(81,168,255);
     //QColor c(Qt::cyan);
-    fogColor[0]=c.redF();
-    fogColor[1]=c.greenF();
-    fogColor[2]=c.blueF();
-    fogColor[3]=1.0;
+    fogColor[0] = c.redF();
+    fogColor[1] = c.greenF();
+    fogColor[2] = c.blueF();
+    fogColor[3] = 1.0;
 
     if(fog==true)
     {

@@ -16,17 +16,23 @@ QT += gui\
     xml \
     widgets
 
-LIB_DIR = ./libs
-LIB_DIR_ABSOLUTE_PATH = $$dirname(PWD)/libs
+INCLUDE_DIR = $${ROOT_DIRECTORY}
+LIB_DIR = $${ROOT_DIRECTORY}/QGLViewer
 
+#LIB_DIR = ./libs
+#LIB_DIR_ABSOLUTE_PATH = $$dirname(PWD)/libs
 
-#LIBS *= -L/home/fedor/MyProg/libQGLViewer-2.7.2/QGLViewer -lQGLViewer-qt5
+LIBS += -lopengl32 -lglu32
+
+LIBS *= D:/MyProg/3DWorld/QGLViewerd2.lib
+#-L/home/fedor/MyProg/libQGLViewer-2.7.2/QGLViewer -lQGLViewer-qt5
 
 unix {
         # The absolute path where the library or framework was found
         LIB_DIR_ABSOLUTE_PATH = $$dirname(PWD)/libs
 
-        LIB_NAME = QGLViewer-qt5
+        #LIB_NAME = QGLViewer-qt5
+#        D:\MyProg\3DWorld\QGLViewerd2.lib
 
        isEmpty(QMAKE_LFLAGS_RPATH) {
                             !plugin:QMAKE_LFLAGS += -Wl,-rpath,$${LIB_DIR_ABSOLUTE_PATH}

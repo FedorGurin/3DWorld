@@ -4,8 +4,8 @@
 VisUDP::VisUDP()
 {
     synch_time = 0;
-    flightObjects.clear();        
-    if(udpSocketRecive.bind(4999) == false)
+    flightObjects.clear();
+    if(udpSocketRecive.bind(7030) == false)
         std::cout<<"Can`t bind to socket port" << std::endl;
     datagram.resize(sizeof(TMRequest));
 }

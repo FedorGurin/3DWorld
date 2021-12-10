@@ -2,66 +2,66 @@
 #define GLOBALDATA_H
 #include <glm/glm.hpp>
 #include <stdint.h>
-typedef struct
-{
-    double time;
-    //! уникальный идентификатор объекта
-    int id;
+//typedef struct
+//{
+//    double time;
+//    //! уникальный идентификатор объекта
+//    int id;
 
-    //! код объекта
-    int code;
-    //! угол атаки
-    float alfa;
-    //! воздушная скорости
-    float vc;
+//    //! код объекта
+//    int code;
+//    //! угол атаки
+//    float alfa;
+//    //! воздушная скорости
+//    float vc;
 
-    //! углы ориентации вектора скорости в траекторной СК
-    float fi;
-    float unt;
+//    //! углы ориентации вектора скорости в траекторной СК
+//    float fi;
+//    float unt;
 
-    //! координаты носителя в географической СК
-    float fi_geo;
-    float lam_geo;
+//    //! координаты носителя в географической СК
+//    float fi_geo;
+//    float lam_geo;
 
-    //! координаты старта носителя в географической СК
-    float fi0_geo;
-    float lam0_geo;
+//    //! координаты старта носителя в географической СК
+//    float fi0_geo;
+//    float lam0_geo;
 
-    //! координаты в земной СК
-    float xg;
-    float yg;
-    float zg;
+//    //! координаты в земной СК
+//    float xg;
+//    float yg;
+//    float zg;
 
-    //! компоненты вектора скорости относительной земной СК
-    float vxg;
-    float vyg;
-    float vzg;
+//    //! компоненты вектора скорости относительной земной СК
+//    float vxg;
+//    float vyg;
+//    float vzg;
 
-    //! компоненты ускорений
-    float axg;
-    float ayg;
-    float azg;
+//    //! компоненты ускорений
+//    float axg;
+//    float ayg;
+//    float azg;
 
-    //! угловые скорости вращения носителя
-    float omega_x;
-    float omega_y;
-    float omega_z;
+//    //! угловые скорости вращения носителя
+//    float omega_x;
+//    float omega_y;
+//    float omega_z;
 
-    //! ориентация носителя в связанной СК
-    float psi;
-    float gamma;
-    float tan;
-    //! число Маха
-    float m;
-    //!
-    float nya;
-    //!
-    float ny;
-    //!
-    float nx;
+//    //! ориентация носителя в связанной СК
+//    float psi;
+//    float gamma;
+//    float tan;
+//    //! число Маха
+//    float m;
+//    //!
+//    float nya;
+//    //!
+//    float ny;
+//    //!
+//    float nx;
 
-    int idManevr;
-}TVis;
+//    int idManevr;
+//}TVis;
 
 typedef struct TSendVehicleVisSimple_
 {
