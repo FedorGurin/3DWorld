@@ -5,21 +5,21 @@
 #-------------------------------------------------
 
 
-CONFIG +=thread
 TARGET = 3DWorld
 TEMPLATE = app
-CONFIG   +=  qt opengl warn_on thread rtti console
+CONFIG += qt opengl thread rtti console
 #CONFIG +=build_all
-QT += gui\
-    network \
-    opengl \
-    xml \
-    widgets
-
-LIB_DIR = ./libs
-LIB_DIR_ABSOLUTE_PATH = $$dirname(PWD)/libs
+QT += xml opengl widgets gui network
 
 
+ROOT_DIRECTORY = ./..
+
+LIB_DIR_ABSOLUTE_PATH = $${ROOT_DIRECTORY}/libs
+INCLUDE_DIR = $${ROOT_DIRECTORY}
+LIB_DIR = D:\MyProg\3DWorld\libs
+
+INCLUDEPATH *= $${INCLUDE_DIR}
+DEPENDPATH  *= $${INCLUDE_DIR}
 #LIBS *= -L/home/fedor/MyProg/libQGLViewer-2.7.2/QGLViewer -lQGLViewer-qt5
 
 unix {
@@ -36,6 +36,29 @@ unix {
                         LIBS *= -L$${LIB_DIR} -l$${LIB_NAME}
 
 
+}
+win32 {
+        # Seems to be needed for Visual Studio with Intel compiler
+        DEFINES *= WIN32
+
+        # Use native OpenGL drivers with Qt5.5
+        # No longer implicit since the ANGLE driver is now an alternative
+        LIBS += -lopengl32 -lglu32
+
+        isEmpty( QGLVIEWER_STATIC ) {
+                CONFIG(debug, debug|release) {
+                        LIBS *= -L$${LIB_DIR} -lQGLViewerd2
+                } else {
+                        LIBS *= -L$${LIB_DIR} -lQGLViewer2
+                }
+        } else {
+                DEFINES *= QGLVIEWER_STATIC
+                CONFIG(debug, debug|release) {
+                        LIBS *= $${LIB_DIR}/libQGLViewerd2.a
+                } else {
+                        LIBS *= $${LIB_DIR}/libQGLViewer2.a
+                }
+        }
 }
 
 
