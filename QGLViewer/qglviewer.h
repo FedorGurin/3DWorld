@@ -1,12 +1,36 @@
+/****************************************************************************
+
+ Copyright (C) 2002-2014 Gilles Debunne. All rights reserved.
+
+ This file is part of the QGLViewer library version 2.8.0.
+
+ http://www.libqglviewer.com - contact@libqglviewer.com
+
+ This file may be used under the terms of the GNU General Public License 
+ versions 2.0 or 3.0 as published by the Free Software Foundation and
+ appearing in the LICENSE file included in the packaging of this file.
+ In addition, as a special exception, Gilles Debunne gives you certain 
+ additional rights, described in the file GPL_EXCEPTION in this package.
+
+ libQGLViewer uses dual licensing. Commercial/proprietary software must
+ purchase a libQGLViewer Commercial License.
+
+ This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+ WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+*****************************************************************************/
+
 #ifndef QGLVIEWER_QGLVIEWER_H
 #define QGLVIEWER_QGLVIEWER_H
 
 #include "camera.h"
 
 #include <QClipboard>
-#include <QGL>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#  include <QGL>
+#endif
 #include <QMap>
-#include <QTime>
+#include <QElapsedTimer>
 
 class QTabWidget;
 
@@ -49,6 +73,7 @@ class QGLVIEWER_EXPORT QGLViewer : public QOpenGLWidget {
 public:
   explicit QGLViewer(QWidget *parent = 0,
                      Qt::WindowFlags flags = Qt::WindowFlags());
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   explicit QGLViewer(QWidget *parent, const QGLWidget *shareWidget,
                      Qt::WindowFlags flags = 0);
   explicit QGLViewer(QGLContext *context, QWidget *parent = 0,
@@ -57,7 +82,7 @@ public:
   explicit QGLViewer(const QGLFormat &format, QWidget *parent = 0,
                      const QGLWidget *shareWidget = 0,
                      Qt::WindowFlags flags = 0);
-
+#endif
   virtual ~QGLViewer();
 
   /*! @name Display of visual hints */
@@ -1198,8 +1223,8 @@ public Q_SLOTS:
   void setStateFileName(const QString &name) { stateFileName_ = name; }
 
 #ifndef DOXYGEN
-  void saveToFile(const QString &fileName = QString::null);
-  bool restoreFromFile(const QString &fileName = QString::null);
+  void saveToFile(const QString &fileName = QString());
+  bool restoreFromFile(const QString &fileName = QString());
 #endif
 
 private:
@@ -1294,7 +1319,7 @@ private:
   int animationTimerId_;
 
   // F P S    d i s p l a y
-  QTime fpsTime_;
+  QElapsedTimer fpsTime_;
   unsigned int fpsCounter_;
   QString fpsString_;
   qreal f_p_s_;
@@ -1408,7 +1433,7 @@ private:
         return modifiers < cbp.modifiers;
       if (button != cbp.button)
         return button < cbp.button;
-      return doubleClick != cbp.doubleClick;
+      return doubleClick < cbp.doubleClick;
     }
   };
 #endif

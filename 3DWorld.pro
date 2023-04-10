@@ -5,34 +5,28 @@
 #-------------------------------------------------
 
 
-CONFIG +=thread
 TARGET = 3DWorld
 TEMPLATE = app
-CONFIG   +=  qt opengl warn_on thread rtti console
+CONFIG += qt opengl thread rtti console
 #CONFIG +=build_all
-QT += gui\
-    network \
-    opengl \
-    xml \
-    widgets
+QT += xml opengl widgets gui network
 
+
+ROOT_DIRECTORY = ./..
+
+LIB_DIR_ABSOLUTE_PATH = $${ROOT_DIRECTORY}/libs
 INCLUDE_DIR = $${ROOT_DIRECTORY}
-LIB_DIR = $${ROOT_DIRECTORY}/QGLViewer
+LIB_DIR = D:\MyProg\3DWorld\libs
 
-#LIB_DIR = ./libs
-#LIB_DIR_ABSOLUTE_PATH = $$dirname(PWD)/libs
-
-LIBS += -lopengl32 -lglu32
-
-LIBS *= D:/MyProg/3DWorld/QGLViewerd2.lib
-#-L/home/fedor/MyProg/libQGLViewer-2.7.2/QGLViewer -lQGLViewer-qt5
+INCLUDEPATH *= $${INCLUDE_DIR}
+DEPENDPATH  *= $${INCLUDE_DIR}
+#LIBS *= -L/home/fedor/MyProg/libQGLViewer-2.7.2/QGLViewer -lQGLViewer-qt5
 
 unix {
         # The absolute path where the library or framework was found
         LIB_DIR_ABSOLUTE_PATH = $$dirname(PWD)/libs
 
-        #LIB_NAME = QGLViewer-qt5
-#        D:\MyProg\3DWorld\QGLViewerd2.lib
+        LIB_NAME = QGLViewer-qt5
 
        isEmpty(QMAKE_LFLAGS_RPATH) {
                             !plugin:QMAKE_LFLAGS += -Wl,-rpath,$${LIB_DIR_ABSOLUTE_PATH}
@@ -42,6 +36,29 @@ unix {
                         LIBS *= -L$${LIB_DIR} -l$${LIB_NAME}
 
 
+}
+win32 {
+        # Seems to be needed for Visual Studio with Intel compiler
+        DEFINES *= WIN32
+
+        # Use native OpenGL drivers with Qt5.5
+        # No longer implicit since the ANGLE driver is now an alternative
+        LIBS += -lopengl32 -lglu32
+
+        isEmpty( QGLVIEWER_STATIC ) {
+                CONFIG(debug, debug|release) {
+                        LIBS *= -L$${LIB_DIR} -lQGLViewerd2
+                } else {
+                        LIBS *= -L$${LIB_DIR} -lQGLViewer2
+                }
+        } else {
+                DEFINES *= QGLVIEWER_STATIC
+                CONFIG(debug, debug|release) {
+                        LIBS *= $${LIB_DIR}/libQGLViewerd2.a
+                } else {
+                        LIBS *= $${LIB_DIR}/libQGLViewer2.a
+                }
+        }
 }
 
 
@@ -64,11 +81,13 @@ HEADERS  += \
     view3DArea.h \
 OBJ_Loader.h \
     view3DTerrain.h \
-    visudp.h \    
+    visudp.h \
+    Vector3D_D.h \
     formsettings.h \
     globalData.h \
     TemplateNASP.hpp \
     math_func.h
+
     #QGLViewer/qglviewer.h
 
 FORMS    += \

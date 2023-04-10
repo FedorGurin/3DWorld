@@ -10,7 +10,6 @@ class FormSettings;
 class FormSettings : public QWidget
 {
     Q_OBJECT
-
 public:
     explicit FormSettings(QWidget *parent = 0);
     ~FormSettings();
