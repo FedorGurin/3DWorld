@@ -88,6 +88,8 @@ public:
 //    void initScene(Lib3dsFile *file3ds);
     //! отрисовка объектов
     void drawSolidObjects();
+    //! отрисовка тестового объекта
+    void drawTestSolidObj();
     //! отрисовка состовного объекта
     void drawArrayObjects();
     //! отрисовка объекта
@@ -121,6 +123,8 @@ public:
     void drawStateLine();
     //! разбор текстового файла
     void parserTXTFile();
+    //! статус загрузки модели из файла
+    void statusLoad(bool);
     //! поиск времени на интервале
     int searchTimeInterval(double time);
     //! расчет результирующей матрицы поворота

@@ -242,6 +242,13 @@ void view3DArea::slotAccepted()
         globalTime=rows[0].time;
     }
 }
+void view3DArea::statusLoad(bool loadout)
+{
+    if(loadout == false)
+        std::cout << "fail" << std::endl;
+    else
+        std::cout << "ok\n" << std::endl;
+}
 void view3DArea::readAllModels()
 {
     list3DObj.resize(8);
@@ -259,14 +266,16 @@ void view3DArea::readAllModels()
 
 
     // Load .obj File
-    bool loadout = list3DObj[0].file.LoadFile("./cone.obj");
-    list3DObj[1].file.LoadFile("./f15.obj");
-    list3DObj[2].file.LoadFile("./f15.obj");
+    bool loadout = list3DObj[0].file.LoadFile("./libs/cone.obj");
+    statusLoad(loadout);
 
-    if(loadout == false)
-        std::cout<<"fail" << std::endl;
-    else
-        std::cout<<"ok\n" << std::endl;
+    loadout = list3DObj[1].file.LoadFile("./libs/f15.obj");
+    statusLoad(loadout);
+
+    loadout = list3DObj[2].file.LoadFile("./libs/f15.obj");
+     statusLoad(loadout);
+
+
 
     // чтение моделей из 3ds файлов
     //loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
@@ -368,6 +377,7 @@ void view3DArea::draw()
 #ifdef USE_3DMODEL
     // отрисовка трехмерных объектов
     drawSolidObjects();
+    drawTestSolidObj();
 #endif
     // отрисовка подстилающей поверхности
     if(terra == true)
@@ -760,97 +770,52 @@ void view3DArea::drawArrayObjects()
 //        }
 //    }
 }
+
+void view3DArea::drawTestSolidObj()
+{
+    objl::Loader *model = nullptr;
+    TSendVehicleVisSimple solid;
+    memset((void*)&solid,0,sizeof(solid));
+    if( findObjByCode(101) != nullptr)
+        model = &(findObjByCode(101)->file);
+    if(model == nullptr)
+        return;
+
+    drawObject(model,
+               solid.cg_x,
+               solid.cg_y,
+               solid.cg_z,
+               solid.psi,
+               solid.gamma,
+               solid.tan);
+}
 void view3DArea::drawSolidObjects()
 {
-//    Lib3dsFile* file3DS=0;
-//    QVector<TSolidObj> *list=net.getObjects();
-//    for(int i=0;i<list->size();i++)
-//    {
-//        TSolidObj *solid=&((*list)[i]);
-//        if(findObjByCode(solid->code)!=0)
-//            file3DS=findObjByCode(solid->code)->file;
-
-//        if(file3DS!=0)
-//        {
-////            convertSphereToDekart(lam0,
-////                                  fi0,
-////                                  solid->lam_geo,
-////                                  solid->fi_geo,
-////                                  solid->x,
-////                                  solid->z);
-
-
-////            sW.x_g=linearInterpolation(globalTime,
-////                                          solid->x_g,
-////                                          solid->x_g_prev,
-////                                          solid->time,
-////                                          solid->time_prev);
-
-////            sW.y_g=linearInterpolation(globalTime,
-////                                       solid->y_g,
-////                                       solid->y_g_prev,
-////                                       solid->time,
-////                                       solid->time_prev);
-
-////            sW.z_g=linearInterpolation(globalTime,
-////                                       solid->z_g,
-////                                       solid->z_g_prev,
-////                                       solid->time,
-////                                       solid->time_prev);
-
-////            sW.psi=linearInterpolation(globalTime,
-////                                       solid->psi,
-////                                       solid->psi_prev,
-////                                       solid->time,
-////                                       solid->time_prev);
-
-////            sW.tan=linearInterpolation(globalTime,
-////                                       solid->tan,
-////                                       solid->tan_prev,
-////                                       solid->time,
-////                                       solid->time_prev);
-
-////            sW.gamma=linearInterpolation(globalTime,
-////                                         solid->gamma,
-////                                         solid->gamma_prev,
-////                                         solid->time,
-////                                         solid->time_prev);
-
-//            drawObject(file3DS,
-//                       solid->x_g,
-//                       solid->y_g,
-//                       solid->z_g,
-//                       solid->psi,
-//                       solid->gamma,
-//                       solid->tan);
-
-        QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
-        for(int i = 0;i < list->size();i++)
+    QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
+    for(auto &i : *list)
+    {
+        TSendVehicleVisSimple *solidCenter = &(list->first());
+        objl::Loader *model = nullptr;
+        if(findObjByCode(i.code) != nullptr)
+            model = &(findObjByCode(i.code)->file);
+        if(model != nullptr)
         {
-            TSendVehicleVisSimple *solid = &((*list)[i]);
-            TSendVehicleVisSimple *solidCenter = &(list->first());
-            objl::Loader *model = nullptr;
-            if(findObjByCode(solid->code) != nullptr)
-                model = &(findObjByCode(solid->code)->file);
-            if(model != nullptr)
-            {
-                convertSphereToDekart(solidCenter->lam0_geo,
-                                      solidCenter->fi0_geo,
-                                      solid->lam_geo,
-                                      solid->fi_geo,
-                                      solid->cg_x,
-                                      solid->cg_z);
-                drawObject(model,
-                           solid->cg_x,
-                           solid->cg_y,
-                           solid->cg_z,
-                           solid->psi,
-                           solid->gamma,
-                           solid->tan);
-            }
+            convertSphereToDekart(solidCenter->lam0_geo,
+                                  solidCenter->fi0_geo,
+                                  i.lam_geo,
+                                  i.fi_geo,
+                                  i.cg_x,
+                                  i.cg_z);
+            drawObject(model,
+                       i.cg_x,
+                       i.cg_y,
+                       i.cg_z,
+                       i.psi,
+                       i.gamma,
+                       i.tan);
         }
+    }
 
-//    }
 }
 
 void view3DArea::drawObject(objl::Loader *obj,
@@ -910,9 +875,8 @@ void view3DArea::drawObject(objl::Loader *obj,
 
         //glNormal3fv(i.Normal);
         //for (auto j : i.Vertices)
+
         glMaterialfv(GL_FRONT, GL_AMBIENT, (GLfloat *)&curMesh.MeshMaterial.Ka);
-
-
         glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat *)&curMesh.MeshMaterial.Kd);
         glMaterialfv(GL_FRONT, GL_SPECULAR, (GLfloat *)&curMesh.MeshMaterial.Ks);
 
@@ -935,6 +899,21 @@ void view3DArea::drawObject(objl::Loader *obj,
         }
 
     }
+//    for(auto i : obj->LoadedMaterials)
+//    {
+//        objl::Material material = i;
+//        glBegin(GL_TRIANGLES);
+//        glMaterialfv(GL_FRONT, GL_AMBIENT, (GLfloat*)&material.Ka);//
+//        glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat*)&material.Kd);
+//        glMaterialfv(GL_FRONT, GL_SPECULAR, (GLfloat*)&material.Ks);
+//        glEnd();
+//        ////                    //  glMaterialfv(GL_FRONT, GL_SPECULAR, mat->specular);
+
+//        ////                    s = pow(2, 10.0*mat->shininess);
+//        ////                    if (s>128.0)
+//        ////                        s=128.0;
+//        ////                    glMaterialf(GL_FRONT, GL_SHININESS, s);
+//    }
 
 //        for(auto i: list3DObj[0].file.LoadedMeshes)
 //        {
@@ -989,7 +968,7 @@ void view3DArea::drawILS()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     /////////////////////////////////////////
-    //! отрисовка ИЛС линий
+    // отрисовка ИЛС линий
     //qglColor(QColor(Qt::green));
     glLineWidth(5.0);
     glDisable(GL_BLEND);//Уберем прозрачность
@@ -1028,7 +1007,7 @@ void view3DArea::drawILS()
     glPopAttrib();
     /////////////////////////////////////////
 }
-//! отрисовка прицельной символики
+// отрисовка прицельной символики
 void view3DArea::drawSymbol()
 {
     glm::mat3 m=signleCalcMatrix(cameraToThisObj);
@@ -1076,11 +1055,11 @@ void view3DArea::drawStateLine()
 }
 void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
 {
-    //! координаты центра
+    // координаты центра
     int xCenter=0;
     int yCenter=0;
     glPointSize(width_);
-    //! перевод
+    // перевод
     //TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
 
     TAngle an;
@@ -1091,17 +1070,17 @@ void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
                          -(camera()->horizontalFieldOfView()/2.0),
                          (camera()->horizontalFieldOfView()/2.0));
 
-    //! перевод градусов в пиксели
+    // перевод градусов в пиксели
     gradToPixel(-an.sigma,
                 -an.tau,
                 xCenter,
                 yCenter);
     //qglColor(Qt::red);//цвет окружности
-    //! отрисовка точки в центре окружности
+    // отрисовка точки в центре окружности
     glBegin(GL_POINTS);
         glVertex2i(xCenter,yCenter);
         glEnd();
-    //! толщина пикселей окружности
+    // толщина пикселей окружности
     glBegin(GL_LINES);
         glVertex2i(xCenter+radius_/2.0,yCenter);
         glVertex2i(xCenter-radius_/2.0,yCenter);
@@ -1172,7 +1151,7 @@ void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
 
 }
 
-//! отрисовка земли
+// отрисовка земли
 void view3DArea::drawTerra()
 {
     if(terrain->loadCompleate==true)
@@ -1622,14 +1601,14 @@ void view3DArea::cameraToObject()
     curFi= radianToGrad(cameraToThisObj->fi);
     curUnt= radianToGrad(cameraToThisObj->unt);
 
-    //! углы повортов камеры в радианах
+    // углы повортов камеры в радианах
     double tan_tar_radian=  cameraToThisObj->tan;
     double gamma_tar_radian=cameraToThisObj->gamma;
     double psi_tar_radian=  cameraToThisObj->psi;
     double d_psi_tar_rad=0.0;
     if(cameraToBack==true)      d_psi_tar_rad=M_PI;
 
-    //! кватернион поворотов
+    // кватернион поворотов
     Quaternion qPI_2(   Vec(0.0, 1.0, 0.0),-M_PI/2.0);
     Quaternion qPsi(    Vec(0.0, 1.0, 0.0),psi_tar_radian+d_psi_tar_rad+dpsi_camera);
     Quaternion qTeta(   Vec(0.0, 0.0, 1.0),-gamma_tar_radian+dgamma_camera);
