@@ -64,13 +64,11 @@ HEADERS  += \
     view3DArea.h \
 OBJ_Loader.h \
     view3DTerrain.h \
-    visudp.h \
-    Vector3D_D.h \
+    visudp.h \    
     formsettings.h \
     globalData.h \
     TemplateNASP.hpp \
-    math_func.h \
-    Vector3D_D.h
+    math_func.h
     #QGLViewer/qglviewer.h
 
 FORMS    += \

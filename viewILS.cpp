@@ -11,7 +11,7 @@ void ViewILS::init()
 
 }
 
-//! îòðèñîâêà ÈËÑ
+//! Ð¾Ñ‚Ñ€Ð¸ÑÐ¾Ð²ÐºÐ° Ð˜Ð›Ð¡
 void ViewILS::draw()
 {
     if(obj==0)
@@ -34,10 +34,10 @@ void ViewILS::draw()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     /////////////////////////////////////////
-    //! îòðèñîâêà ÈËÑ ëèíèé
+    //! Ð¾Ñ‚Ñ€Ð¸ÑÐ¾Ð²ÐºÐ° Ð˜Ð›Ð¡ Ð»Ð¸Ð½Ð¸Ð¹
     qglColor(QColor(Qt::green));
     glLineWidth(5.0);
-    glDisable(GL_BLEND);//Óáåðåì ïðîçðà÷íîñòü
+    glDisable(GL_BLEND);//Ð£Ð±ÐµÑ€ÐµÐ¼ Ð¿Ñ€Ð¾Ð·Ñ€Ð°Ñ‡Ð½Ð¾ÑÑ‚ÑŒ
     glTranslatef(width()/2.0,height()/2.0,0);
     glRotated(-obj->gamma,0.0,0.0,1.0);
 

@@ -58,7 +58,7 @@ view3DArea::view3DArea():QGLViewer()
     globalCount = 0;
     ils         = true;
     vertLine    = false;
-    //! признаки отрисовки тумана
+    // признаки отрисовки тумана
     fog     =  false    ;
     info    =  false    ;
     terra   =  true     ;
@@ -73,7 +73,7 @@ view3DArea::view3DArea():QGLViewer()
     dt = ((1.0/20)*1000.0);
     //dt=((1.0/freq)*1000.0);
 
-    //! доп. поворот камеры
+    // доп. поворот камеры
     dpsi_camera     = 0.0;
     dteta_camera    = 0.0;
     dgamma_camera   = 0.0;
@@ -87,10 +87,10 @@ view3DArea::view3DArea():QGLViewer()
 
     //camera_name=0;
 
-    //! указатель на рельеф
+    // указатель на рельеф
     terrain=new View3DTerrain;
 
-    //! ограничения на КАИ
+    // ограничения на КАИ
     limit=new LimitPositionKAI;
 
     horFilter=new FilterAperiodic(0.0,0.8,PERIOD_ANIMATION/1000.0,1.0,-1.0);
@@ -245,7 +245,7 @@ void view3DArea::slotAccepted()
 void view3DArea::readAllModels()
 {
     list3DObj.resize(8);
-    //! коды известных объектов
+    // коды известных объектов
     list3DObj[0].code=105;//конус
     list3DObj[1].code=101;//f15
     list3DObj[2].code=102;
@@ -268,7 +268,7 @@ void view3DArea::readAllModels()
     else
         std::cout<<"ok\n" << std::endl;
 
-    //! чтение моделей из 3ds файлов
+    // чтение моделей из 3ds файлов
     //loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
     //loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
 //    loadFile("./3dmodels/x55.3ds",       &(list3DObj[2].file));
@@ -292,11 +292,11 @@ void view3DArea::init()
     //setFullScreen(true);
     //setAnimationPeriod(dt);
 #endif
-    //! открыть рельеф по умолчанию
+    // открыть рельеф по умолчанию
     terrain->openTerrainMap("./defaultTerrain.asc");
     this->setBackgroundColor(QColor(81,168,255));
     setSceneRadius(radiusScene);
-    //!установить период анимации
+    //установить период анимации
     //setAnimationPeriod(PERIOD_ANIMATION);
     startAnimation();
     camera()->setFieldOfView(gradToRadian(45));
@@ -330,7 +330,7 @@ void view3DArea::draw()
     }else
     {
         setSceneRadius(radiusScene);
-        d=radiusScene;
+        d = radiusScene;
     }
     ////////////////////////////////////////////////
     GLfloat fogColor[4];//= {0.1f, 0.1f, 0.5f, 1.0f}; // Цвет тумана
@@ -342,7 +342,7 @@ void view3DArea::draw()
     fogColor[2] = c.blueF();
     fogColor[3] = 1.0;
 
-    if(fog==true)
+    if(fog == true)
     {
         glEnable(GL_FOG);               // Включает туман (GL_FOG)
         glFogi(GL_FOG_MODE, GL_LINEAR); // Выбираем тип тумана
@@ -363,32 +363,32 @@ void view3DArea::draw()
 
     glEnd();
 
-    //! отрисовка траектории
+    // отрисовка траектории
     drawTrajectory();
 #ifdef USE_3DMODEL
-    //! отрисовка трехмерных объектов
+    // отрисовка трехмерных объектов
     drawSolidObjects();
 #endif
-    //! отрисовка подстилающей поверхности
-    if(terra==true)
+    // отрисовка подстилающей поверхности
+    if(terra == true)
         drawTerra();
-    //! отрисовка ИЛС
-    if(ils==true)
+    // отрисовка ИЛС
+    if(ils == true)
         drawILS();
-    //! отрисовка неба
-    if(sky==true)
+    // отрисовка неба
+    if(sky == true)
         drawSky();
     //////////////////////////
     glDisable(GL_LIGHTING);
     //glEnable(GL_BLEND);
-    //! Полная яркость, 50% альфа (НОВОЕ)
+    // Полная яркость, 50% альфа (НОВОЕ)
     glColor4f(1.0f,1.0f,1.0f,0.7f);
-    //! Функция смешивания для непрозрачности
+    // Функция смешивания для непрозрачности
     glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 
     //if(grid==true) drawGrid();
     drawStateLine();
-    if(info==true)
+    if(info == true)
     {
         drawText(10,60,"[+] zoom UP");
         drawText(10,80,"[-] zoom DOWN");
@@ -692,7 +692,7 @@ void view3DArea::animate()
     cameraToObject();
 
 
-    //! отправка органов управления
+    // отправка органов управления
     if(horFilter->delta()>10e-3 || verFilter->delta()>10e-3)
     {
         if(cameraToThisObj != nullptr)
@@ -829,10 +829,10 @@ void view3DArea::drawSolidObjects()
         {
             TSendVehicleVisSimple *solid = &((*list)[i]);
             TSendVehicleVisSimple *solidCenter = &(list->first());
-            objl::Loader *model = 0;
-            if(findObjByCode(solid->code) != 0)
+            objl::Loader *model = nullptr;
+            if(findObjByCode(solid->code) != nullptr)
                 model = &(findObjByCode(solid->code)->file);
-            if(model != 0)
+            if(model != nullptr)
             {
                 convertSphereToDekart(solidCenter->lam0_geo,
                                       solidCenter->fi0_geo,

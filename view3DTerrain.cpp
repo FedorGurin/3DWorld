@@ -31,15 +31,15 @@ bool View3DTerrain::openTerrainMap(QString nameFile)
 
 void View3DTerrain::slotAccepted()
 {
-    QStringList list=dialog->selectedFiles();
-    if(list.size()!=0)
+    QStringList list = dialog->selectedFiles();
+    if(list.isEmpty() == false)
     {
-        QString fileName=list[0];
+        QString fileName = list[0];
 
         file->setFileName(fileName);
         if (!file->open(QIODevice::ReadOnly | QIODevice::Text))   return;
         threadParser->setParserFile(stream,mapH);
-        //! загружаем карту цветов
+        // загружаем карту цветов
 
 
         loadCompleate=false;
@@ -106,7 +106,7 @@ void ThreadParser::run()
                                   gradToRadian(mapH->xllcorner+j*mapH->cellsize),
                                   x,
                                   z);
-            vec.push_back(QVector3D(5*x,mapH->data[i][j],5*z));
+            vec.push_back(QVector3D(5*x,mapH->data[i][j],500*z));
         }
         mapH->dataVectors.push_back(vec);
 

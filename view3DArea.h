@@ -16,7 +16,7 @@
 #include "OBJ_Loader.h"
 #include "math_func.h"
 #include "visudp.h"
-#include "viewILS.h"
+//#include "viewILS.h"
 #include "formsettings.h"
 #include "TemplateNASP.hpp"
 #include "glm/gtx/projection.hpp"
@@ -197,7 +197,7 @@ private:
     //! камеры установлена сверху над объектом
     bool cameraUp;
     //! объект для отрисовки ИЛС
-    ViewILS *viewILS;
+    //ViewILS *viewILS;
 
     double curPsi;
     double curGamma;
