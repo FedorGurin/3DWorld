@@ -18,17 +18,17 @@ bool VisUDP::checkDatagrams()
     while(udpSocketRecive.hasPendingDatagrams())
     {
         udpSocketRecive.readDatagram(datagram.data(), udpSocketRecive.pendingDatagramSize());
-        //! чтение заголовка
+        // чтение заголовка
         QDataStream outHead(&datagram,QIODevice::ReadOnly);
         outHead.setVersion(QDataStream::Qt_4_6);
         outHead.readRawData(reinterpret_cast<char* >(&head),sizeof(THRequest));
         QDataStream out(&datagram,QIODevice::ReadOnly);
         out.setVersion(QDataStream::Qt_4_6);
         //out.setByteOrder(QDataStream::BigEndian);
-        //! обработка пакетов
+        // обработка пакетов
         if(head.typeRequest == PARAM_OBJ)
         {
-            //! чтение заголовка
+            // чтение заголовка
             out.readRawData(reinterpret_cast<char* >(&rec_udp),head.size);
             QByteArray compBuf(reinterpret_cast<char* >(rec_udp.buffer),rec_udp.sizeBuf);
 
@@ -56,11 +56,11 @@ bool VisUDP::checkDatagrams()
             synch_time = solid->time;
         }else if(head.typeRequest == PARAM_ARRAY)
         {
-            //! чтение заголовка
+            // чтение заголовка
             out.readRawData(reinterpret_cast<char* >(&rec_udp),head.size);
             QByteArray compBuf(reinterpret_cast<char* >(rec_udp.buffer),rec_udp.sizeBuf);
 
-            //! преобразуем буфер в структуру
+            // преобразуем буфер в структуру
             TSendArrayVisSimple *arrayObj = reinterpret_cast<TSendArrayVisSimple* > (rec_udp.buffer);
 
             /*if(rec_udp.compressed==1)
@@ -90,6 +90,19 @@ bool VisUDP::checkDatagrams()
 
             if(req.com==TC_RESET)
                 emit resetTrajectory();
+        }else if(head.typeRequest == LIST_VECTOR)
+        {
+            // чтение заголовка
+            out.readRawData(reinterpret_cast<char* >(&rec_udp),head.size);
+            QByteArray compBuf(reinterpret_cast<char* >(rec_udp.buffer),rec_udp.sizeBuf);
+
+            // преобразуем буфер в структуру
+            TSendListVectorsVisSimple *vecPacket = reinterpret_cast<TSendListVectorsVisSimple* > (rec_udp.buffer);
+            vecList.clear();
+            for(int i = 0 ; i < vecPacket->num; i++)
+            {
+                vecList.push_back(glm::vec3(vecPacket->points[i]));
+            }
         }
     }
     return true;

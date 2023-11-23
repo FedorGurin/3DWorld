@@ -7,20 +7,23 @@
 
 #define SIZE_BUF_DEFAULT 2048
 
-enum TTypeHead
+enum TTypeHead:uint32_t
 {
     PARAM_OBJ       = 0,
     PARAM_ARRAY     = 4,
     INFO_FLIGHT_OBJ = 1,
     COMMAND         = 2,
-    CONTROL_STICK   = 3    /*управление ручкой указанными объектом*/};
+    CONTROL_STICK   = 3,    /*управление ручкой указанными объектом*/
+    LIST_VECTOR     = 5
+
+};
 //! структура запроса для отправки/получения
 typedef struct
 {
     //! идентификатор программного модуля
     uint32_t id;
     //! тип запроса
-    uint32_t typeRequest;
+    TTypeHead typeRequest;
     //! размер всего пакета
     uint32_t size;
     //! глобальное время(в тиках)
@@ -71,6 +74,10 @@ public:
     {
         return &arrayObjects;
     }
+    QVector<glm::vec3> *getVecObj()
+    {
+        return &vecList;
+    }
     //! кол-во объектов
     void setSizeObj(int size)
     {
@@ -118,6 +125,7 @@ private:
     //! то старый объект заменяется новым
     QVector<TSendVehicleVisSimple>  flightObjects;//! объекты воздушных целей
     QVector<TSendArrayVisSimple>    arrayObjects; //! объекты состоящие из нескольких точках
+    QVector<glm::vec3> vecList;
 
 };
 

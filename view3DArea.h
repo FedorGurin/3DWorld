@@ -121,6 +121,7 @@ public:
     void drawTrajectory();
     //! отрисовка строки состояния
     void drawStateLine();
+    void drawVecLine();
     //! разбор текстового файла
     void parserTXTFile();
     //! статус загрузки модели из файла

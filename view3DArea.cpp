@@ -119,6 +119,10 @@ view3DArea::view3DArea():QGLViewer()
     connect(setting,SIGNAL(offsetMapZ(double)), this,SLOT(setOffsetMapZ(double)));
     connect(setting,SIGNAL(rotateMap(double)),  this,SLOT(setRotateMap(double)));
     connect(&net,SIGNAL(resetTrajectory()),this,SLOT(slotReset()));
+
+    QVector<glm::vec3> *vecL = net.getVecObj();
+    vecL->append(glm::vec3(100,100,100));
+    vecL->append(glm::vec3(0,0,0));
 }
 void view3DArea::slotReset()
 {
@@ -376,9 +380,10 @@ void view3DArea::draw()
     drawTrajectory();
 #ifdef USE_3DMODEL
     // отрисовка трехмерных объектов
-    drawSolidObjects();
-    drawTestSolidObj();
+    //drawSolidObjects();
+    //drawTestSolidObj();
 #endif
+    drawVecLine();
     // отрисовка подстилающей поверхности
     if(terra == true)
         drawTerra();
@@ -781,13 +786,13 @@ void view3DArea::drawTestSolidObj()
     if(model == nullptr)
         return;
 
-    drawObject(model,
-               solid.cg_x,
-               solid.cg_y,
-               solid.cg_z,
-               solid.psi,
-               solid.gamma,
-               solid.tan);
+//    drawObject(model,
+//               solid.cg_x,
+//               solid.cg_y,
+//               solid.cg_z,
+//               solid.psi,
+//               solid.gamma,
+//               solid.tan);
 }
 void view3DArea::drawSolidObjects()
 {
@@ -1052,6 +1057,21 @@ void view3DArea::drawStateLine()
 
     drawText((width()/2)-20,height()-40,"Time="+QString::number(globalTime));
     drawText((width()/2)-20,height()-10,"Time="+QString::number(globalTimeDebug));
+}
+void view3DArea::drawVecLine()
+{
+    if(net.getVecObj()->isEmpty())
+        return;
+    for(int i = 1; i < net.getVecObj()->size();i++)
+    {
+        glm::vec3 vec, vec_1;
+        vec = (*net.getVecObj())[i];
+        vec_1 = (*net.getVecObj())[i -1 ];
+        glBegin(GL_LINES);
+        glVertex3f(vec.x, vec.y,vec.z);
+        glVertex3f(vec_1.x, vec_1.y,vec_1.z);
+        glEnd();
+    }
 }
 void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
 {

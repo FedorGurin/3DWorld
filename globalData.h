@@ -2,6 +2,7 @@
 #define GLOBALDATA_H
 #include <glm/glm.hpp>
 #include <stdint.h>
+
 //typedef struct
 //{
 //    double time;
@@ -129,6 +130,20 @@ typedef struct TSendArrayVisSimple_
     TGeoCoord coord[256];
 }TSendArrayVisSimple;
 
+
+typedef struct TSendListVectorsVisSimple_
+{
+    int id;
+    int code;
+    double time;
+
+    //! кол-во элементов
+    uint8_t num;
+
+    glm::vec3 points[256];
+    //! список объектов элемента
+
+}TSendListVectorsVisSimple;
 //typedef struct TSendVehicleVisSimple
 //{
 //    int id;
