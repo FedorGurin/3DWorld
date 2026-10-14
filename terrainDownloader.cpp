@@ -8,6 +8,7 @@
 #include <QNetworkRequest>
 #include <QStandardPaths>
 #include <QTextStream>
+#include <QRegExp>
 #include <math.h>
 
 //! размер тайла, пиксели
@@ -40,6 +41,15 @@ TerrainDownloader::TerrainDownloader(QObject *parent) : QObject(parent)
     centerLat = centerLon = areaKm = 0.0;
     nRows = 0;
     hasError = false;
+    imagery  = true;
+    imgPending = 0;
+    imgZoom = 0;
+    imgX0 = imgX1 = imgY0 = imgY1 = 0;
+    // тот же источник снимков, что и при подгрузке рельефа (см. TerrainStreamer)
+    imageryUrl = "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg";
+    const QByteArray envUrl = qgetenv("TERRAIN_IMAGERY_URL");
+    if(envUrl.isEmpty() == false)
+        imageryUrl = QString::fromUtf8(envUrl);
 }
 
 bool TerrainDownloader::start(double lat, double lon, double sizeKm, int gridSize)
@@ -121,6 +131,24 @@ void TerrainDownloader::replyFinished(QNetworkReply *reply)
     reply->deleteLater();
     const int x = reply->property("tileX").toInt();
     const int y = reply->property("tileY").toInt();
+    if(reply->property("imagery").toBool())
+    {
+        QImage image;
+        if(reply->error() == QNetworkReply::NoError)
+        {
+            QByteArray data = reply->readAll();
+            if(image.loadFromData(data))
+            {
+                const QString path = reply->property("path").toString();
+                QDir().mkpath(QFileInfo(path).path());
+                QFile f(path);
+                if(f.open(QIODevice::WriteOnly))
+                    f.write(data);
+            }
+        }
+        imageTileReady(x, y, image);
+        return;
+    }
     QImage image;
     if(reply->error() != QNetworkReply::NoError)
     {
@@ -240,5 +268,108 @@ void TerrainDownloader::buildGrid()
     }
     file.close();
     tiles.clear();
-    emit finished(fileName);
+    ascFileName = fileName;
+    if(imagery)
+        startImagery();
+    else
+        emit finished(fileName);
+}
+
+void TerrainDownloader::startImagery()
+{
+    // снимок ~2048 пикселей по широте
+    const double pixel = areaKm * 1000.0 / 2048.0;
+    const double pixelAtZ0 = 156543.03 * cos(centerLat * M_PI / 180.0);
+    imgZoom = qBound(1, int(ceil(log2(pixelAtZ0 / pixel))), 17);
+    int count = 0;
+    for(;;)
+    {
+        imgX0 = int(floor(lonToTileX(lonMin, imgZoom)));
+        imgX1 = int(floor(lonToTileX(lonMax, imgZoom)));
+        imgY0 = int(floor(latToTileY(latMax, imgZoom)));
+        imgY1 = int(floor(latToTileY(latMin, imgZoom)));
+        count = (imgX1 - imgX0 + 1) * (imgY1 - imgY0 + 1);
+        if(count <= 196 || imgZoom <= 1)
+            break;
+        imgZoom--;
+    }
+    imgTiles.clear();
+    imgPending = count;
+    const QString src = QString::number(qHash(imageryUrl), 16);
+    for(int x = imgX0; x <= imgX1; x++)
+    {
+        for(int y = imgY0; y <= imgY1; y++)
+        {
+            const QString path = QString("%1/imagery_%2/%3/%4/%5.img")
+                    .arg(cacheDir, src).arg(imgZoom).arg(x).arg(y);
+            QImage cached;
+            if(QFileInfo::exists(path) && cached.load(path))
+            {
+                imageTileReady(x, y, cached);
+                continue;
+            }
+            QString url = imageryUrl;
+            url.replace("{z}", QString::number(imgZoom));
+            url.replace("{x}", QString::number(x));
+            url.replace("{y}", QString::number(y));
+            QNetworkRequest request{QUrl(url)};
+            request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+            request.setRawHeader("User-Agent", "3DWorld terrain loader");
+            QNetworkReply *reply = manager->get(request);
+            reply->setProperty("tileX", x);
+            reply->setProperty("tileY", y);
+            reply->setProperty("imagery", true);
+            reply->setProperty("path", path);
+        }
+    }
+}
+
+void TerrainDownloader::imageTileReady(int x, int y, const QImage &image)
+{
+    if(image.isNull() == false)
+        imgTiles.insert(tileKey(x, y), image.convertToFormat(QImage::Format_RGB32));
+    imgPending--;
+    if(imgPending == 0)
+        buildImagery();
+}
+
+void TerrainDownloader::buildImagery()
+{
+    // снимок сохраняется, только если загружены все тайлы
+    const int total = (imgX1 - imgX0 + 1) * (imgY1 - imgY0 + 1);
+    if(imgTiles.size() == total)
+    {
+        // пиксели снимка - регулярная сетка по широте и долготе, как у карты
+        const int H = 2048;
+        const int W = qMax(2, int(H * (lonMax - lonMin) / (latMax - latMin) *
+                                  cos(centerLat * M_PI / 180.0) + 0.5));
+        QImage out(W, H, QImage::Format_RGB32);
+        for(int r = 0; r < H; r++)
+        {
+            const double lat = latMax - (r + 0.5) / H * (latMax - latMin);
+            const double py = latToTileY(lat, imgZoom) * TILE_SIZE;
+            QRgb *line = reinterpret_cast<QRgb*>(out.scanLine(r));
+            for(int c = 0; c < W; c++)
+            {
+                const double lon = lonMin + (c + 0.5) / W * (lonMax - lonMin);
+                const double px = lonToTileX(lon, imgZoom) * TILE_SIZE;
+                const int tx = qBound(imgX0, int(floor(px / TILE_SIZE)), imgX1);
+                const int ty = qBound(imgY0, int(floor(py / TILE_SIZE)), imgY1);
+                const QImage &tile = imgTiles[tileKey(tx, ty)];
+                const int ix = qBound(0, int(px) - tx * TILE_SIZE, tile.width() - 1);
+                const int iy = qBound(0, int(py) - ty * TILE_SIZE, tile.height() - 1);
+                line[c] = tile.pixel(ix, iy);
+            }
+        }
+        QString imgName = ascFileName;
+        imgName.replace(QRegExp("\\.asc$"), ".jpg");
+        out.save(imgName, "JPG", 90);
+        imgTiles.clear();
+        emit finished(ascFileName);
+    }else
+    {
+        imgTiles.clear();
+        emit finished(ascFileName);
+        emit failed(QString::fromUtf8("Снимок области загружен не полностью - рельеф без снимка"));
+    }
 }

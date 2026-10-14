@@ -48,6 +48,10 @@ view3DArea::view3DArea():QGLViewer()
     terrainList        = 0;
     terrainListVersion = -1;
     terrainStreaming   = false;
+    terrainImagery     = true;
+    terrainTexture     = 0;
+    terrainListTex     = 0;
+    terrainTextureVersion = -1;
     outerGroundColor[0] = 0.3f; outerGroundColor[1] = 0.5f; outerGroundColor[2] = 0.25f;
     outerGroundHeight   = 0.0f;
     curIdMan = 0;
@@ -146,6 +150,7 @@ view3DArea::view3DArea():QGLViewer()
     connect(terrain,SIGNAL(status(QString)),    setting,SLOT(setTerrainStatus(QString)));
     connect(streamer,SIGNAL(status(QString)),   setting,SLOT(setTerrainStatus(QString)));
     connect(setting,SIGNAL(smoothing(bool)),    this,SLOT(setSmoothing(bool)));
+    connect(setting,SIGNAL(imagery(bool)),      this,SLOT(setImagery(bool)));
     connect(setting,SIGNAL(staleTimeout(int)),  this,SLOT(setStaleTimeout(int)));
     connect(setting,SIGNAL(recording(bool)),    this,SLOT(setRecording(bool)));
     connect(setting,SIGNAL(playRecording()),    this,SLOT(openPlayback()));
@@ -193,6 +198,11 @@ void view3DArea::setGrid(bool value)
 void view3DArea::setSky(bool value)
 {
     sky=value;
+}
+void view3DArea::setImagery(bool value)
+{
+    streamer->setImagery(value);
+    terrainImagery = value;
 }
 void view3DArea::setSmoothing(bool value)
 {
@@ -460,7 +470,9 @@ void view3DArea::init()
     setAnimationPeriod(dt);
     frameClock.start();
     // открыть рельеф по умолчанию
-    terrain->openTerrainMap("defaultTerrain.asc");
+    // (если карта уже не запрошена из командной строки)
+    if(terrain->isRequested() == false)
+        terrain->openTerrainMap("defaultTerrain.asc");
     this->setBackgroundColor(QColor(81,168,255));
     setSceneRadius(radiusScene);
     //установить период анимации
@@ -1295,6 +1307,14 @@ void view3DArea::drawStateLine()
     drawText((width()/2)-20,height()-20,"Current Object="+prefix);
 
     drawText((width()/2)-20,height()-40,"Time="+QString::number(globalTime));
+    // подпись источника спутниковых снимков (условие лицензии)
+    if(terra == true && ((terrainStreaming && streamer->hasImagery()) ||
+                         (terrainStreaming == false && terrainTexture != 0 && terrainImagery)))
+    {
+        QFont small;
+        small.setPointSize(7);
+        drawText(4, height() - 4, streamer->imageryAttribution, small);
+    }
     drawText((width()/2)-20,height()-10,"Time="+QString::number(globalTimeDebug));
 }
 void view3DArea::drawVecLine()
@@ -1379,8 +1399,6 @@ void view3DArea::drawTerra()
         // заново только после загрузки новой карты
         if(terrainList == 0 || terrainListVersion != terrain->version)
         {
-            if(terrainList == 0)
-                terrainList = glGenLists(1);
             terrainListVersion = terrain->version;
 
             TASCII_MAP *map = terrain->mapH;
@@ -1402,28 +1420,70 @@ void view3DArea::drawTerra()
                 terrainColor(isWater ? 0.0f : float(sumH / qMax(count, 1)), 1.0f, outerGroundColor);
                 outerGroundHeight = isWater ? 0.0f : float(map->minHeight) - 30.0f;
             }
-            glNewList(terrainList, GL_COMPILE);
-            for(int i=0;i<map->nrows-1;i++)
+            // два варианта: окрашенный по высоте и со спутниковым снимком
+            for(int textured = 0; textured < 2; textured++)
             {
-                glBegin(GL_TRIANGLE_STRIP);
-                for(int j=0;j<map->ncols;j++)
+                GLuint &list = textured ? terrainListTex : terrainList;
+                if(list == 0)
+                    list = glGenLists(1);
+                glNewList(list, GL_COMPILE);
+                for(int i=0;i<map->nrows-1;i++)
                 {
-                    for(int k = 0; k < 2; k++)
+                    glBegin(GL_TRIANGLE_STRIP);
+                    for(int j=0;j<map->ncols;j++)
                     {
-                        const QVector3D v = map->value(j, i + k);
-                        const QVector3D n = map->normal(j, i + k);
-                        float c[3];
-                        terrainColor(v.y(), n.y(), c);
-                        glColor3fv(c);
-                        glNormal3f(n.x(), n.y(), n.z());
-                        glVertex3f(v.x(), v.y(), v.z());
+                        for(int k = 0; k < 2; k++)
+                        {
+                            const QVector3D v = map->value(j, i + k);
+                            const QVector3D n = map->normal(j, i + k);
+                            if(textured)
+                            {
+                                // снимок - регулярная сетка по широте и долготе, как и карта
+                                glColor3f(1.0f, 1.0f, 1.0f);
+                                glTexCoord2f(float(j) / (map->ncols - 1), float(i + k) / (map->nrows - 1));
+                            }else
+                            {
+                                float c[3];
+                                terrainColor(v.y(), n.y(), c);
+                                glColor3fv(c);
+                            }
+                            glNormal3f(n.x(), n.y(), n.z());
+                            glVertex3f(v.x(), v.y(), v.z());
+                        }
                     }
+                    glEnd();
                 }
-                glEnd();
+                glEndList();
             }
-            glEndList();
+            // текстура снимка
+            if(terrainTexture != 0)
+                glDeleteTextures(1, &terrainTexture);
+            terrainTexture = 0;
+            if(map->texture.isNull() == false)
+            {
+                const QImage img = map->texture.convertToFormat(QImage::Format_RGBA8888);
+                glGenTextures(1, &terrainTexture);
+                glBindTexture(GL_TEXTURE_2D, terrainTexture);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 0x812F);   // GL_CLAMP_TO_EDGE
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, 0x812F);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, 0x8191, GL_TRUE);             // GL_GENERATE_MIPMAP
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width(), img.height(), 0,
+                             GL_RGBA, GL_UNSIGNED_BYTE, img.constBits());
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
         }
-        glCallList(terrainList);
+        if(terrainImagery && terrainTexture != 0)
+        {
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, terrainTexture);
+            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            glCallList(terrainListTex);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glDisable(GL_TEXTURE_2D);
+        }else
+            glCallList(terrainList);
     }
     glPopMatrix();
 

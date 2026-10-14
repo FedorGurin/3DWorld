@@ -22,6 +22,7 @@ FormSettings::FormSettings(QWidget *parent) :
     resize(inner->sizeHint().width() + 30, qMin(inner->sizeHint().height() + 10, 760));
 
     connect(ui->checkBoxSmoothing,SIGNAL(toggled(bool)),this,SIGNAL(smoothing(bool)));
+    connect(ui->checkBoxImagery,SIGNAL(toggled(bool)),this,SIGNAL(imagery(bool)));
     connect(ui->spinBoxStaleSec,SIGNAL(valueChanged(int)),this,SIGNAL(staleTimeout(int)));
     connect(ui->pushButtonRecord,SIGNAL(toggled(bool)),this,SIGNAL(recording(bool)));
     connect(ui->pushButtonPlay,SIGNAL(clicked()),this,SIGNAL(playRecording()));

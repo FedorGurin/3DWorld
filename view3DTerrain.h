@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QThread>
 #include <QVector3D>
+#include <QImage>
 
 
 
@@ -34,6 +35,8 @@ typedef struct
     //! минимальная и максимальная высота, м
     double minHeight;
     double maxHeight;
+    //! спутниковый снимок карты (файл с тем же именем, .jpg или .png), может быть пустым
+    QImage texture;
     QVector3D value(int col,int row)
     {
         return dataVectors[row][col];
@@ -48,12 +51,12 @@ class ThreadParser : public QThread
  {
  public:
     ThreadParser();
-    void setParserFile(QTextStream *out,TASCII_MAP *mapH_);
+    void setParserFile(TASCII_MAP *mapH_, const QString &fileName_);
     void run();
  private:
 
     TASCII_MAP *mapH;
-    QTextStream *out;
+    QString fileName;
  };
 
 class View3DTerrain : public QGLWidget
@@ -71,6 +74,8 @@ public:
     bool loadCompleate;
     //! номер загруженной карты (увеличивается после каждой загрузки)
     int version;
+    //! была ли уже запрошена загрузка карты (из файла или из интернета)
+    bool isRequested() const {return requested;}
     ~View3DTerrain();
     TASCII_MAP *mapH;
     //! загрузка карты высот из интернета
@@ -83,6 +88,7 @@ private:
     ThreadParser *threadParser;
     //! карта, которую нужно загрузить после окончания текущей загрузки
     QString pendingFile;
+    bool requested;
     //! загрузка карты из файла
     void loadFile(const QString &fileName);
 

@@ -37,6 +37,7 @@ signals:
     void terrainStreaming(bool enabled, double lat, double lon);
     //! сеть: сглаживание движения, удаление молчащих объектов, запись, воспроизведение
     void smoothing(bool);
+    void imagery(bool);
     void staleTimeout(int seconds);
     void recording(bool);
     void playRecording();

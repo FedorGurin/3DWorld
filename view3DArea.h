@@ -303,6 +303,13 @@ private:
     TerrainStreamer *streamer;
     //! признак подгрузки рельефа (вместо карты из файла)
     bool terrainStreaming;
+    //! наложение спутниковых снимков на рельеф
+    bool terrainImagery;
+    //! текстура снимка карты из файла (0 - нет) и номер карты, для которой она создана
+    GLuint terrainTexture;
+    //! список отображения рельефа с текстурными координатами снимка
+    GLuint terrainListTex;
+    int terrainTextureVersion;
     //! список отображения OpenGL с рельефом
     GLuint terrainList;
     //! номер карты, для которой построен список отображения
@@ -361,6 +368,8 @@ public slots:
     void setSky(bool);
     //! сглаживание движения сетевых объектов
     void setSmoothing(bool);
+    //! наложение спутниковых снимков
+    void setImagery(bool);
     //! удаление объектов без данных через seconds секунд (0 - не удалять)
     void setStaleTimeout(int seconds);
     //! запись принимаемых пакетов в файл

@@ -13,6 +13,7 @@ View3DTerrain::View3DTerrain(QWidget *parent):QGLWidget(parent)
     threadParser  = new ThreadParser;
     loadCompleate = false;
     version       = 0;
+    requested     = false;
     connect(dialog,SIGNAL(accepted()),this,SLOT(slotAccepted()));
     connect(threadParser,SIGNAL(finished()),this,SLOT(slotThreadFinished()));
 
@@ -23,6 +24,7 @@ View3DTerrain::View3DTerrain(QWidget *parent):QGLWidget(parent)
 }
 void View3DTerrain::loadFromInternet(double lat, double lon, double sizeKm)
 {
+    requested = true;
     if(downloader->isRunning())
         return;
     // статус выставляется до запуска: при тайлах из кэша загрузка
@@ -80,18 +82,23 @@ void View3DTerrain::loadFile(const QString &fileName)
         return;
     }
 
-    file->close();
-    file->setFileName(fileName);
-    if (!file->open(QIODevice::ReadOnly | QIODevice::Text))   return;
-    stream->setDevice(file);
-    threadParser->setParserFile(stream,mapH);
+    if(QFileInfo(fileName).isReadable() == false)
+    {
+        qWarning("Can't open terrain file %s", qPrintable(fileName));
+        return;
+    }
+    requested = true;
+    // файл открывает и читает сам поток разбора
+    threadParser->setParserFile(mapH,fileName);
 
     loadCompleate=false;
     threadParser->start(QThread::IdlePriority);
 }
 void View3DTerrain::slotThreadFinished()
 {
-    file->close();
+    // запоздавший сигнал предыдущей загрузки, когда уже идет следующая
+    if(threadParser->isRunning())
+        return;
     loadCompleate = (mapH->dataVectors.isEmpty() == false);
     version++;
     if(pendingFile.isEmpty() == false)
@@ -112,10 +119,10 @@ ThreadParser::ThreadParser()
 {
 
 }
-void ThreadParser::setParserFile(QTextStream *out_,TASCII_MAP *mapH_)
+void ThreadParser::setParserFile(TASCII_MAP *mapH_, const QString &fileName_)
 {
    mapH=mapH_;
-   out=out_;
+   fileName=fileName_;
 }
 void ThreadParser::run()
 {
@@ -126,8 +133,28 @@ void ThreadParser::run()
     mapH->nrows = 0;
     mapH->minHeight = 0.0;
     mapH->maxHeight = 0.0;
+    mapH->texture = QImage();
+    // снимок карты: файл с тем же именем и расширением .jpg или .png
+    if(fileName.isEmpty() == false)
+    {
+        const QFileInfo fi(fileName);
+        for(const char *ext : {".jpg", ".png"})
+        {
+            const QString img = fi.path() + "/" + fi.completeBaseName() + ext;
+            if(QFileInfo::exists(img) && mapH->texture.load(img))
+                break;
+        }
+    }
 
-    QStringList list=(out->readAll()).split("\n",QString::SkipEmptyParts);
+    QFile file(fileName);
+    if(file.open(QIODevice::ReadOnly | QIODevice::Text) == false)
+    {
+        qWarning("Can't open terrain file %s", qPrintable(fileName));
+        return;
+    }
+    QTextStream out(&file);
+    QStringList list=(out.readAll()).split("\n",QString::SkipEmptyParts);
+    file.close();
     // заголовок ESRI ASCII Grid: ncols, nrows, xllcorner, yllcorner, cellsize[, nodata_value]
     if(list.size() < 6)
     {

@@ -22,7 +22,11 @@ public:
     //! gridSize - кол-во узлов сетки по широте
     bool start(double lat, double lon, double sizeKm, int gridSize = 400);
     //! идет ли загрузка
-    bool isRunning() const {return pending > 0;}
+    bool isRunning() const {return pending > 0 || imgPending > 0;}
+    //! загружать спутниковый снимок области (сохраняется рядом с картой, .jpg)
+    bool imagery;
+    //! адрес тайлов снимков: {z}, {x}, {y}
+    QString imageryUrl;
     //! адрес тайлов: {z}, {x}, {y} заменяются номерами тайла
     QString urlTemplate;
     //! каталог для кэша тайлов и готовых карт
@@ -48,6 +52,17 @@ private:
     //! высота в точке, м (билинейная интерполяция по тайлам)
     double sampleHeight(double lat, double lon) const;
     QString tilePath(int x, int y) const;
+    //! загрузка снимка области после построения карты
+    void startImagery();
+    void imageTileReady(int x, int y, const QImage &image);
+    //! сборка снимка в сетку карты и сохранение
+    void buildImagery();
+
+    QMap<qint64, QImage> imgTiles;
+    int imgPending;
+    int imgZoom;
+    int imgX0, imgX1, imgY0, imgY1;
+    QString ascFileName;
 
     QNetworkAccessManager *manager;
     QMap<qint64, QImage> tiles;
