@@ -29,12 +29,34 @@ FormSettings::FormSettings(QWidget *parent) :
     connect(ui->doubleSpinBoxRot,SIGNAL(valueChanged(double)),this,SIGNAL(rotateMap(double)));
     connect(ui->pushButtonTerrainOnline,&QPushButton::clicked,this,[this]()
     {
-        emit loadTerrainOnline(ui->doubleSpinBoxLat->value(),
-                               ui->doubleSpinBoxLon->value(),
-                               ui->doubleSpinBoxAreaKm->value());
+        if(ui->checkBoxTerrainStreaming->isChecked())
+            emit terrainStreaming(true,
+                                  ui->doubleSpinBoxLat->value(),
+                                  ui->doubleSpinBoxLon->value());
+        else
+            emit loadTerrainOnline(ui->doubleSpinBoxLat->value(),
+                                   ui->doubleSpinBoxLon->value(),
+                                   ui->doubleSpinBoxAreaKm->value());
+    });
+    connect(ui->checkBoxTerrainStreaming,&QCheckBox::toggled,this,[this](bool on)
+    {
+        // при подгрузке размер области не нужен - она следует за камерой
+        ui->doubleSpinBoxAreaKm->setEnabled(!on);
+        emit terrainStreaming(on,
+                              ui->doubleSpinBoxLat->value(),
+                              ui->doubleSpinBoxLon->value());
     });
 }
 
+void FormSettings::setTerrainStreamingChecked(bool value, double lat, double lon)
+{
+    ui->doubleSpinBoxLat->setValue(lat);
+    ui->doubleSpinBoxLon->setValue(lon);
+    ui->checkBoxTerrainStreaming->blockSignals(true);
+    ui->checkBoxTerrainStreaming->setChecked(value);
+    ui->checkBoxTerrainStreaming->blockSignals(false);
+    ui->doubleSpinBoxAreaKm->setEnabled(!value);
+}
 void FormSettings::setTerrainStatus(const QString &text)
 {
     ui->labelTerrainStatus->setText(text);

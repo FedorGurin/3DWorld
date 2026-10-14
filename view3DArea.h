@@ -15,6 +15,7 @@
 #include "view3DTerrain.h"
 #include "view3DSky.h"
 #include "view3DHud.h"
+#include "terrainStreamer.h"
 #include "OBJ_Loader.h"
 #include "math_func.h"
 #include "visudp.h"
@@ -138,6 +139,12 @@ public:
     void loadTerrainOnline(double lat, double lon, double sizeKm)
     {
         terrain->loadFromInternet(lat, lon, sizeKm);
+    }
+    //! включение подгрузки рельефа из командной строки
+    void startTerrainStreaming(double lat, double lon)
+    {
+        setting->setTerrainStreamingChecked(true, lat, lon);
+        setTerrainStreaming(true, lat, lon);
     }
     //! статус загрузки модели из файла
     void statusLoad(bool);
@@ -269,6 +276,10 @@ private:
     View3DSky skyView;
     //! индикатор на лобовом стекле
     View3DHud hud;
+    //! подгрузка рельефа вокруг камеры по ходу полета
+    TerrainStreamer *streamer;
+    //! признак подгрузки рельефа (вместо карты из файла)
+    bool terrainStreaming;
     //! список отображения OpenGL с рельефом
     GLuint terrainList;
     //! номер карты, для которой построен список отображения
@@ -325,6 +336,8 @@ public slots:
     void setGrid(bool);
     //! отрисовка неба
     void setSky(bool);
+    //! подгрузка рельефа по ходу полета с началом координат lat, lon (град)
+    void setTerrainStreaming(bool value, double lat, double lon);
     void setRotateMap(double);
     void setOffsetMapX(double);
     void setOffsetMapZ(double);

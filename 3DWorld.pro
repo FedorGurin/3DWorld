@@ -66,6 +66,7 @@ SOURCES += main.cpp\
     view3DSky.cpp \
     view3DHud.cpp \
     terrainDownloader.cpp \
+    terrainStreamer.cpp \
     visudp.cpp \
     formsettings.cpp \
     TemplateNASP.cpp \
@@ -79,6 +80,8 @@ OBJ_Loader.h \
     view3DSky.h \
     view3DHud.h \
     terrainDownloader.h \
+    terrainStreamer.h \
+    terrainColor.h \
     visudp.h \
     dataPath.h \
     formsettings.h \

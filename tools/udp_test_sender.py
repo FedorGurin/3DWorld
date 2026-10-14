@@ -76,6 +76,10 @@ def main():
                         help="длительность, сек (0 - бесконечно)")
     parser.add_argument("--codes", default="101,102,105",
                         help="коды 3D моделей объектов через запятую")
+    parser.add_argument("--line", action="store_true",
+                        help="прямолинейный полет на север (проверка подгрузки рельефа)")
+    parser.add_argument("--speed", type=float, default=250.0,
+                        help="скорость прямолинейного полета, м/с")
     parser.add_argument("--reset", action="store_true",
                         help="отправить команду TC_RESET и выйти")
     args = parser.parse_args()
@@ -95,6 +99,15 @@ def main():
         t = time.time() - t0
         if args.duration and t > args.duration:
             break
+        if args.line:
+            # объекты летят на север друг за другом
+            for i in range(args.objects):
+                x = args.speed * t - 1500.0 * i
+                payload = vehicle(i, codes[i % len(codes)], t, x, 6500.0, 300.0 * i,
+                                  0.0, 0.0, 0.0, v=args.speed, alfa=math.radians(3.0))
+                sock.sendto(make_packet(PARAM_OBJ, payload), addr)
+            time.sleep(dt)
+            continue
         for i in range(args.objects):
             r = 3000.0 + 1500.0 * i
             w = 200.0 / r

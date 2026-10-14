@@ -15,6 +15,7 @@
 #include <QByteArray>
 
 #include "dataPath.h"
+#include "terrainColor.h"
 
 
 using namespace qglviewer;
@@ -36,6 +37,7 @@ view3DArea::view3DArea():QGLViewer()
     glFunc = 0;
     terrainList        = 0;
     terrainListVersion = -1;
+    terrainStreaming   = false;
     outerGroundColor[0] = 0.3f; outerGroundColor[1] = 0.5f; outerGroundColor[2] = 0.25f;
     outerGroundHeight   = 0.0f;
     curIdMan = 0;
@@ -99,6 +101,8 @@ view3DArea::view3DArea():QGLViewer()
 
     // указатель на рельеф
     terrain=new View3DTerrain;
+    // подгрузка рельефа по ходу полета
+    streamer = new TerrainStreamer(this);
 
     // ограничения на КАИ
     limit=new LimitPositionKAI;
@@ -123,6 +127,9 @@ view3DArea::view3DArea():QGLViewer()
     connect(setting,SIGNAL(loadTerrainOnline(double,double,double)),
             terrain,SLOT(loadFromInternet(double,double,double)));
     connect(terrain,SIGNAL(status(QString)),    setting,SLOT(setTerrainStatus(QString)));
+    connect(streamer,SIGNAL(status(QString)),   setting,SLOT(setTerrainStatus(QString)));
+    connect(setting,SIGNAL(terrainStreaming(bool,double,double)),
+            this,SLOT(setTerrainStreaming(bool,double,double)));
     connect(setting,SIGNAL(loadDataFlight()),   this,SLOT(openTXTFile()));
     connect(setting,SIGNAL(terra(bool)),        this,SLOT(setTerra(bool)));
     connect(setting,SIGNAL(freq(int)),          this,SLOT(setFreq(int)));
@@ -180,6 +187,12 @@ void view3DArea::setGrid(bool value)
 void view3DArea::setSky(bool value)
 {
     sky=value;
+}
+void view3DArea::setTerrainStreaming(bool value, double lat, double lon)
+{
+    terrainStreaming = value;
+    if(value)
+        streamer->setOrigin(lat, lon);
 }
 void view3DArea::openTXTFile()
 {
@@ -411,6 +424,14 @@ void view3DArea::draw()
         globalTime = net.synch_time;
     // список объектов мог измениться - обновим объект, к которому привязана камера
     refreshCameraObject();
+    // если модель передает географическую точку начала координат (рад),
+    // подгружаемый рельеф привязывается к ней
+    if(terrainStreaming == true && net.getVehicleObj()->isEmpty() == false)
+    {
+        const TSendVehicleVisSimple &first = net.getVehicleObj()->first();
+        if(first.fi0_geo != 0.0 || first.lam0_geo != 0.0)
+            streamer->setOrigin(radianToGrad(first.fi0_geo), radianToGrad(first.lam0_geo));
+    }
 
 
     if(cameraToThisObj != nullptr)
@@ -1118,43 +1139,10 @@ void view3DArea::drawVecLine()
         glEnd();
     }
 }
-//! цвет рельефа по высоте и крутизне склона (slope: 1 - горизонтально, 0 - отвесно)
-static void terrainColor(float h, float slope, float c[3])
-{
-    struct TColorStop {float h; float r, g, b;};
-    static const TColorStop stops[] = {
-        {   0.0f, 0.24f, 0.42f, 0.20f},   // низменность
-        { 300.0f, 0.33f, 0.52f, 0.24f},
-        { 900.0f, 0.50f, 0.54f, 0.30f},   // предгорья
-        {1600.0f, 0.52f, 0.44f, 0.31f},   // горы
-        {2600.0f, 0.50f, 0.47f, 0.44f},   // скалы
-        {3400.0f, 0.93f, 0.94f, 0.97f},   // снег
-    };
-    const int n = sizeof(stops) / sizeof(stops[0]);
-    if(h < 3.0f)
-    {
-        // вода
-        c[0] = 0.16f; c[1] = 0.32f; c[2] = 0.55f;
-        return;
-    }
-    int k = 0;
-    while(k < n - 2 && h > stops[k + 1].h)
-        k++;
-    float t = (h - stops[k].h) / (stops[k + 1].h - stops[k].h);
-    t = qBound(0.0f, t, 1.0f);
-    c[0] = stops[k].r + (stops[k + 1].r - stops[k].r) * t;
-    c[1] = stops[k].g + (stops[k + 1].g - stops[k].g) * t;
-    c[2] = stops[k].b + (stops[k + 1].b - stops[k].b) * t;
-    // крутые склоны - каменистые, снег на них не держится
-    float rock = qBound(0.0f, (0.85f - slope) / 0.25f, 1.0f);
-    const float rc[3] = {0.45f, 0.42f, 0.38f};
-    for(int i = 0; i < 3; i++)
-        c[i] = c[i] + (rc[i] - c[i]) * rock * 0.8f;
-}
 // отрисовка земли
 void view3DArea::drawTerra()
 {
-    if(terrain->loadCompleate==false)
+    if(terrainStreaming == false && terrain->loadCompleate==false)
         return;
 
     glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_FOG_BIT);
@@ -1198,55 +1186,72 @@ void view3DArea::drawTerra()
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
 
-    // рельеф не меняется между кадрами - формируем список отображения
-    // заново только после загрузки новой карты
-    if(terrainList == 0 || terrainListVersion != terrain->version)
+    if(terrainStreaming == true)
     {
-        if(terrainList == 0)
-            terrainList = glGenLists(1);
-        terrainListVersion = terrain->version;
+        // подгрузка рельефа вокруг камеры: точка фокуса в координатах карты
+        // (обратное преобразование к повороту и смещению карты)
+        const Vec cp = camera()->position();
+        const double a = -rotMap * M_PI / 180.0;
+        const double lx =  cp.x * cos(a) + cp.z * sin(a) - offsetMapX;
+        const double lz = -cp.x * sin(a) + cp.z * cos(a) - offsetMapZ;
+        streamer->update(lx, lz);
+        streamer->draw();
+        // земля за подгруженной областью
+        const bool isWater = streamer->waterFraction() > 0.5f;
+        terrainColor(isWater ? 0.0f : 150.0f, 1.0f, outerGroundColor);
+        outerGroundHeight = isWater ? 0.0f : streamer->minHeight() - 50.0f;
+    }else
+    {
+        // рельеф не меняется между кадрами - формируем список отображения
+        // заново только после загрузки новой карты
+        if(terrainList == 0 || terrainListVersion != terrain->version)
+        {
+            if(terrainList == 0)
+                terrainList = glGenLists(1);
+            terrainListVersion = terrain->version;
 
-        TASCII_MAP *map = terrain->mapH;
-        // земля за картой: вода, если край карты в основном водный
-        {
-            int water = 0, count = 0;
-            double sumH = 0.0;
-            for(int i = 0; i < map->nrows; i++)
+            TASCII_MAP *map = terrain->mapH;
+            // земля за картой: вода, если край карты в основном водный
             {
-                for(int j = 0; j < map->ncols; j += (i == 0 || i == map->nrows - 1) ? 1 : map->ncols - 1)
+                int water = 0, count = 0;
+                double sumH = 0.0;
+                for(int i = 0; i < map->nrows; i++)
                 {
-                    const double h = map->value(j, i).y();
-                    if(h < 3.0) water++;
-                    sumH += h;
-                    count++;
+                    for(int j = 0; j < map->ncols; j += (i == 0 || i == map->nrows - 1) ? 1 : map->ncols - 1)
+                    {
+                        const double h = map->value(j, i).y();
+                        if(h < 3.0) water++;
+                        sumH += h;
+                        count++;
+                    }
                 }
+                const bool isWater = water * 2 > count;
+                terrainColor(isWater ? 0.0f : float(sumH / qMax(count, 1)), 1.0f, outerGroundColor);
+                outerGroundHeight = isWater ? 0.0f : float(map->minHeight) - 30.0f;
             }
-            const bool isWater = water * 2 > count;
-            terrainColor(isWater ? 0.0f : float(sumH / qMax(count, 1)), 1.0f, outerGroundColor);
-            outerGroundHeight = isWater ? 0.0f : float(map->minHeight) - 30.0f;
-        }
-        glNewList(terrainList, GL_COMPILE);
-        for(int i=0;i<map->nrows-1;i++)
-        {
-            glBegin(GL_TRIANGLE_STRIP);
-            for(int j=0;j<map->ncols;j++)
+            glNewList(terrainList, GL_COMPILE);
+            for(int i=0;i<map->nrows-1;i++)
             {
-                for(int k = 0; k < 2; k++)
+                glBegin(GL_TRIANGLE_STRIP);
+                for(int j=0;j<map->ncols;j++)
                 {
-                    const QVector3D v = map->value(j, i + k);
-                    const QVector3D n = map->normal(j, i + k);
-                    float c[3];
-                    terrainColor(v.y(), n.y(), c);
-                    glColor3fv(c);
-                    glNormal3f(n.x(), n.y(), n.z());
-                    glVertex3f(v.x(), v.y(), v.z());
+                    for(int k = 0; k < 2; k++)
+                    {
+                        const QVector3D v = map->value(j, i + k);
+                        const QVector3D n = map->normal(j, i + k);
+                        float c[3];
+                        terrainColor(v.y(), n.y(), c);
+                        glColor3fv(c);
+                        glNormal3f(n.x(), n.y(), n.z());
+                        glVertex3f(v.x(), v.y(), v.z());
+                    }
                 }
+                glEnd();
             }
-            glEnd();
+            glEndList();
         }
-        glEndList();
+        glCallList(terrainList);
     }
-    glCallList(terrainList);
     glPopMatrix();
 
     // за пределами карты продолжаем землю плоскостью до горизонта,
