@@ -71,6 +71,8 @@ def main():
     parser.add_argument("--rate", type=float, default=20.0, help="частота, Гц")
     parser.add_argument("--duration", type=float, default=0.0,
                         help="длительность, сек (0 - бесконечно)")
+    parser.add_argument("--codes", default="101,102,105",
+                        help="коды 3D моделей объектов через запятую")
     parser.add_argument("--reset", action="store_true",
                         help="отправить команду TC_RESET и выйти")
     args = parser.parse_args()
@@ -83,7 +85,7 @@ def main():
         sock.sendto(packet, addr)
         return
 
-    codes = [101, 102, 105]
+    codes = [int(c) for c in args.codes.split(",")]
     t0 = time.time()
     dt = 1.0 / args.rate
     while True:

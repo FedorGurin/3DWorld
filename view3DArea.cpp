@@ -41,6 +41,7 @@ view3DArea::view3DArea():QGLViewer()
     cameraToThisObj = nullptr;
     cameraToObjIndex= -1;
     cameraToBack    = false;
+    txtScale        = 1.0f;
     dataFromTXTFile = false;
 
     dialog  = new QFileDialog(this);
@@ -312,43 +313,50 @@ void view3DArea::statusLoad(bool loadout)
 }
 void view3DArea::readAllModels()
 {
-    list3DObj.resize(8);
-    for(auto &obj : list3DObj)
-        obj.displayList = 0;
-    // коды известных объектов
-    list3DObj[0].code=105;//конус
-    list3DObj[1].code=101;//f15
-    list3DObj[2].code=102;
-    list3DObj[3].code=103;
-    list3DObj[4].code=104;
-    list3DObj[5].code=100;
-    list3DObj[6].code=106;
-    list3DObj[7].code=107;
+    //! описание моделей: код объекта, файл, реальная длина модели, м
+    //! (0 - размеры в файле уже заданы в метрах)
+    struct TModelInfo
+    {
+        int code;
+        const char *file;
+        float length;
+    };
+    const TModelInfo models[] = {
+        {105, "libs/cone.obj",  0.0f},  // конус
+        {101, "libs/f15.obj",  19.4f},  // F-15
+        {102, "libs/f15.obj",  19.4f},  // цель (F-15)
+        {106, "libs/il76.obj",  0.0f},  // Ил-76
+    };
 
-    // Initialize Loader
-
-
-    // Load .obj File
-    bool loadout = list3DObj[0].file.LoadFile(findDataFile("libs/cone.obj").toStdString());
-    statusLoad(loadout);
-
-    loadout = list3DObj[1].file.LoadFile(findDataFile("libs/f15.obj").toStdString());
-    statusLoad(loadout);
-
-    loadout = list3DObj[2].file.LoadFile(findDataFile("libs/f15.obj").toStdString());
-     statusLoad(loadout);
-
-
-
-    // чтение моделей из 3ds файлов
-    //loadFile("./3dmodels/aircraft.3ds",  &(list3DObj[0].file));
-    //loadFile("./3dmodels/target.3ds",    &(list3DObj[1].file));
-//    loadFile("./3dmodels/x55.3ds",       &(list3DObj[2].file));
-//    loadFile("./3dmodels/WATER_T2.3ds",  &(list3DObj[3].file));
-//    loadFile("./3dmodels/bomb.3ds",      &(list3DObj[4].file));
-//    loadFile("./3dmodels/buran.3ds",     &(list3DObj[5].file));
-//    loadFile("./3dmodels/il78.3ds",      &(list3DObj[6].file));
-//    loadFile("./3dmodels/su35.3ds",      &(list3DObj[7].file));
+    list3DObj.clear();
+    for(const TModelInfo &info : models)
+    {
+        T3DObject obj;
+        obj.code            = info.code;
+        obj.displayList     = 0;
+        obj.transparentList = 0;
+        obj.scale           = 1.0f;
+        list3DObj.push_back(obj);
+    }
+    for(int i = 0; i < list3DObj.size(); i++)
+    {
+        T3DObject &obj = list3DObj[i];
+        bool loadout = obj.file.LoadFile(findDataFile(models[i].file).toStdString());
+        statusLoad(loadout);
+        if(loadout == false || models[i].length <= 0.0f)
+            continue;
+        // масштаб по длине модели вдоль продольной оси X
+        float minX = 0.0f, maxX = 0.0f;
+        bool first = true;
+        for(const objl::Vertex &v : obj.file.LoadedVertices)
+        {
+            if(first || v.Position.x < minX) minX = v.Position.x;
+            if(first || v.Position.x > maxX) maxX = v.Position.x;
+            first = false;
+        }
+        if(maxX - minX > 1e-6f)
+            obj.scale = models[i].length / (maxX - minX);
+    }
 }
 
 void view3DArea::init()
@@ -707,6 +715,7 @@ void view3DArea::animate()
         QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
         TSendVehicleVisSimple *solid = &((*list)[0]);
         solid->code = rows[index].code;
+        txtScale    = rows[index].scale > 0.0f ? rows[index].scale : 1.0f;
 
 
         //! эти параметры нужно прогнать через блок интерполяции
@@ -884,74 +893,73 @@ void view3DArea::drawSolidObjects()
                                       i.cg_x,
                                       i.cg_z);
             }
+            // при воспроизведении файла учитываем масштаб из файла
+            float scale = model->scale;
+            if(dataFromTXTFile == true && &i == &list->first())
+                scale *= txtScale;
             drawObject(model,
                        i.cg_x,
                        i.cg_y,
                        i.cg_z,
                        i.psi,
                        i.gamma,
-                       i.tan);
+                       i.tan,
+                       scale);
         }
     }
 
 }
 
-void view3DArea::drawObject(T3DObject *obj,
-                            double pos_x,
-                            double pos_y,
-                            double pos_z,
-                            double psi_rad,
-                            double gamma_rad,
-                            double tan_rad)
+void view3DArea::compileObject(T3DObject *obj)
 {
-    glPushMatrix();
-    glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_COLOR_MATERIAL);
-
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-
-    // направленный источник света - солнце
-    const glm::vec3 sun = skyView.sunDirection();
-    GLfloat pos[] = {sun.x, sun.y, sun.z, 0.0f};
-    GLfloat ambLight[]  = {0.2f, 0.2f, 0.2f, 0.0f};
-    GLfloat difLight[]  = {0.8f, 0.8f, 0.8f, 0.0f};
-    GLfloat specLight[] = {1.0f, 1.0f, 1.0f, 0.0f};
-
-    glLightfv(GL_LIGHT0, GL_POSITION, pos);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambLight);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, difLight);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, specLight);
-
-    glTranslatef(pos_x,
-                 pos_y,
-                 pos_z);
-    glScalef(10,10,10);
-    // при масштабировании нормали нужно нормировать заново
-    glEnable(GL_NORMALIZE);
-
-    glRotated(radToGrad * psi_rad,0.0,1.0,0.0);
-    glRotated(radToGrad * tan_rad,0.0,0.0,1.0);
-    glRotated(radToGrad * gamma_rad,1.0,0.0,0.0);
-
-    glColor4f(1.0f,1.0f,1.0f,1.0f);
-
-    // геометрия модели не меняется - формируем список отображения один раз
-    if(obj->displayList == 0)
+    // если модель содержит несколько уровней детализации (части с именами
+    // lod0, lod1, ...), рисуем только самый детальный - иначе они
+    // накладываются друг на друга
+    int minLod = -1;
+    for(const objl::Mesh &mesh : obj->file.LoadedMeshes)
     {
-        obj->displayList = glGenLists(1);
-        glNewList(obj->displayList, GL_COMPILE);
+        QString name = QString::fromStdString(mesh.MeshName).toLower();
+        if(name.startsWith("lod"))
+        {
+            int lod = name.mid(3, 1).toInt();
+            if(minLod < 0 || lod < minLod)
+                minLod = lod;
+        }
+    }
+    // непрозрачные части - в первый список, прозрачные (d < 1) - во второй
+    for(int pass = 0; pass < 2; pass++)
+    {
+        GLuint list = glGenLists(1);
+        if(pass == 0)
+            obj->displayList = list;
+        else
+            obj->transparentList = list;
+
+        glNewList(list, GL_COMPILE);
         for(const objl::Mesh &curMesh : obj->file.LoadedMeshes)
         {
-            // glMaterialfv ожидает 4 компоненты цвета (RGBA)
+            QString name = QString::fromStdString(curMesh.MeshName).toLower();
+            if(minLod >= 0 && name.startsWith("lod") && name.mid(3, 1).toInt() != minLod)
+                continue;
+
             const objl::Material &mat = curMesh.MeshMaterial;
-            const GLfloat ka[] = {mat.Ka.x, mat.Ka.y, mat.Ka.z, 1.0f};
-            const GLfloat kd[] = {mat.Kd.x, mat.Kd.y, mat.Kd.z, 1.0f};
+            // d = 0 - значение по умолчанию, если прозрачность не задана в файле
+            const float alpha = (mat.d > 0.0f && mat.d < 1.0f) ? mat.d : 1.0f;
+            if((alpha < 1.0f) != (pass == 1))
+                continue;
+
+            // glMaterialfv ожидает 4 компоненты цвета (RGBA);
+            // фоновый цвет берем из Kd: экспорт Blender задает Ka = 1,
+            // из-за чего модель выглядит белой
+            const GLfloat ka[] = {mat.Kd.x, mat.Kd.y, mat.Kd.z, alpha};
+            const GLfloat kd[] = {mat.Kd.x, mat.Kd.y, mat.Kd.z, alpha};
             const GLfloat ks[] = {mat.Ks.x, mat.Ks.y, mat.Ks.z, 1.0f};
-            glMaterialfv(GL_FRONT, GL_AMBIENT,  ka);
-            glMaterialfv(GL_FRONT, GL_DIFFUSE,  kd);
-            glMaterialfv(GL_FRONT, GL_SPECULAR, ks);
+            // показатель блеска: без него блик заливает всю освещенную сторону
+            const GLfloat shininess = mat.Ns > 0.0f ? qMin(mat.Ns, 128.0f) : 32.0f;
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,  ka);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,  kd);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, ks);
+            glMaterialf (GL_FRONT_AND_BACK, GL_SHININESS, shininess);
 
             glBegin(GL_TRIANGLES);
             for (size_t j = 0; j + 2 < curMesh.Indices.size(); j += 3)
@@ -967,12 +975,65 @@ void view3DArea::drawObject(T3DObject *obj,
         }
         glEndList();
     }
+}
+void view3DArea::drawObject(T3DObject *obj,
+                            double pos_x,
+                            double pos_y,
+                            double pos_z,
+                            double psi_rad,
+                            double gamma_rad,
+                            double tan_rad,
+                            float scale)
+{
+    glPushMatrix();
+    glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_COLOR_MATERIAL);
+    glShadeModel(GL_SMOOTH);
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    // освещаем обе стороны граней: у части моделей нормали направлены внутрь
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+
+    // направленный источник света - солнце
+    const glm::vec3 sun = skyView.sunDirection();
+    GLfloat pos[] = {sun.x, sun.y, sun.z, 0.0f};
+    GLfloat ambLight[]  = {0.35f, 0.35f, 0.38f, 1.0f};
+    GLfloat difLight[]  = {0.85f, 0.85f, 0.80f, 1.0f};
+    GLfloat specLight[] = {0.6f, 0.6f, 0.6f, 1.0f};
+
+    glLightfv(GL_LIGHT0, GL_POSITION, pos);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambLight);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, difLight);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specLight);
+
+    glTranslatef(pos_x,
+                 pos_y,
+                 pos_z);
+
+    glRotated(radToGrad * psi_rad,0.0,1.0,0.0);
+    glRotated(radToGrad * tan_rad,0.0,0.0,1.0);
+    glRotated(radToGrad * gamma_rad,1.0,0.0,0.0);
+
+    glScalef(scale, scale, scale);
+    // при масштабировании нормали нужно нормировать заново
+    glEnable(GL_NORMALIZE);
+
+    // геометрия модели не меняется - формируем списки отображения один раз
+    if(obj->displayList == 0)
+        compileObject(obj);
     glCallList(obj->displayList);
 
-    glDisable(GL_NORMALIZE);
-    glDisable(GL_LIGHTING);
-    glPopMatrix();
+    // прозрачные части (остекление) - с полупрозрачностью, без записи глубины
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    glCallList(obj->transparentList);
 
+    glPopAttrib();
+    glPopMatrix();
 }
 //! отрисовка ИЛС
 void view3DArea::drawILS()

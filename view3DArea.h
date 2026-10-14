@@ -66,8 +66,12 @@ typedef struct
     int code;
     //! загрузка файла с объектом
     objl::Loader file;
-    //! список отображения OpenGL с геометрией модели (0 - еще не создан)
+    //! списки отображения OpenGL с непрозрачной и прозрачной геометрией
+    //! модели (0 - еще не созданы)
     GLuint displayList;
+    GLuint transparentList;
+    //! масштаб модели к реальным размерам, б/р
+    float scale;
 }T3DObject;
 //! класс 3D визуализации
 class view3DArea:public QGLViewer
@@ -106,7 +110,10 @@ public:
                     double pos_z,
                     double psi_grad,
                     double gamma_grad,
-                    double tan_grad);
+                    double tan_grad,
+                    float scale = 1.0f);
+    //! формирование списков отображения модели
+    void compileObject(T3DObject *obj);
     //! перевод градусов в пиксели
     void gradToPixel(double xGrad,
                      double yGrad,
@@ -190,6 +197,8 @@ private:
     QFileDialog *dialog;
     //! содержимое текстового файла(список строк)
     QVector<TDataRow> rows;
+    //! масштаб объекта из текстового файла (столбец "масштаб")
+    float txtScale;
     //! текущий объект на котором установлена камера
     TSendVehicleVisSimple *cameraToThisObj;
     //! индекс объекта к которому привязана каера
