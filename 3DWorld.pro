@@ -58,6 +58,7 @@ SOURCES += main.cpp\
     view3DArea.cpp \
     view3DTerrain.cpp \
     view3DSky.cpp \
+    view3DHud.cpp \
     visudp.cpp \
     formsettings.cpp \
     TemplateNASP.cpp \
@@ -69,6 +70,7 @@ HEADERS  += \
 OBJ_Loader.h \
     view3DTerrain.h \
     view3DSky.h \
+    view3DHud.h \
     visudp.h \
     dataPath.h \
     formsettings.h \

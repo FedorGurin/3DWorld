@@ -1035,107 +1035,52 @@ void view3DArea::drawObject(T3DObject *obj,
     glPopAttrib();
     glPopMatrix();
 }
-//! отрисовка ИЛС
+//! отрисовка ИЛС (HUD)
 void view3DArea::drawILS()
 {
-    if(cameraToThisObj==0)
+    // HUD имеет смысл только для камеры, привязанной к объекту
+    if(cameraToThisObj == nullptr || cameraUp == true)
         return;
 
-    /////////////////////////////////////////
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-    glShadeModel(GL_FLAT);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_TEXTURE_2D);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    // экранные координаты в пикселях, начало - левый верхний угол
-    glOrtho(0, width(), height(), 0, -1.0, 1.0);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    /////////////////////////////////////////
-    // отрисовка ИЛС линий
-    //qglColor(QColor(Qt::green));
-    glLineWidth(5.0);
-    glDisable(GL_BLEND);//Уберем прозрачность
-    glTranslatef(width()/2.0,height()/2.0,0);
-    glRotated(-radToGrad * cameraToThisObj->gamma,0.0,0.0,1.0);
-
-    for(int i=-10;i<10;i++)
+    THudData data;
+    data.psi      = cameraToThisObj->psi;
+    data.tan      = cameraToThisObj->tan;
+    data.gamma    = cameraToThisObj->gamma;
+    data.alfa     = cameraToThisObj->alfa;
+    data.beta     = cameraToThisObj->beta;
+    data.v        = cameraToThisObj->vc;
+    data.vx       = cameraToThisObj->vc_x;
+    data.vy       = cameraToThisObj->vc_y;
+    data.vz       = cameraToThisObj->vc_z;
+    data.altitude = cameraToThisObj->cg_y;
+    data.ny       = cameraToThisObj->ny;
+    data.position = glm::vec3(cameraToThisObj->cg_x,
+                              cameraToThisObj->cg_y,
+                              cameraToThisObj->cg_z);
+    // при воспроизведении файла скорость считаем по траектории
+    if(dataFromTXTFile == true && trs.isEmpty() == false && trs[0].x.size() >= 2)
     {
-        if(i==0)
-            glLineWidth(5.0);
-        else
-            glLineWidth(2.0);
-
-        double hILS=(cameraToThisObj->tan+gradToRadian(10*i))*(height()/camera()->fieldOfView());
-
-
-        // подписи поворачиваются вместе с линиями шкалы
-        const double rollILS = -cameraToThisObj->gamma;
-        const double xLabel  = width()/5.0 + 10.0;
-        for(int side = -1; side <= 1; side += 2)
-        {
-            double xl = side * xLabel;
-            int xText = width()/2.0  + xl*cos(rollILS) - hILS*sin(rollILS);
-            int yText = height()/2.0 + xl*sin(rollILS) + hILS*cos(rollILS);
-            drawText(side < 0 ? xText - 20 : xText, yText + 5, QString::number(-i*10));
-        }
-        glColor3f(0.0f,1.0f,0.0f);
-
-        glBegin(GL_LINES);
-
-            glVertex2i(-(width()/5.0),hILS);
-            glVertex2i((width()/5.0),hILS);
-
-        glEnd();
+        const TTrajectory &tr = trs[0];
+        const int n = tr.x.size();
+        glm::vec3 d(tr.x[n-1] - tr.x[n-2], tr.y[n-1] - tr.y[n-2], tr.z[n-1] - tr.z[n-2]);
+        const double dtSec = dt * 0.001 * multTime;
+        if(dtSec > 0.0)
+            data.v = glm::length(d) / dtSec;
     }
-    drawSymbol();
 
-    glTranslatef(0,0,0);
-    /////////////////////////////////////////
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glPopAttrib();
-    /////////////////////////////////////////
-}
-// отрисовка прицельной символики
-void view3DArea::drawSymbol()
-{
-    glm::mat3 m=signleCalcMatrix(cameraToThisObj);
-
+    // цели - все остальные объекты
+    QVector<THudTarget> targets;
     QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
-    for(auto  i : *list)
+    for(const auto &i : *list)
     {
-        //TSendVehicleVisSimple *solid=&((*list)[i]);
-        if(i.id != cameraToThisObj->id)
-        {
-            glm::vec3 vecTarget(i.cg_x,
-                                i.cg_y,
-                                i.cg_z);
-            TAngle angle;
-            earthToSGF(vecTarget,vecCameraInGeoSys,m,&angle);
-
-            drawCircle(&angle,15,2);
-            drawCross(&angle,15,2);
-        }
+        if(i.id == cameraToThisObj->id)
+            continue;
+        THudTarget t;
+        t.id       = i.id;
+        t.position = glm::vec3(i.cg_x, i.cg_y, i.cg_z);
+        targets.push_back(t);
     }
-}
-void view3DArea::gradToPixel(double xRad,
-                             double yRad,
-                             int &xPixel,
-                             int &yPixel)
-{
-    xPixel=xRad*(height()/camera()->fieldOfView());
-    yPixel=yRad*(height()/camera()->fieldOfView());
+    hud.draw(this, data, targets);
 }
 void view3DArea::drawStateLine()
 {
@@ -1168,104 +1113,6 @@ void view3DArea::drawVecLine()
         glEnd();
     }
 }
-void view3DArea::drawCross(TAngle* angle,int radius_,int width_)
-{
-    // координаты центра
-    int xCenter=0;
-    int yCenter=0;
-    glPointSize(width_);
-    // перевод
-    //TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
-
-    TAngle an;
-    an.tau=limitMinMax(angle->tau,
-                       -(camera()->fieldOfView()/2.0),
-                       (camera()->fieldOfView()/2.0));
-    an.sigma=limitMinMax(angle->sigma,
-                         -(camera()->horizontalFieldOfView()/2.0),
-                         (camera()->horizontalFieldOfView()/2.0));
-
-    // перевод градусов в пиксели
-    gradToPixel(-an.sigma,
-                -an.tau,
-                xCenter,
-                yCenter);
-    //qglColor(Qt::red);//цвет окружности
-    // отрисовка точки в центре окружности
-    glBegin(GL_POINTS);
-        glVertex2i(xCenter,yCenter);
-        glEnd();
-    // толщина пикселей окружности
-    glBegin(GL_LINES);
-        glVertex2i(xCenter+radius_/2.0,yCenter);
-        glVertex2i(xCenter-radius_/2.0,yCenter);
-
-        glVertex2i(xCenter,yCenter+radius_/2.0);
-        glVertex2i(xCenter,yCenter-radius_/2.0);
-    glEnd();
-}
-
-void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
-{
-    int x=0;
-    int y=radius_;
-    int delta=1-1*radius_;
-    int error=0;
-    //! координаты центра
-    int xCenter=0;
-    int yCenter=0;
-    glPointSize(width_);
-    //! перевод
-    //TAngle an=limit->limitAngle(*angle,RadianToGrad(camera()->fieldOfView())/2.0);
-    TAngle an;
-    an.tau=limitMinMax(angle->tau,
-                       -(camera()->fieldOfView()/2.0),
-                       (camera()->fieldOfView()/2.0));
-    an.sigma=limitMinMax(angle->sigma,
-                         -(camera()->horizontalFieldOfView()/2.0),
-                         (camera()->horizontalFieldOfView()/2.0));
-    //! перевод градусов в пиксели
-    gradToPixel(-an.sigma,
-                -an.tau,
-                xCenter,
-                yCenter);
-    //qglColor(Qt::red);//цвет окружности
-    //! отрисовка точки в центре окружности
-    glBegin(GL_POINTS);
-        glVertex2i(xCenter,yCenter);
-        glEnd();
-    //! толщина пикселей окружности
-    glBegin(GL_POINTS);
-
-    while(y>=0)
-    {
-        glVertex2i(xCenter+x,yCenter+y);
-        glVertex2i(xCenter+x,yCenter-y);
-        glVertex2i(xCenter-x,yCenter+y);
-        glVertex2i(xCenter-x,yCenter-y);
-
-        error= 2*(delta+y)-1;
-        if(delta<0 && error<=0)
-        {
-            ++x;
-            delta +=2*x+1;
-            continue;
-        }
-        error = 2* (delta - x)-1;
-        if(delta > 0 && error > 0)
-        {
-            --y;
-            delta +=1-2*y;
-            continue;
-        }
-        ++x;
-        delta += 2*(x-y);
-        --y;
-    }
-    glEnd();
-
-}
-
 // отрисовка земли
 void view3DArea::drawTerra()
 {
@@ -1397,10 +1244,8 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
     case Qt::Key_Down:  {verFilter->setFilterValue(1.0);   break;}
     case Qt::Key_I:
     {
-       /* if(ils==true) ils=false;
-        else ils=true;
-        break;*/
-
+        // включение/выключение HUD
+        ils = !ils;
         break;
     }
     case Qt::Key_U:

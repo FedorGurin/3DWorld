@@ -14,6 +14,7 @@
 
 #include "view3DTerrain.h"
 #include "view3DSky.h"
+#include "view3DHud.h"
 #include "OBJ_Loader.h"
 #include "math_func.h"
 #include "visudp.h"
@@ -114,11 +115,6 @@ public:
                     float scale = 1.0f);
     //! формирование списков отображения модели
     void compileObject(T3DObject *obj);
-    //! перевод градусов в пиксели
-    void gradToPixel(double xGrad,
-                     double yGrad,
-                     int &xPixel,
-                     int &yPixel);
     //! отрисовка рельефа
     void drawTerra();
     //! отрисовка неба (купол и солнце)
@@ -129,12 +125,6 @@ public:
     void drawILS();
     //! отрисовка сетки на плоскости OXZ размером d
     void drawGrid(double d);
-    //! отрисовка прицельной сиволики
-    void drawSymbol();
-    //! отрисовка окружности
-    void drawCircle(TAngle *angle,int radius_,int width_);
-    //! отрисовка перекрестья
-    void drawCross(TAngle* angle,int radius_,int width_);
     //! отрисовка траектории за объектом
     void drawTrajectory();
     //! отрисовка строки состояния
@@ -272,6 +262,8 @@ private:
     View3DTerrain *terrain;
     //! небо: купол, солнце, облака
     View3DSky skyView;
+    //! индикатор на лобовом стекле
+    View3DHud hud;
     //! список отображения OpenGL с рельефом
     GLuint terrainList;
     //! номер карты, для которой построен список отображения

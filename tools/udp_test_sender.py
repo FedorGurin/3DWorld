@@ -38,18 +38,21 @@ def make_packet(type_request, payload):
     return head + payload
 
 
-def vehicle(obj_id, code, t, x, y, z, psi, gamma=0.0, tan=0.0, v=200.0):
+def vehicle(obj_id, code, t, x, y, z, psi, gamma=0.0, tan=0.0, v=200.0, alfa=0.0):
+    # скорость в связанной СК с учетом угла атаки
+    vcx = v * math.cos(alfa)
+    vcy = -v * math.sin(alfa)
     # порядок полей как в TSendVehicleVisSimple
     fields = [t, x, y, z,          # time, cg_x, cg_y, cg_z
               psi, gamma, tan,     # psi, gamma, tan
-              0.0, 0.0,            # alfa, beta
+              alfa, 0.0,           # alfa, beta
               0.0, 1.0, 0.0,       # nx, ny, nz
               v,                   # vc
               0.0, 0.0,            # fi, unt
               0.0, 0.0,            # fi0_geo, lam0_geo
               0.0, 0.0,            # fi_geo, lam_geo (0 - используются cg_x/cg_z)
               0.0, 0.0, 0.0,       # vg_x, vg_y, vg_z
-              v, 0.0, 0.0,         # vc_x, vc_y, vc_z
+              vcx, vcy, 0.0,       # vc_x, vc_y, vc_z
               0.0, 0.0, 0.0]       # omega_x, omega_y, omega_z
     return struct.pack(VEHICLE_FMT, obj_id, code, *fields)
 
@@ -102,7 +105,10 @@ def main():
             # курс по касательной к окружности
             psi = -a - math.pi / 2.0
             gamma = -0.3
-            payload = vehicle(i, codes[i % len(codes)], t, x, y, z, psi, gamma)
+            # тангаж плавно меняется, угол атаки 4 град
+            tan = 0.15 * math.sin(0.3 * t)
+            payload = vehicle(i, codes[i % len(codes)], t, x, y, z, psi, gamma, tan,
+                              alfa=math.radians(4.0))
             sock.sendto(make_packet(PARAM_OBJ, payload), addr)
         # треугольник из 3D линий
         tri = [(0.0, 6000.0, 0.0), (2000.0, 7000.0, 0.0),
