@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <algorithm>
 
 #include <QOpenGLFunctions_4_0_Core>
 
@@ -23,13 +24,18 @@ using namespace qglviewer;
 #define MAX_Y 20000.0
 //#define PERIOD_ANIMATION 50
 #define PERIOD_ANIMATION 1000
-#define DIVIDE 10
+//! период записи точек траекторий сетевых объектов, с
+#define TRAJECTORY_PERIOD 0.5
 //#define VERT_GRID
 
 #define USE_3DMODEL
 #define FOG_OFF 1
 //! максимальное кол-во точек в траектории одного объекта
 #define MAX_TRAJECTORY_POINTS 20000
+//! минимальная длина траектории при большом числе объектов
+#define MIN_TRAJECTORY_POINTS 100
+//! общее кол-во точек траекторий всех объектов
+#define TRAJECTORY_POINTS_BUDGET 400000
 
 
 view3DArea::view3DArea():QGLViewer()
@@ -46,6 +52,7 @@ view3DArea::view3DArea():QGLViewer()
     cameraToObjIndex= -1;
     cameraToBack    = false;
     txtScale        = 1.0f;
+    txtSpeed        = 0.0;
     dataFromTXTFile = false;
 
     dialog  = new QFileDialog(this);
@@ -82,7 +89,9 @@ view3DArea::view3DArea():QGLViewer()
     globalTime      = 0.0;
     globalTimeDebug = 0.0;
     multTime        = 1.0;
-    dt = ((1.0/20)*1000.0);
+    // частота отрисовки по умолчанию 60 Гц
+    dt = ((1.0/60)*1000.0);
+    trajectoryTimer = 0.0;
     //dt=((1.0/freq)*1000.0);
 
     // доп. поворот камеры
@@ -144,15 +153,7 @@ view3DArea::view3DArea():QGLViewer()
 void view3DArea::slotReset()
 {
     for(int i=0;i<trs.size();i++)
-    {
-        trs[i].r.clear();
-        trs[i].g.clear();
-        trs[i].b.clear();
-
-        trs[i].x.clear();
-        trs[i].y.clear();
-        trs[i].z.clear();
-    }
+        trs[i].clear();
 }
 void view3DArea::appendTrajectoryPoint(int index,float x,float y,float z,int r,int g,int b)
 {
@@ -161,24 +162,22 @@ void view3DArea::appendTrajectoryPoint(int index,float x,float y,float z,int r,i
     if(index >= trs.size())
         trs.resize(index + 1);
 
+    // общий бюджет точек на все объекты: чем больше объектов,
+    // тем короче хвост у каждого (память и время отрисовки не растут)
+    const int objects  = qMax(1, net.getVehicleObj()->size());
+    const int maxPoints = qBound(MIN_TRAJECTORY_POINTS,
+                                 TRAJECTORY_POINTS_BUDGET / objects,
+                                 MAX_TRAJECTORY_POINTS);
     TTrajectory &tr = trs[index];
-    // ограничиваем длину траектории, чтобы память не росла бесконечно
-    if(tr.x.size() >= MAX_TRAJECTORY_POINTS)
+    if(tr.size() >= maxPoints)
     {
-        const int n = tr.x.size() - MAX_TRAJECTORY_POINTS + 1;
-        tr.x.remove(0, n);
-        tr.y.remove(0, n);
-        tr.z.remove(0, n);
-        tr.r.remove(0, n);
-        tr.g.remove(0, n);
-        tr.b.remove(0, n);
+        // удаляем сразу 10% старых точек, чтобы не сдвигать массив на каждой точке
+        const int n = tr.size() - maxPoints + qMax(1, maxPoints / 10);
+        tr.xyz.remove(0, n * 3);
+        tr.rgb.remove(0, n * 3);
     }
-    tr.x.push_back(x);
-    tr.y.push_back(y);
-    tr.z.push_back(z);
-    tr.r.push_back(r);
-    tr.g.push_back(g);
-    tr.b.push_back(b);
+    tr.xyz << x << y << z;
+    tr.rgb << (unsigned char)r << (unsigned char)g << (unsigned char)b;
 }
 void view3DArea::setGrid(bool value)
 {
@@ -224,6 +223,8 @@ void view3DArea::setSizeScene(double value)
 }
 void view3DArea::setFreq(int freq)
 {
+    if(freq <= 0)
+        return;
     //qDebug("catch\n");
     dt=((1.0/freq)*1000.0);
     setAnimationPeriod(dt);
@@ -354,6 +355,7 @@ void view3DArea::readAllModels()
         obj.displayList     = 0;
         obj.transparentList = 0;
         obj.scale           = 1.0f;
+        obj.radius          = 1.0f;
         list3DObj.push_back(obj);
     }
     for(int i = 0; i < list3DObj.size(); i++)
@@ -361,6 +363,9 @@ void view3DArea::readAllModels()
         T3DObject &obj = list3DObj[i];
         bool loadout = obj.file.LoadFile(findDataFile(models[i].file).toStdString());
         statusLoad(loadout);
+        // радиус описанной сферы - для отсечения невидимых объектов
+        for(const objl::Vertex &v : obj.file.LoadedVertices)
+            obj.radius = qMax(obj.radius, glm::length(v.Position));
         if(loadout == false || models[i].length <= 0.0f)
             continue;
         // масштаб по длине модели вдоль продольной оси X
@@ -390,8 +395,10 @@ void view3DArea::init()
     setAxisIsDrawn(false);
     setFPSIsDisplayed(true);
     //setFullScreen(true);
-    //setAnimationPeriod(dt);
 #endif
+    // период анимации (раньше не устанавливался - работал период QGLViewer 40 мс)
+    setAnimationPeriod(dt);
+    frameClock.start();
     // открыть рельеф по умолчанию
     terrain->openTerrainMap("defaultTerrain.asc");
     this->setBackgroundColor(QColor(81,168,255));
@@ -685,28 +692,38 @@ void view3DArea::drawTrajectory()
         }
     }else
     {
-        //! отрисовка точек
-        glBegin(GL_POINTS);
-        for(long i=0;i<trs.size();i++)
+        // отрисовка массивами вершин - быстро даже для сотен объектов
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+        for(const TTrajectory &tr : trs)
         {
-            for(long int j=0;j<trs[i].x.size();j++)
+            if(tr.size() == 0)
+                continue;
+            glVertexPointer(3, GL_FLOAT, 0, tr.xyz.constData());
+            glColorPointer(3, GL_UNSIGNED_BYTE, 0, tr.rgb.constData());
+            glDrawArrays(GL_POINTS, 0, tr.size());
+            // проекция траектории на землю (без рельефа)
+            if(terra == false)
             {
-                glColor3ub(trs[i].r[j],trs[i].g[j],trs[i].b[j]);
-                glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
-                glVertex3f(trs[i].x[j],0,trs[i].z[j]);
+                glPushMatrix();
+                glScalef(1.0f, 0.0f, 1.0f);
+                glDrawArrays(GL_POINTS, 0, tr.size());
+                glPopMatrix();
             }
         }
-        glEnd();
+        glDisableClientState(GL_COLOR_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
         if(vertLine==true)
         {
             //! отрисовка вертикальных линий
             glBegin(GL_LINES);
-            for(long i=0;i<trs.size();i++)
+            for(const TTrajectory &tr : trs)
             {
-                for(long int j=0;j<trs[i].x.size();j++)
+                for(int j = 0; j < tr.size(); j += 5)
                 {
-                    glVertex3f(trs[i].x[j],0.0,trs[i].z[j]);
-                    glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
+                    const float *p = tr.xyz.constData() + j * 3;
+                    glVertex3f(p[0], 0.0f, p[2]);
+                    glVertex3f(p[0], p[1], p[2]);
                 }
             }
             glEnd();
@@ -717,11 +734,13 @@ void view3DArea::drawTrajectory()
 
 void view3DArea::animate()
 {
-    static int div=0;
-    div++;
+    // время сцены идет по реальным часам: не зависит от частоты кадров
+    // и не отстает, если кадр отрисовывался дольше периода анимации
+    double frameSec = frameClock.restart() * 0.001;
+    frameSec = qBound(0.0, frameSec, 0.25);
     //! счетчик времени, сек
-    globalTime=globalTime+dt*0.001*multTime;
-    globalTimeDebug=globalTimeDebug+dt*0.001*multTime;
+    globalTime=globalTime+frameSec*multTime;
+    globalTimeDebug=globalTimeDebug+frameSec*multTime;
     //! если данные загружены из файла
     if(dataFromTXTFile==true && rows.size() >= 2)
     {
@@ -742,6 +761,13 @@ void view3DArea::animate()
         TSendVehicleVisSimple *solid = &((*list)[0]);
         solid->code = rows[index].code;
         txtScale    = rows[index].scale > 0.0f ? rows[index].scale : 1.0f;
+        // скорость на текущем интервале файла
+        {
+            const TDataRow &r0 = rows[index-1], &r1 = rows[index];
+            const double dtRow = r1.time - r0.time;
+            const glm::vec3 d(r1.x_g - r0.x_g, r1.y_g - r0.y_g, r1.z_g - r0.z_g);
+            txtSpeed = dtRow > 1e-9 ? glm::length(d) / dtRow : 0.0;
+        }
 
 
         //! эти параметры нужно прогнать через блок интерполяции
@@ -791,9 +817,11 @@ void view3DArea::animate()
                               rows[index].b);
     }else
     {
-        if(div==DIVIDE)
+        // точки траекторий сетевых объектов - раз в TRAJECTORY_PERIOD секунд
+        trajectoryTimer += frameSec;
+        if(trajectoryTimer >= TRAJECTORY_PERIOD)
         {
-            div=0;
+            trajectoryTimer = 0.0;
             QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
             int j = 0;
             for(const auto &i:*list)
@@ -899,41 +927,113 @@ void view3DArea::drawTestSolidObj()
 //               solid.gamma,
 //               solid.tan);
 }
+bool view3DArea::objectVisible(const glm::vec3 &p, float r, float &pixelRadius)
+{
+    const Vec c = camera()->cameraCoordinatesOf(Vec(p.x, p.y, p.z));
+    // камера смотрит вдоль -z
+    const double depth = -c.z;
+    if(depth < -r)
+        return false;
+    const double tanV = tan(camera()->fieldOfView() / 2.0);
+    const double tanH = tan(camera()->horizontalFieldOfView() / 2.0);
+    const double d = qMax(depth, 1e-3);
+    if(fabs(c.x) - r > d * tanH || fabs(c.y) - r > d * tanV)
+        return false;
+    pixelRadius = float(r / d * (height() / 2.0) / tanV);
+    return true;
+}
 void view3DArea::drawSolidObjects()
 {
     QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
-    for(auto &i : *list)
+    if(list->isEmpty())
+        return;
+    // уровни отображения: крупные на экране объекты - полной моделью
+    // (не более MAX_FULL_MODELS ближайших), мелкие - метками-точками
+    const int   MAX_FULL_MODELS = 64;
+    const float FULL_MODEL_PIXELS = 6.0f;
+    struct TCandidate {int idx; float pixels; float scale;};
+    QVector<TCandidate> full;
+    // метки: x, y, z, размер точки
+    QVector<float> marks;
+    const TSendVehicleVisSimple *solidCenter = &(list->first());
+    for(int idx = 0; idx < list->size(); idx++)
     {
-        TSendVehicleVisSimple *solidCenter = &(list->first());
-        T3DObject *model = findObjByCode(i.code);
-        if(model != nullptr && model->file.LoadedMeshes.empty() == false)
+        TSendVehicleVisSimple &i = (*list)[idx];
+        // если переданы географические координаты - пересчитываем их
+        // в декартовые относительно первого объекта
+        if(i.lam_geo != 0.0 || i.fi_geo != 0.0)
         {
-            // если переданы географические координаты - пересчитываем их
-            // в декартовые относительно первого объекта
-            if(i.lam_geo != 0.0 || i.fi_geo != 0.0)
-            {
-                convertSphereToDekart(solidCenter->lam0_geo,
-                                      solidCenter->fi0_geo,
-                                      i.lam_geo,
-                                      i.fi_geo,
-                                      i.cg_x,
-                                      i.cg_z);
-            }
-            // при воспроизведении файла учитываем масштаб из файла
-            float scale = model->scale;
-            if(dataFromTXTFile == true && &i == &list->first())
-                scale *= txtScale;
-            drawObject(model,
-                       i.cg_x,
-                       i.cg_y,
-                       i.cg_z,
-                       i.psi,
-                       i.gamma,
-                       i.tan,
-                       scale);
+            convertSphereToDekart(solidCenter->lam0_geo,
+                                  solidCenter->fi0_geo,
+                                  i.lam_geo,
+                                  i.fi_geo,
+                                  i.cg_x,
+                                  i.cg_z);
         }
-    }
+        T3DObject *model = findObjByCode(i.code);
+        const bool hasModel = model != nullptr && model->file.LoadedMeshes.empty() == false;
 
+        // при воспроизведении файла учитываем масштаб из файла
+        float scale = hasModel ? model->scale : 1.0f;
+        if(dataFromTXTFile == true && idx == 0)
+            scale *= txtScale;
+        const float r = hasModel ? model->radius * scale : 10.0f;
+        const glm::vec3 p(i.cg_x, i.cg_y, i.cg_z);
+
+        float pixelRadius = 0.0f;
+        if(objectVisible(p, r, pixelRadius) == false)
+            continue;
+        if(hasModel && pixelRadius >= FULL_MODEL_PIXELS)
+        {
+            full.append({idx, pixelRadius, scale});
+            continue;
+        }
+        // объект, к которому привязана камера, изнутри не рисуем меткой
+        if(idx == cameraToObjIndex && hasModel == false)
+            continue;
+        marks << p.x << p.y << p.z << qBound(3.0f, pixelRadius * 1.5f, 9.0f);
+    }
+    // ближайшие (самые крупные на экране) - полными моделями, остальные - метками
+    std::sort(full.begin(), full.end(),
+              [](const TCandidate &a, const TCandidate &b) {return a.pixels > b.pixels;});
+    for(int k = 0; k < full.size(); k++)
+    {
+        const TSendVehicleVisSimple &i = (*list)[full[k].idx];
+        if(k >= MAX_FULL_MODELS)
+        {
+            marks << i.cg_x << i.cg_y << i.cg_z << 9.0f;
+            continue;
+        }
+        drawObject(findObjByCode(i.code),
+                   i.cg_x,
+                   i.cg_y,
+                   i.cg_z,
+                   i.psi,
+                   i.gamma,
+                   i.tan,
+                   full[k].scale);
+    }
+    if(marks.isEmpty() == false)
+    {
+        glPushAttrib(GL_ENABLE_BIT | GL_POINT_BIT | GL_CURRENT_BIT);
+        glDisable(GL_LIGHTING);
+        glEnable(GL_POINT_SMOOTH);
+        glColor3f(1.0f, 0.9f, 0.3f);
+        // точки группируются по размеру (glPointSize нельзя менять внутри glBegin)
+        for(int size = 3; size <= 9; size += 2)
+        {
+            glPointSize(float(size));
+            glBegin(GL_POINTS);
+            for(int k = 0; k + 3 < marks.size(); k += 4)
+            {
+                const int sz = int(marks[k + 3]);
+                if(sz >= size && sz < size + 2)
+                    glVertex3f(marks[k], marks[k + 1], marks[k + 2]);
+            }
+            glEnd();
+        }
+        glPopAttrib();
+    }
 }
 
 void view3DArea::compileObject(T3DObject *obj)
@@ -1083,16 +1183,9 @@ void view3DArea::drawILS()
     data.position = glm::vec3(cameraToThisObj->cg_x,
                               cameraToThisObj->cg_y,
                               cameraToThisObj->cg_z);
-    // при воспроизведении файла скорость считаем по траектории
-    if(dataFromTXTFile == true && trs.isEmpty() == false && trs[0].x.size() >= 2)
-    {
-        const TTrajectory &tr = trs[0];
-        const int n = tr.x.size();
-        glm::vec3 d(tr.x[n-1] - tr.x[n-2], tr.y[n-1] - tr.y[n-2], tr.z[n-1] - tr.z[n-2]);
-        const double dtSec = dt * 0.001 * multTime;
-        if(dtSec > 0.0)
-            data.v = glm::length(d) / dtSec;
-    }
+    // при воспроизведении файла скорость считаем по точкам файла
+    if(dataFromTXTFile == true)
+        data.v = txtSpeed;
 
     // цели - все остальные объекты
     QVector<THudTarget> targets;
@@ -1110,15 +1203,16 @@ void view3DArea::drawILS()
 }
 void view3DArea::drawStateLine()
 {
-    QString prefix=tr("our aircraft");
+    QString prefix;
     if(cameraToObjIndex == 0)
-    {
         prefix=tr("our aircraft");
-    }else if(cameraToObjIndex>0)
-    {
+    else if(cameraToObjIndex>0)
         prefix=tr("target #")+QString::number(cameraToObjIndex);
-    }else
+    else
         prefix=tr("no select");
+    if(cameraToThisObj != nullptr)
+        prefix += QString(" (id %1)").arg(cameraToThisObj->id);
+    prefix += QString(", objects: %1").arg(net.getVehicleObj()->size());
     drawText((width()/2)-20,height()-20,"Current Object="+prefix);
 
     drawText((width()/2)-20,height()-40,"Time="+QString::number(globalTime));
@@ -1352,6 +1446,19 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
     case Qt::Key_8    : {setCameraToObject(7);break;}
     case Qt::Key_9    : {setCameraToObject(8);break;}
     case Qt::Key_Insert:{cameraToBack=true;break;}
+    // перебор объектов по кругу (для любого их числа)
+    case Qt::Key_PageDown:
+    case Qt::Key_PageUp:
+    {
+        const int n = net.getVehicleObj()->size();
+        if(n > 0)
+        {
+            int next = cameraToObjIndex + (e->key() == Qt::Key_PageDown ? 1 : -1);
+            next = (next % n + n) % n;
+            setCameraToObject(next);
+        }
+        break;
+    }
     case Qt::Key_T:     {dteta_camera+=0.01;break;}
     case Qt::Key_G:     {dteta_camera-=0.01;break;}
     case Qt::Key_F:     {dpsi_camera+=0.01;break;}

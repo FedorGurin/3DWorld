@@ -4,6 +4,7 @@
 #include <QGLViewer/qglviewer.h>
 
 #include <QFile>
+#include <QElapsedTimer>
 #include <QTextStream>
 #include <QTextCodec>
 #include <QLocale>
@@ -26,15 +27,13 @@
 //! струтура описывающая траекторию
 typedef struct _TTrajectory
 {
-    //! массив с координатами
-    QVector<float> x;
-    QVector<float> y;
-    QVector<float> z;
-    //! цвет траектории
-    QVector<int>    r;
-    QVector<int>    g;
-    QVector<int>    b;
-
+    //! координаты точек: x, y, z подряд (для отрисовки массивом вершин)
+    QVector<float> xyz;
+    //! цвет точек: r, g, b подряд
+    QVector<unsigned char> rgb;
+    //! кол-во точек
+    int size() const {return xyz.size() / 3;}
+    void clear() {xyz.clear(); rgb.clear();}
 }TTrajectory;
 
 //! структура описывающая строку с данными
@@ -74,6 +73,8 @@ typedef struct
     GLuint transparentList;
     //! масштаб модели к реальным размерам, б/р
     float scale;
+    //! радиус описанной сферы модели (в единицах файла)
+    float radius;
 }T3DObject;
 //! класс 3D визуализации
 class view3DArea:public QGLViewer
@@ -101,6 +102,9 @@ public:
 //    void initScene(Lib3dsFile *file3ds);
     //! отрисовка объектов
     void drawSolidObjects();
+    //! объект виден камерой (сфера с центром p и радиусом r);
+    //! pixelRadius - примерный радиус на экране, пиксели
+    bool objectVisible(const glm::vec3 &p, float r, float &pixelRadius);
     //! отрисовка тестового объекта
     void drawTestSolidObj();
     //! отрисовка состовного объекта
@@ -189,6 +193,10 @@ private:
     int dt;//мсек
     //! глобальный счетчик
     int globalCount;
+    //! часы для измерения длительности кадра
+    QElapsedTimer frameClock;
+    //! время с последней записи точек траекторий, с
+    double trajectoryTimer;
     //! поворот карты
     double rotMap;
     double offsetMapX;
@@ -201,6 +209,8 @@ private:
     QVector<TDataRow> rows;
     //! масштаб объекта из текстового файла (столбец "масштаб")
     float txtScale;
+    //! скорость объекта из текстового файла, м/с
+    double txtSpeed;
     //! текущий объект на котором установлена камера
     TSendVehicleVisSimple *cameraToThisObj;
     //! индекс объекта к которому привязана каера

@@ -3,6 +3,7 @@
 #include <QGLViewer/qglviewer.h>
 #include <QFontMetrics>
 #include <math.h>
+#include <algorithm>
 
 using namespace qglviewer;
 
@@ -360,8 +361,22 @@ void View3DHud::drawTargets(QGLViewer *viewer, const THudData &data,
     Camera *cam = viewer->camera();
     const double margin = 30.0;
     glLineWidth(1.5f);
-    for(const THudTarget &t : targets)
+    // при большом числе целей: дальность подписываем только у ближайших,
+    // цели вне поля зрения показываем у края экрана только для ближайших
+    const int maxLabels = 12;
+    const int maxEdgeMarks = 24;
+    // ромбы - не более maxMarks ближайших целей в поле зрения
+    const int maxMarks = 64;
+    int marks = 0;
+    QVector<QPair<double, int> > order;
+    order.reserve(targets.size());
+    for(int i = 0; i < targets.size(); i++)
+        order.append(qMakePair(double(glm::length(targets[i].position - data.position)), i));
+    std::sort(order.begin(), order.end());
+    int labels = 0, edgeMarks = 0;
+    for(const auto &o : order)
     {
+        const THudTarget &t = targets[o.second];
         Vec p(t.position.x, t.position.y, t.position.z);
         Vec inCam = cam->cameraCoordinatesOf(p);
         Vec scr   = cam->projectedCoordinatesOf(p);
@@ -376,6 +391,9 @@ void View3DHud::drawTargets(QGLViewer *viewer, const THudData &data,
         bool clamped = false;
         if(behind || x < margin || x > width - margin || y < margin || y > height - margin)
         {
+            if(edgeMarks >= maxEdgeMarks)
+                continue;
+            edgeMarks++;
             // приводим к краю экрана по направлению на цель
             double dx = x - cx, dy = y - cy;
             double k = 1.0;
@@ -385,6 +403,12 @@ void View3DHud::drawTargets(QGLViewer *viewer, const THudData &data,
             y = cy + dy * k;
             clamped = true;
         }
+        if(clamped == false)
+        {
+            if(marks >= maxMarks)
+                continue;
+            marks++;
+        }
         // ромб вокруг цели
         const double s = clamped ? 6.0 : 10.0;
         glBegin(GL_LINE_LOOP);
@@ -393,10 +417,10 @@ void View3DHud::drawTargets(QGLViewer *viewer, const THudData &data,
         glVertex2d(x,     y + s);
         glVertex2d(x - s, y);
         glEnd();
-        if(clamped == false)
+        if(clamped == false && labels < maxLabels)
         {
-            double dist = glm::length(t.position - data.position);
-            text(viewer, int(x + s + 4), int(y), QString::number(dist / 1000.0, 'f', 1));
+            labels++;
+            text(viewer, int(x + s + 4), int(y), QString::number(o.first / 1000.0, 'f', 1));
         }
     }
 }

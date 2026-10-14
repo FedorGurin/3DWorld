@@ -2,6 +2,7 @@
 #define VISUDP_H
 #include <QUdpSocket>
 #include <QObject>
+#include <QHash>
 #include "math_func.h"
 #include "globalData.h"
 
@@ -14,7 +15,8 @@ enum TTypeHead:uint32_t
     INFO_FLIGHT_OBJ = 1,
     COMMAND         = 2,
     CONTROL_STICK   = 3,    /*управление ручкой указанными объектом*/
-    LIST_VECTOR     = 5
+    LIST_VECTOR     = 5,
+    PARAM_OBJ_LIST  = 6     /*несколько объектов в одном пакете: uint32 кол-во + массив TSendVehicleVisSimple*/
 
 };
 //! структура запроса для отправки/получения
@@ -82,6 +84,7 @@ public:
     void setSizeObj(int size)
     {
         flightObjects.resize(size);
+        rebuildIndex();
     }
     //! блокировка соединения
     void setBlockConection(bool value)
@@ -94,8 +97,7 @@ public:
     //! проверка наличия объекта в списке
     int testFlightObjInList(int uid);
     int testArrayObjInList(int uid);
-    void addToFlightObjList(TSendVehicleVisSimple body);
-    void addToArrayObjList(TSendArrayVisSimple body);
+
     //! проверка datagram
     bool checkDatagrams();
     double synch_time;
@@ -126,6 +128,12 @@ private:
     QVector<TSendVehicleVisSimple>  flightObjects;//! объекты воздушных целей
     QVector<TSendArrayVisSimple>    arrayObjects; //! объекты состоящие из нескольких точках
     QVector<glm::vec3> vecList;
+    //! индекс объекта в списке по его идентификатору
+    QHash<int, int> flightIndex;
+    //! обновление/добавление объекта
+    void updateFlightObj(const TSendVehicleVisSimple &solid);
+    //! перестроение индекса
+    void rebuildIndex();
 
 };
 

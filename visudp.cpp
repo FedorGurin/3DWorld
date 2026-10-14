@@ -13,6 +13,8 @@ VisUDP::VisUDP()
     memset(&send_udp, 0, sizeof(send_udp));
     if(udpSocketRecive.bind(7030) == false)
         std::cout<<"Can`t bind to socket port" << std::endl;
+    // при большом числе объектов пакеты приходят потоком - увеличиваем буфер сокета
+    udpSocketRecive.setSocketOption(QAbstractSocket::ReceiveBufferSizeSocketOption, 8 * 1024 * 1024);
     datagram.resize(sizeof(TMRequest));
 }
 //! копирование полезной нагрузки пакета в структуру с проверкой размера
@@ -55,6 +57,7 @@ bool VisUDP::checkDatagrams()
             continue;
         }
         if(head.typeRequest != PARAM_OBJ &&
+           head.typeRequest != PARAM_OBJ_LIST &&
            head.typeRequest != PARAM_ARRAY &&
            head.typeRequest != LIST_VECTOR)
             continue;
@@ -76,17 +79,25 @@ bool VisUDP::checkDatagrams()
             //! преобразуем буфер в структуру
             TSendVehicleVisSimple solid;
             readPayload(solid, rec_udp.buffer, sizeBuf);
-
-            int index = testFlightObjInList(solid.id);
-            if(index >= 0 )
-            {
-                flightObjects[index] = solid;
-            }else
-            {
-                qDebug("Create new obj=%d\n",solid.id);
-                flightObjects.push_back(solid);
-            }
+            updateFlightObj(solid);
             synch_time = solid.time;
+        }else if(head.typeRequest == PARAM_OBJ_LIST)
+        {
+            // uint32 - кол-во объектов, далее массив TSendVehicleVisSimple
+            if(sizeBuf < sizeof(uint32_t))
+                continue;
+            uint32_t count = 0;
+            memcpy(&count, rec_udp.buffer, sizeof(count));
+            const uint32_t maxCount = (sizeBuf - sizeof(uint32_t)) / sizeof(TSendVehicleVisSimple);
+            count = qMin(count, maxCount);
+            for(uint32_t i = 0; i < count; i++)
+            {
+                TSendVehicleVisSimple solid;
+                readPayload(solid, rec_udp.buffer + sizeof(uint32_t) + i * sizeof(TSendVehicleVisSimple),
+                            sizeof(TSendVehicleVisSimple));
+                updateFlightObj(solid);
+                synch_time = solid.time;
+            }
         }else if(head.typeRequest == PARAM_ARRAY)
         {
             // преобразуем буфер в структуру
@@ -160,14 +171,32 @@ void VisUDP::processPendingDatagrams()
 int VisUDP::testFlightObjInList(int uid)
 {
     //! поиск объекта с уже существующим ID
-    for(int i = 0;i < flightObjects.size();i++)
+    return flightIndex.value(uid, -1);
+}
+void VisUDP::updateFlightObj(const TSendVehicleVisSimple &solid)
+{
+    int index = testFlightObjInList(solid.id);
+    // индекс мог устареть, если список меняли напрямую (setSizeObj)
+    if(index >= flightObjects.size() || (index >= 0 && flightObjects[index].id != solid.id))
     {
-        if(flightObjects[i].id == uid)
-        {
-            return i;
-        }
+        rebuildIndex();
+        index = testFlightObjInList(solid.id);
     }
-    return -1;
+    if(index >= 0)
+    {
+        flightObjects[index] = solid;
+    }else
+    {
+        qDebug("Create new obj=%d (total %d)", solid.id, flightObjects.size() + 1);
+        flightIndex.insert(solid.id, flightObjects.size());
+        flightObjects.push_back(solid);
+    }
+}
+void VisUDP::rebuildIndex()
+{
+    flightIndex.clear();
+    for(int i = 0; i < flightObjects.size(); i++)
+        flightIndex.insert(flightObjects[i].id, i);
 }
 int VisUDP::testArrayObjInList(int uid)
 {

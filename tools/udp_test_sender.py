@@ -16,6 +16,9 @@ import struct
 import time
 
 PARAM_OBJ = 0
+PARAM_OBJ_LIST = 6
+# объектов в одном пакете PARAM_OBJ_LIST (4 + 8 * 232 <= 2048)
+OBJ_PER_PACKET = 8
 COMMAND = 2
 LIST_VECTOR = 5
 TC_RESET = 0
@@ -57,6 +60,12 @@ def vehicle(obj_id, code, t, x, y, z, psi, gamma=0.0, tan=0.0, v=200.0, alfa=0.0
     return struct.pack(VEHICLE_FMT, obj_id, code, *fields)
 
 
+def send_batch(sock, addr, payloads):
+    # PARAM_OBJ_LIST: uint32 кол-во объектов + массив TSendVehicleVisSimple
+    data = struct.pack("<I", len(payloads)) + b"".join(payloads)
+    sock.sendto(make_packet(PARAM_OBJ_LIST, data), addr)
+
+
 def vector_list(points):
     # TSendListVectorsVisSimple: id, code, time, num(u8), 3 байта выравнивания, vec3[]
     payload = struct.pack("<iidB3x", 0, 0, 0.0, len(points))
@@ -76,6 +85,10 @@ def main():
                         help="длительность, сек (0 - бесконечно)")
     parser.add_argument("--codes", default="101,102,105",
                         help="коды 3D моделей объектов через запятую")
+    parser.add_argument("--swarm", action="store_true",
+                        help="рой: объекты на разных радиусах и высотах (для большого --objects)")
+    parser.add_argument("--batch", action="store_true",
+                        help="отправлять по 8 объектов в пакете PARAM_OBJ_LIST")
     parser.add_argument("--line", action="store_true",
                         help="прямолинейный полет на север (проверка подгрузки рельефа)")
     parser.add_argument("--speed", type=float, default=250.0,
@@ -108,13 +121,21 @@ def main():
                 sock.sendto(make_packet(PARAM_OBJ, payload), addr)
             time.sleep(dt)
             continue
+        batch = []
         for i in range(args.objects):
-            r = 3000.0 + 1500.0 * i
-            w = 200.0 / r
-            a = w * t + i * 2.0 * math.pi / max(args.objects, 1)
+            if args.swarm:
+                # 25 колец по радиусу, высота растет с номером слоя
+                r = 2000.0 + 600.0 * (i % 25)
+                w = 200.0 / r
+                a = w * t + i * 2.399963  # золотой угол - равномерное распределение
+                y = 5000.0 + 150.0 * (i // 25)
+            else:
+                r = 3000.0 + 1500.0 * i
+                w = 200.0 / r
+                a = w * t + i * 2.0 * math.pi / max(args.objects, 1)
+                y = 6500.0 + 300.0 * i
             x = r * math.cos(a)
             z = r * math.sin(a)
-            y = 6500.0 + 300.0 * i
             # курс по касательной к окружности
             psi = -a - math.pi / 2.0
             gamma = -0.3
@@ -122,7 +143,15 @@ def main():
             tan = 0.15 * math.sin(0.3 * t)
             payload = vehicle(i, codes[i % len(codes)], t, x, y, z, psi, gamma, tan,
                               alfa=math.radians(4.0))
-            sock.sendto(make_packet(PARAM_OBJ, payload), addr)
+            if args.batch:
+                batch.append(payload)
+                if len(batch) == OBJ_PER_PACKET:
+                    send_batch(sock, addr, batch)
+                    batch = []
+            else:
+                sock.sendto(make_packet(PARAM_OBJ, payload), addr)
+        if batch:
+            send_batch(sock, addr, batch)
         # треугольник из 3D линий
         tri = [(0.0, 6000.0, 0.0), (2000.0, 7000.0, 0.0),
                (0.0, 7000.0, 2000.0), (0.0, 6000.0, 0.0)]
