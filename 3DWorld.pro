@@ -19,9 +19,15 @@ INCLUDEPATH *= $$PWD
 DEPENDPATH  *= $$PWD
 
 unix {
-        # В Linux используется системная библиотека libQGLViewer
-        # (пакет libqglviewer-dev-qt5 в Debian/Ubuntu)
-        LIBS *= -lQGLViewer-qt5
+        system_qglviewer {
+                # системная библиотека libQGLViewer (qmake CONFIG+=system_qglviewer);
+                # ее версия должна совпадать с заголовками в каталоге QGLViewer/
+                LIBS *= -lQGLViewer-qt5
+        } else {
+                # по умолчанию libQGLViewer собирается из исходников в QGLViewer/
+                include(QGLViewer/qglviewer_sources.pri)
+                LIBS *= -lGLU
+        }
 }
 win32 {
         # Seems to be needed for Visual Studio with Intel compiler

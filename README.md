@@ -11,11 +11,17 @@
 ### Linux (Debian/Ubuntu)
 
 ```sh
-sudo apt install qtbase5-dev libqt5opengl5-dev libqglviewer-dev-qt5
+sudo apt install qtbase5-dev libqt5opengl5-dev libglu1-mesa-dev
 mkdir build && cd build
 qmake ../3DWorld.pro
 make -j$(nproc)
 ```
+
+libQGLViewer (2.8) собирается из исходников в каталоге `QGLViewer/` вместе с
+проектом, системный пакет `libqglviewer` не нужен. Чтобы использовать
+системную библиотеку, запустите `qmake CONFIG+=system_qglviewer` — её версия
+должна совпадать с заголовками в `QGLViewer/` (иначе будут ошибки линковки
+вида `undefined reference to QGLViewer::QGLViewer(...)`).
 
 ### Windows
 
