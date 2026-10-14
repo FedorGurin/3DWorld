@@ -284,7 +284,7 @@
              <double>180.000000000000000</double>
             </property>
             <property name="value">
-             <double>90.000000000000000</double>
+             <double>0.000000000000000</double>
             </property>
            </widget>
           </item>
@@ -338,6 +338,54 @@
            <string>ландшафт</string>
           </property>
          </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBoxTerrainOnline">
+       <property name="title">
+        <string>Рельеф из интернета</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayoutTerrainOnline">
+        <item row="0" column="0">
+         <widget class="QLabel" name="labelLat"><property name="text"><string>шир.</string></property></widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBoxLat">
+           <property name="decimals"><number>4</number></property>
+           <property name="minimum"><double>-84</double></property>
+           <property name="maximum"><double>84</double></property>
+           <property name="value"><double>43.35</double></property>
+          </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="labelLon"><property name="text"><string>долг.</string></property></widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="QDoubleSpinBox" name="doubleSpinBoxLon">
+           <property name="decimals"><number>4</number></property>
+           <property name="minimum"><double>-180</double></property>
+           <property name="maximum"><double>180</double></property>
+           <property name="value"><double>42.44</double></property>
+          </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="labelAreaKm"><property name="text"><string>км</string></property></widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBoxAreaKm">
+           <property name="decimals"><number>0</number></property>
+           <property name="minimum"><double>5</double></property>
+           <property name="maximum"><double>300</double></property>
+           <property name="value"><double>60</double></property>
+          </widget>
+        </item>
+        <item row="1" column="2" colspan="2">
+         <widget class="QPushButton" name="pushButtonTerrainOnline"><property name="text"><string>загрузить</string></property></widget>
+        </item>
+        <item row="2" column="0" colspan="4">
+         <widget class="QLabel" name="labelTerrainStatus"><property name="wordWrap"><bool>true</bool></property></widget>
         </item>
        </layout>
       </widget>

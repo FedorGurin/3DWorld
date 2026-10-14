@@ -15,6 +15,35 @@ View3DTerrain::View3DTerrain(QWidget *parent):QGLWidget(parent)
     version       = 0;
     connect(dialog,SIGNAL(accepted()),this,SLOT(slotAccepted()));
     connect(threadParser,SIGNAL(finished()),this,SLOT(slotThreadFinished()));
+
+    downloader = new TerrainDownloader(this);
+    connect(downloader,SIGNAL(progress(int,int)),this,SLOT(slotDownloadProgress(int,int)));
+    connect(downloader,SIGNAL(finished(QString)),this,SLOT(slotDownloadFinished(QString)));
+    connect(downloader,SIGNAL(failed(QString)),this,SLOT(slotDownloadFailed(QString)));
+}
+void View3DTerrain::loadFromInternet(double lat, double lon, double sizeKm)
+{
+    if(downloader->isRunning())
+        return;
+    // статус выставляется до запуска: при тайлах из кэша загрузка
+    // завершается сразу внутри start()
+    emit status(QString::fromUtf8("Загрузка рельефа..."));
+    downloader->start(lat, lon, sizeKm);
+}
+void View3DTerrain::slotDownloadProgress(int done, int total)
+{
+    emit status(QString::fromUtf8("Загрузка рельефа: %1 из %2 тайлов").arg(done).arg(total));
+}
+void View3DTerrain::slotDownloadFinished(const QString &fileName)
+{
+    emit status(QString::fromUtf8("Рельеф загружен: %1").arg(QFileInfo(fileName).fileName()));
+    qDebug("Terrain saved to %s", qPrintable(fileName));
+    openTerrainMap(fileName);
+}
+void View3DTerrain::slotDownloadFailed(const QString &message)
+{
+    emit status(message);
+    qWarning("%s", qPrintable(message));
 }
 void View3DTerrain::openFileWithTerrain()
 {
@@ -32,8 +61,7 @@ bool View3DTerrain::openTerrainMap(QString nameFile)
         qWarning("Terrain file not found: %s", qPrintable(nameFile));
         return false;
     }
-    dialog->selectFile(path);
-    slotAccepted();
+    loadFile(path);
     return true;
 }
 
@@ -41,29 +69,39 @@ void View3DTerrain::slotAccepted()
 {
     QStringList list = dialog->selectedFiles();
     if(list.isEmpty() == false)
+        loadFile(list[0]);
+}
+void View3DTerrain::loadFile(const QString &fileName)
+{
+    // пока идет предыдущая загрузка, запоминаем карту и загрузим ее следом
+    if(threadParser->isRunning())
     {
-        QString fileName = list[0];
-        // не начинаем новую загрузку, пока не закончилась предыдущая
-        if(threadParser->isRunning())
-            return;
-
-        file->close();
-        file->setFileName(fileName);
-        if (!file->open(QIODevice::ReadOnly | QIODevice::Text))   return;
-        stream->setDevice(file);
-        threadParser->setParserFile(stream,mapH);
-        // загружаем карту цветов
-
-
-        loadCompleate=false;
-        threadParser->start(QThread::IdlePriority);
+        pendingFile = fileName;
+        return;
     }
+
+    file->close();
+    file->setFileName(fileName);
+    if (!file->open(QIODevice::ReadOnly | QIODevice::Text))   return;
+    stream->setDevice(file);
+    threadParser->setParserFile(stream,mapH);
+
+    loadCompleate=false;
+    threadParser->start(QThread::IdlePriority);
 }
 void View3DTerrain::slotThreadFinished()
 {
     file->close();
     loadCompleate = (mapH->dataVectors.isEmpty() == false);
     version++;
+    if(pendingFile.isEmpty() == false)
+    {
+        // сигнал finished приходит до полной остановки потока
+        threadParser->wait();
+        QString next = pendingFile;
+        pendingFile.clear();
+        loadFile(next);
+    }
 }
 
 View3DTerrain::~View3DTerrain()

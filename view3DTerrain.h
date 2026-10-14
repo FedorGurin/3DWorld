@@ -14,6 +14,7 @@
 
 
 #include "math_func.h"
+#include "terrainDownloader.h"
 typedef struct
 {
     long ncols;
@@ -72,12 +73,18 @@ public:
     int version;
     ~View3DTerrain();
     TASCII_MAP *mapH;
+    //! загрузка карты высот из интернета
+    TerrainDownloader *downloader;
 private:
 
     QFile *file;
     QTextStream *stream;
     QFileDialog *dialog;
     ThreadParser *threadParser;
+    //! карта, которую нужно загрузить после окончания текущей загрузки
+    QString pendingFile;
+    //! загрузка карты из файла
+    void loadFile(const QString &fileName);
 
 public slots:
     void slotAccepted();
@@ -85,6 +92,16 @@ public slots:
     void slotThreadFinished();
     //! открыть файл с ландшафтом
     void openFileWithTerrain();
+    //! загрузить из интернета область с центром lat, lon (град) и стороной sizeKm
+    void loadFromInternet(double lat, double lon, double sizeKm);
+    //! карта из интернета сохранена в файл
+    void slotDownloadFinished(const QString &fileName);
+signals:
+    //! состояние загрузки рельефа (для окна настроек)
+    void status(const QString &text);
+private slots:
+    void slotDownloadProgress(int done, int total);
+    void slotDownloadFailed(const QString &message);
 };
 
 #endif // VIEW3DTERRAIN_H

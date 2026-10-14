@@ -36,6 +36,8 @@ view3DArea::view3DArea():QGLViewer()
     glFunc = 0;
     terrainList        = 0;
     terrainListVersion = -1;
+    outerGroundColor[0] = 0.3f; outerGroundColor[1] = 0.5f; outerGroundColor[2] = 0.25f;
+    outerGroundHeight   = 0.0f;
     curIdMan = 0;
     resize(800,600);
     cameraToThisObj = nullptr;
@@ -118,6 +120,9 @@ view3DArea::view3DArea():QGLViewer()
     connect(setting,SIGNAL(ils(bool)),          this,SLOT(setILS(bool)));
     connect(setting,SIGNAL(vertical(bool)),     this,SLOT(setVertical(bool)));
     connect(setting,SIGNAL(loadLand()),         terrain,SLOT(openFileWithTerrain()));
+    connect(setting,SIGNAL(loadTerrainOnline(double,double,double)),
+            terrain,SLOT(loadFromInternet(double,double,double)));
+    connect(terrain,SIGNAL(status(QString)),    setting,SLOT(setTerrainStatus(QString)));
     connect(setting,SIGNAL(loadDataFlight()),   this,SLOT(openTXTFile()));
     connect(setting,SIGNAL(terra(bool)),        this,SLOT(setTerra(bool)));
     connect(setting,SIGNAL(freq(int)),          this,SLOT(setFreq(int)));
@@ -1202,6 +1207,24 @@ void view3DArea::drawTerra()
         terrainListVersion = terrain->version;
 
         TASCII_MAP *map = terrain->mapH;
+        // земля за картой: вода, если край карты в основном водный
+        {
+            int water = 0, count = 0;
+            double sumH = 0.0;
+            for(int i = 0; i < map->nrows; i++)
+            {
+                for(int j = 0; j < map->ncols; j += (i == 0 || i == map->nrows - 1) ? 1 : map->ncols - 1)
+                {
+                    const double h = map->value(j, i).y();
+                    if(h < 3.0) water++;
+                    sumH += h;
+                    count++;
+                }
+            }
+            const bool isWater = water * 2 > count;
+            terrainColor(isWater ? 0.0f : float(sumH / qMax(count, 1)), 1.0f, outerGroundColor);
+            outerGroundHeight = isWater ? 0.0f : float(map->minHeight) - 30.0f;
+        }
         glNewList(terrainList, GL_COMPILE);
         for(int i=0;i<map->nrows-1;i++)
         {
@@ -1231,10 +1254,8 @@ void view3DArea::drawTerra()
     {
         const float r = camera()->zFar() * 0.9f;
         const Vec cp  = camera()->position();
-        const float y = terrain->mapH->minHeight - 30.0f;
-        float c[3];
-        terrainColor(150.0f, 1.0f, c);
-        glColor3fv(c);
+        const float y = outerGroundHeight;
+        glColor3fv(outerGroundColor);
         glNormal3f(0.0f, 1.0f, 0.0f);
         // кольца вокруг камеры: туман считается в вершинах, поэтому
         // плоскость разбивается, чтобы дымка нарастала с расстоянием плавно

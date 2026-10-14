@@ -134,6 +134,11 @@ public:
     void parserTXTFile();
     //! загрузка траектории из текстового файла
     void loadTXTFile(const QString &fileName);
+    //! загрузка рельефа из интернета
+    void loadTerrainOnline(double lat, double lon, double sizeKm)
+    {
+        terrain->loadFromInternet(lat, lon, sizeKm);
+    }
     //! статус загрузки модели из файла
     void statusLoad(bool);
     //! поиск времени на интервале
@@ -268,6 +273,9 @@ private:
     GLuint terrainList;
     //! номер карты, для которой построен список отображения
     int terrainListVersion;
+    //! цвет и высота земли за пределами карты (по краю карты)
+    float outerGroundColor[3];
+    float outerGroundHeight;
     //! отрисовка света
     qglviewer::ManipulatedFrame* light1;
 

@@ -27,6 +27,17 @@ FormSettings::FormSettings(QWidget *parent) :
     connect(ui->doubleSpinBoxOffsetX,SIGNAL(valueChanged(double)),this,SIGNAL(offsetMapX(double)));
     connect(ui->doubleSpinBoxOffsetZ,SIGNAL(valueChanged(double)),this,SIGNAL(offsetMapZ(double)));
     connect(ui->doubleSpinBoxRot,SIGNAL(valueChanged(double)),this,SIGNAL(rotateMap(double)));
+    connect(ui->pushButtonTerrainOnline,&QPushButton::clicked,this,[this]()
+    {
+        emit loadTerrainOnline(ui->doubleSpinBoxLat->value(),
+                               ui->doubleSpinBoxLon->value(),
+                               ui->doubleSpinBoxAreaKm->value());
+    });
+}
+
+void FormSettings::setTerrainStatus(const QString &text)
+{
+    ui->labelTerrainStatus->setText(text);
 }
 
 FormSettings::~FormSettings()

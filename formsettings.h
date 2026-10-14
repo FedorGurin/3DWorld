@@ -31,6 +31,11 @@ signals:
     void offsetMapX(double);
     void offsetMapZ(double);
     void rotateMap(double);
+    //! загрузка рельефа из интернета: широта, долгота (град), размер области (км)
+    void loadTerrainOnline(double lat, double lon, double sizeKm);
+public slots:
+    //! состояние загрузки рельефа
+    void setTerrainStatus(const QString &text);
 private:
     Ui::FormSettings *ui;
 };

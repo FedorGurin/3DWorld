@@ -256,7 +256,7 @@ void View3DHud::drawHeadingTape(QGLViewer *viewer, const THudData &data)
             continue;
         int hn = ((h % 360) + 360) % 360;
         // подписи в десятках градусов: 09 = 090
-        if(fabs(x - cx) > 20)
+        if(fabs(x - cx) > 36)
             text(viewer, int(x), int(y - 12), QString("%1").arg(hn / 10, 2, 10, QChar('0')), 0);
     }
     // текущее значение курса в рамке
