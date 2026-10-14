@@ -56,7 +56,7 @@ view3DArea::view3DArea():QGLViewer()
 
     lam0    = gradToRad * 57.0;
     fi0     = gradToRad * 33.0;
-    rotMap  = 90.0;
+    rotMap  = 0.0;
 
     offsetMapX = 0.0;
     offsetMapZ = 0.0;
@@ -71,7 +71,7 @@ view3DArea::view3DArea():QGLViewer()
     info    =  false    ;
     terra   =  true     ;
     sky     =  true     ;
-    grid    =  true     ;
+    grid    =  false    ;
     cameraUp=  false    ;
 
     radiusScene     = 26000.0;
@@ -1113,12 +1113,61 @@ void view3DArea::drawVecLine()
         glEnd();
     }
 }
+//! цвет рельефа по высоте и крутизне склона (slope: 1 - горизонтально, 0 - отвесно)
+static void terrainColor(float h, float slope, float c[3])
+{
+    struct TColorStop {float h; float r, g, b;};
+    static const TColorStop stops[] = {
+        {   0.0f, 0.24f, 0.42f, 0.20f},   // низменность
+        { 300.0f, 0.33f, 0.52f, 0.24f},
+        { 900.0f, 0.50f, 0.54f, 0.30f},   // предгорья
+        {1600.0f, 0.52f, 0.44f, 0.31f},   // горы
+        {2600.0f, 0.50f, 0.47f, 0.44f},   // скалы
+        {3400.0f, 0.93f, 0.94f, 0.97f},   // снег
+    };
+    const int n = sizeof(stops) / sizeof(stops[0]);
+    if(h < 3.0f)
+    {
+        // вода
+        c[0] = 0.16f; c[1] = 0.32f; c[2] = 0.55f;
+        return;
+    }
+    int k = 0;
+    while(k < n - 2 && h > stops[k + 1].h)
+        k++;
+    float t = (h - stops[k].h) / (stops[k + 1].h - stops[k].h);
+    t = qBound(0.0f, t, 1.0f);
+    c[0] = stops[k].r + (stops[k + 1].r - stops[k].r) * t;
+    c[1] = stops[k].g + (stops[k + 1].g - stops[k].g) * t;
+    c[2] = stops[k].b + (stops[k + 1].b - stops[k].b) * t;
+    // крутые склоны - каменистые, снег на них не держится
+    float rock = qBound(0.0f, (0.85f - slope) / 0.25f, 1.0f);
+    const float rc[3] = {0.45f, 0.42f, 0.38f};
+    for(int i = 0; i < 3; i++)
+        c[i] = c[i] + (rc[i] - c[i]) * rock * 0.8f;
+}
 // отрисовка земли
 void view3DArea::drawTerra()
 {
     if(terrain->loadCompleate==false)
         return;
 
+    glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_FOG_BIT);
+    // воздушная дымка: дальний рельеф растворяется в цвете горизонта
+    // (если туман не включен в настройках)
+    if(sky == true && fog == false)
+    {
+        const double h = qMax(100.0, double(camera()->position().y));
+        // дальность видимого горизонта для данной высоты
+        const double horizon = sqrt(2.0 * 6371000.0 * h);
+        const glm::vec3 hc = skyView.skyColor(0.0f, camera()->position().y);
+        const GLfloat hazeColor[4] = {hc.r, hc.g, hc.b, 1.0f};
+        glEnable(GL_FOG);
+        glFogi(GL_FOG_MODE, GL_LINEAR);
+        glFogfv(GL_FOG_COLOR, hazeColor);
+        glFogf(GL_FOG_START, 0.05 * horizon);
+        glFogf(GL_FOG_END, 1.6 * horizon);
+    }
     glPushMatrix();
     glRotated(rotMap,0.0,1.0,0.0);
     glTranslatef(offsetMapX,0.0,offsetMapZ);
@@ -1126,6 +1175,23 @@ void view3DArea::drawTerra()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
+
+    // освещение солнцем, цвет вершин задает материал
+    const glm::vec3 sun = skyView.sunDirection();
+    GLfloat pos[]       = {sun.x, sun.y, sun.z, 0.0f};
+    GLfloat ambLight[]  = {0.38f, 0.40f, 0.45f, 1.0f};
+    GLfloat difLight[]  = {0.85f, 0.83f, 0.76f, 1.0f};
+    GLfloat noSpec[]    = {0.0f, 0.0f, 0.0f, 1.0f};
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+    glLightfv(GL_LIGHT0, GL_POSITION, pos);
+    glLightfv(GL_LIGHT0, GL_AMBIENT,  ambLight);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE,  difLight);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, noSpec);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, noSpec);
+    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+    glEnable(GL_COLOR_MATERIAL);
 
     // рельеф не меняется между кадрами - формируем список отображения
     // заново только после загрузки новой карты
@@ -1135,33 +1201,60 @@ void view3DArea::drawTerra()
             terrainList = glGenLists(1);
         terrainListVersion = terrain->version;
 
-        const int step = 1;
+        TASCII_MAP *map = terrain->mapH;
         glNewList(terrainList, GL_COMPILE);
-        glBegin(GL_QUADS);
-        for(int i=0;i<terrain->mapH->nrows-step;i+=step)
+        for(int i=0;i<map->nrows-1;i++)
         {
-            for(int j=0;j<terrain->mapH->ncols-step;j+=step)
+            glBegin(GL_TRIANGLE_STRIP);
+            for(int j=0;j<map->ncols;j++)
             {
-                const QVector3D quad[4] = {terrain->mapH->value(j,i),
-                                           terrain->mapH->value(j,i+step),
-                                           terrain->mapH->value(j+step,i+step),
-                                           terrain->mapH->value(j+step,i)};
-                for(const QVector3D &vec : quad)
+                for(int k = 0; k < 2; k++)
                 {
-                    // цвет по высоте: ниже 100 м - вода, выше - суша
-                    if(vec.y()<100)
-                        glColor3f(0.0f,0.0f,vec.y()/100);
-                    else
-                        glColor3f(0.0f,vec.y()/1500.0,0.0);
-                    glVertex3f(vec.x(),vec.y(),vec.z());
+                    const QVector3D v = map->value(j, i + k);
+                    const QVector3D n = map->normal(j, i + k);
+                    float c[3];
+                    terrainColor(v.y(), n.y(), c);
+                    glColor3fv(c);
+                    glNormal3f(n.x(), n.y(), n.z());
+                    glVertex3f(v.x(), v.y(), v.z());
                 }
             }
+            glEnd();
         }
-        glEnd();
         glEndList();
     }
     glCallList(terrainList);
     glPopMatrix();
+
+    // за пределами карты продолжаем землю плоскостью до горизонта,
+    // чуть ниже самой низкой точки карты, чтобы не было наложения
+    {
+        const float r = camera()->zFar() * 0.9f;
+        const Vec cp  = camera()->position();
+        const float y = terrain->mapH->minHeight - 30.0f;
+        float c[3];
+        terrainColor(150.0f, 1.0f, c);
+        glColor3fv(c);
+        glNormal3f(0.0f, 1.0f, 0.0f);
+        // кольца вокруг камеры: туман считается в вершинах, поэтому
+        // плоскость разбивается, чтобы дымка нарастала с расстоянием плавно
+        const int rings = 24, slices = 48;
+        for(int i = 0; i < rings; i++)
+        {
+            const float r0 = r * powf(float(i) / rings, 2.0f);
+            const float r1 = r * powf(float(i + 1) / rings, 2.0f);
+            glBegin(GL_QUAD_STRIP);
+            for(int j = 0; j <= slices; j++)
+            {
+                const float a = 2.0f * float(M_PI) * j / slices;
+                const float ca = cosf(a), sa = sinf(a);
+                glVertex3f(cp.x + r0 * ca, y, cp.z + r0 * sa);
+                glVertex3f(cp.x + r1 * ca, y, cp.z + r1 * sa);
+            }
+            glEnd();
+        }
+    }
+    glPopAttrib();
 }
 //! отрисовка неба
 void view3DArea::drawSky()

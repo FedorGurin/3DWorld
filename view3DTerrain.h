@@ -19,29 +19,28 @@ typedef struct
     long ncols;
     long nrows;
 
+    //! долгота и широта левого нижнего угла карты, град
     double xllcorner;
     double yllcorner;
 
-
-
     double cellsize;//шаг сетки в градусах
+    //! высоты, м: data[строка][столбец], строка 0 - северный край карты
     QVector<QVector<double> >data;
+    //! координаты узлов в земной СК, м: x - на север, y - вверх, z - на восток
     QVector<QVector<QVector3D> > dataVectors;
+    //! нормали в узлах сетки
+    QVector<QVector<QVector3D> > normals;
+    //! минимальная и максимальная высота, м
+    double minHeight;
+    double maxHeight;
     QVector3D value(int col,int row)
     {
-       /* double x,z;
-        convertSphereToDekart(GradToRadian(yllcorner+ncols/2*cellsize),
-                              GradToRadian(xllcorner+nrows/2*cellsize),
-                              GradToRadian(yllcorner+col*cellsize),
-                              GradToRadian(xllcorner+row*cellsize),
-                              x,
-                              z
-                              );
-
-        return QVector3D(x,data[col][row],z);*/
-        return dataVectors[col][row];
+        return dataVectors[row][col];
     }
-
+    QVector3D normal(int col,int row)
+    {
+        return normals[row][col];
+    }
 }TASCII_MAP;
 
 class ThreadParser : public QThread
