@@ -1,0 +1,12 @@
+# Каталоги и файлы сборки
+build*/
+*.o
+moc_*.cpp
+moc_predefs.h
+ui_*.h
+qrc_*.cpp
+Makefile*
+.qmake.stash
+/3DWorld
+*.pro.user*
+__pycache__/
