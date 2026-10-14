@@ -17,6 +17,7 @@ signals:
     void fog(bool);
 
     void grid(bool);
+    void sky(bool);
     void vertical(bool);
     void ils(bool);
     void info(bool);

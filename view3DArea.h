@@ -13,6 +13,7 @@
 #include <QOpenGLFunctions_3_2_Compatibility>
 
 #include "view3DTerrain.h"
+#include "view3DSky.h"
 #include "OBJ_Loader.h"
 #include "math_func.h"
 #include "visudp.h"
@@ -113,8 +114,10 @@ public:
                      int &yPixel);
     //! отрисовка рельефа
     void drawTerra();
-    //! отрисовка неба
+    //! отрисовка неба (купол и солнце)
     void drawSky();
+    //! отрисовка облаков
+    void drawClouds();
     //! отрисовка ИЛС
     void drawILS();
     //! отрисовка сетки на плоскости OXZ размером d
@@ -258,6 +261,8 @@ private:
 
     //! указатель на визуализатор подстилающей поверхности
     View3DTerrain *terrain;
+    //! небо: купол, солнце, облака
+    View3DSky skyView;
     //! список отображения OpenGL с рельефом
     GLuint terrainList;
     //! номер карты, для которой построен список отображения
@@ -309,6 +314,8 @@ public slots:
     void setSizeScene(double);
     //! отрисовка сетки
     void setGrid(bool);
+    //! отрисовка неба
+    void setSky(bool);
     void setRotateMap(double);
     void setOffsetMapX(double);
     void setOffsetMapZ(double);

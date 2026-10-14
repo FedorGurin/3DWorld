@@ -69,7 +69,7 @@ view3DArea::view3DArea():QGLViewer()
     fog     =  false    ;
     info    =  false    ;
     terra   =  true     ;
-    sky     =  false    ;
+    sky     =  true     ;
     grid    =  true     ;
     cameraUp=  false    ;
 
@@ -111,6 +111,7 @@ view3DArea::view3DArea():QGLViewer()
 
     connect(setting,SIGNAL(fog(bool)),          this,SLOT(setFog(bool)));
     connect(setting,SIGNAL(grid(bool)),         this,SLOT(setGrid(bool)));
+    connect(setting,SIGNAL(sky(bool)),          this,SLOT(setSky(bool)));
 
     connect(setting,SIGNAL(info(bool)),         this,SLOT(setInfo(bool)));
     connect(setting,SIGNAL(ils(bool)),          this,SLOT(setILS(bool)));
@@ -169,6 +170,10 @@ void view3DArea::appendTrajectoryPoint(int index,float x,float y,float z,int r,i
 void view3DArea::setGrid(bool value)
 {
     grid=value;
+}
+void view3DArea::setSky(bool value)
+{
+    sky=value;
 }
 void view3DArea::openTXTFile()
 {
@@ -352,6 +357,8 @@ void view3DArea::init()
     glFunc->initializeOpenGLFunctions();
 
     readAllModels();
+    // текстура облаков
+    skyView.init();
 #ifdef USE_3DMODEL
 
     setAxisIsDrawn(false);
@@ -411,6 +418,14 @@ void view3DArea::draw()
     fogColor[1] = c.greenF();
     fogColor[2] = c.blueF();
     fogColor[3] = 1.0;
+    if(sky == true)
+    {
+        // при отрисовке неба туман совпадает с цветом горизонта
+        glm::vec3 horizon = skyView.skyColor(0.0f, camera()->position().y);
+        fogColor[0] = horizon.r;
+        fogColor[1] = horizon.g;
+        fogColor[2] = horizon.b;
+    }
 
     if(fog == true)
     {
@@ -426,6 +441,9 @@ void view3DArea::draw()
         glDisable(GL_FOG);
     }
 
+    // отрисовка неба - фон для всей сцены
+    if(sky == true)
+        drawSky();
     // сначала трехмерная сцена с проверкой глубины, затем экранная символика
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -443,12 +461,12 @@ void view3DArea::draw()
     drawSolidObjects();
 #endif
     drawVecLine();
+    // облака полупрозрачные - рисуются после непрозрачных объектов
+    if(sky == true)
+        drawClouds();
     // отрисовка ИЛС
     if(ils == true)
         drawILS();
-    // отрисовка неба
-    if(sky == true)
-        drawSky();
     //////////////////////////
     glDisable(GL_LIGHTING);
     //glEnable(GL_BLEND);
@@ -894,7 +912,9 @@ void view3DArea::drawObject(T3DObject *obj,
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    GLfloat pos[] = {1.0f, 1.0f, 1.0f, 0.0f};
+    // направленный источник света - солнце
+    const glm::vec3 sun = skyView.sunDirection();
+    GLfloat pos[] = {sun.x, sun.y, sun.z, 0.0f};
     GLfloat ambLight[]  = {0.2f, 0.2f, 0.2f, 0.0f};
     GLfloat difLight[]  = {0.8f, 0.8f, 0.8f, 0.0f};
     GLfloat specLight[] = {1.0f, 1.0f, 1.0f, 0.0f};
@@ -1238,7 +1258,20 @@ void view3DArea::drawTerra()
 //! отрисовка неба
 void view3DArea::drawSky()
 {
-
+    // купол должен лежать между ближней и дальней плоскостями отсечения
+    const float zNear = camera()->zNear();
+    const float zFar  = camera()->zFar();
+    const float radius = qMax(zNear * 4.0f, zFar * 0.5f);
+    const Vec pos = camera()->position();
+    skyView.drawDome(glm::vec3(pos.x, pos.y, pos.z), radius);
+}
+//! отрисовка облаков
+void view3DArea::drawClouds()
+{
+    const float zFar   = camera()->zFar();
+    const float radius = qMin(zFar * 0.8f, 80000.0f);
+    const Vec pos = camera()->position();
+    skyView.drawClouds(glm::vec3(pos.x, pos.y, pos.z), radius, globalTimeDebug);
 }
 void view3DArea::keyReleaseEvent(QKeyEvent *e)
 {
@@ -1328,6 +1361,11 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
     case Qt::Key_Z:
     {
         setting->show();
+        break;
+    }
+    case Qt::Key_K:
+    {
+        sky = !sky;
         break;
     }
     /*case Qt::Key_F1    :

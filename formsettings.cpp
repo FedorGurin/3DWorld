@@ -9,6 +9,7 @@ FormSettings::FormSettings(QWidget *parent) :
     ///
     connect(ui->checkBoxFog,SIGNAL(clicked(bool)),this,SIGNAL(fog(bool)));
     connect(ui->checkBoxGrid,SIGNAL(clicked(bool)),this,SIGNAL(grid(bool)));
+    connect(ui->checkBoxSky,SIGNAL(clicked(bool)),this,SIGNAL(sky(bool)));
     connect(ui->checkBoxVertLine,SIGNAL(clicked(bool)),this,SIGNAL(vertical(bool)));
     ///
     connect(ui->pushButtonLoadData,SIGNAL(clicked(bool)),this,SIGNAL(loadDataFlight()));
