@@ -4,6 +4,7 @@
 #include <QGLViewer/qglviewer.h>
 
 #include <QFile>
+#include <QHash>
 #include <QElapsedTimer>
 #include <QTextStream>
 #include <QTextCodec>
@@ -89,7 +90,10 @@ public:
     //! обновление указателя на объект камеры (после изменения списка объектов)
     void refreshCameraObject();
     //! добавление точки в траекторию объекта
-    void appendTrajectoryPoint(int index,float x,float y,float z,int r,int g,int b);
+    void appendTrajectoryPoint(int id,float x,float y,float z,int r,int g,int b);
+    //! запись сеанса в файл и воспроизведение записи
+    void startRecording(const QString &fileName);
+    void startPlayback(const QString &fileName);
     //! привязать камеру к объекту
     void cameraToObject();
     //! Загрузить файл с 3D моделью
@@ -215,6 +219,14 @@ private:
     TSendVehicleVisSimple *cameraToThisObj;
     //! индекс объекта к которому привязана каера
     int cameraToObjIndex;
+    //! идентификатор объекта, к которому привязана камера (-1 - нет)
+    int cameraObjId;
+    //! удаление объектов без данных через, с (0 - не удалять)
+    int staleTimeoutSec;
+    //! часы сцены, позиция воспроизведения записи, мс, пауза
+    QElapsedTimer sceneClock;
+    double playPosMs;
+    bool playPaused;
     //! признак отрисовки тумана
     bool fog;
     //! задний вид из объекта
@@ -278,7 +290,8 @@ private:
     //! список 3ех мерных объектов
     QVector<T3DObject> list3DObj;
     //! список траекторий
-    QVector<TTrajectory> trs;
+    //! траектории по идентификатору объекта
+    QHash<int, TTrajectory> trs;
 
     //! указатель на визуализатор подстилающей поверхности
     View3DTerrain *terrain;
@@ -346,6 +359,14 @@ public slots:
     void setGrid(bool);
     //! отрисовка неба
     void setSky(bool);
+    //! сглаживание движения сетевых объектов
+    void setSmoothing(bool);
+    //! удаление объектов без данных через seconds секунд (0 - не удалять)
+    void setStaleTimeout(int seconds);
+    //! запись принимаемых пакетов в файл
+    void setRecording(bool);
+    //! выбор и воспроизведение записи
+    void openPlayback();
     //! подгрузка рельефа по ходу полета с началом координат lat, lon (град)
     void setTerrainStreaming(bool value, double lat, double lon);
     void setRotateMap(double);

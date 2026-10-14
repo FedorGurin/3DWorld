@@ -3,10 +3,15 @@
 #include <QUdpSocket>
 #include <QObject>
 #include <QHash>
+#include <QFile>
+#include <QList>
+#include <QPair>
 #include "math_func.h"
 #include "globalData.h"
 
 #define SIZE_BUF_DEFAULT 2048
+//! сигнатура файла записи сеанса
+#define RECORD_MAGIC "3DWREC01"
 
 enum TTypeHead:uint32_t
 {
@@ -84,8 +89,29 @@ public:
     void setSizeObj(int size)
     {
         flightObjects.resize(size);
+        samples.resize(size);
         rebuildIndex();
     }
+    //! сглаживание движения объектов между пакетами
+    bool smoothing;
+    //! пересчет отображаемых положений объектов на момент nowMs
+    void updateDisplay(qint64 nowMs);
+    //! удаление объектов без данных дольше timeoutMs; возвращает их id
+    QList<int> removeStale(qint64 nowMs, qint64 timeoutMs);
+    //! удаление всех объектов
+    void clearObjects();
+
+    //! запись принимаемых пакетов в файл
+    bool startRecording(const QString &fileName, qint64 nowMs);
+    void stopRecording();
+    bool isRecording() const {return recordFile.isOpen();}
+    //! воспроизведение записи: загрузка, остановка, длительность, мс
+    bool loadPlayback(const QString &fileName);
+    void stopPlayback();
+    bool isPlaying() const {return playing;}
+    qint64 playbackDuration() const;
+    //! обработка записанных пакетов до момента positionMs
+    void advancePlayback(qint64 positionMs);
     //! блокировка соединения
     void setBlockConection(bool value)
     {
@@ -98,8 +124,10 @@ public:
     int testFlightObjInList(int uid);
     int testArrayObjInList(int uid);
 
-    //! проверка datagram
-    bool checkDatagrams();
+    //! прием пакетов из сети (nowMs - текущее время сцены, мс)
+    bool checkDatagrams(qint64 nowMs);
+    //! разбор одного пакета
+    void processDatagram(const QByteArray &datagram, qint64 nowMs);
     double synch_time;
 private slots:
     void processPendingDatagrams();
@@ -130,8 +158,24 @@ private:
     QVector<glm::vec3> vecList;
     //! индекс объекта в списке по его идентификатору
     QHash<int, int> flightIndex;
+    //! два последних пакета объекта и время их приема (для сглаживания)
+    struct TObjSample
+    {
+        TSendVehicleVisSimple last, prev;
+        qint64 tLast, tPrev;
+        bool hasPrev;
+    };
+    QVector<TObjSample> samples;
     //! обновление/добавление объекта
-    void updateFlightObj(const TSendVehicleVisSimple &solid);
+    void updateFlightObj(const TSendVehicleVisSimple &solid, qint64 nowMs);
+    //! запись сеанса
+    QFile recordFile;
+    qint64 recordStartMs;
+    void writeRecord(qint64 nowMs, const QByteArray &data);
+    //! воспроизведение сеанса: время пакета от начала записи, мс, и сам пакет
+    QVector<QPair<qint64, QByteArray> > playRecords;
+    int playIndex;
+    bool playing;
     //! перестроение индекса
     void rebuildIndex();
 

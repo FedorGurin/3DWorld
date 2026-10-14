@@ -16,6 +16,10 @@
 #include <QByteArray>
 
 #include "dataPath.h"
+#include <QDateTime>
+#include <QDir>
+#include <QFileInfo>
+#include <QStandardPaths>
 #include "terrainColor.h"
 
 
@@ -50,6 +54,11 @@ view3DArea::view3DArea():QGLViewer()
     resize(800,600);
     cameraToThisObj = nullptr;
     cameraToObjIndex= -1;
+    cameraObjId     = -1;
+    staleTimeoutSec = 10;
+    playPosMs       = 0.0;
+    playPaused      = false;
+    sceneClock.start();
     cameraToBack    = false;
     txtScale        = 1.0f;
     txtSpeed        = 0.0;
@@ -101,7 +110,6 @@ view3DArea::view3DArea():QGLViewer()
 
     rows.clear();
     trs.clear();
-    trs.resize(17);
 
     current_frame_aircraft=0.0;
     current_frame_target=0.0;
@@ -137,6 +145,10 @@ view3DArea::view3DArea():QGLViewer()
             terrain,SLOT(loadFromInternet(double,double,double)));
     connect(terrain,SIGNAL(status(QString)),    setting,SLOT(setTerrainStatus(QString)));
     connect(streamer,SIGNAL(status(QString)),   setting,SLOT(setTerrainStatus(QString)));
+    connect(setting,SIGNAL(smoothing(bool)),    this,SLOT(setSmoothing(bool)));
+    connect(setting,SIGNAL(staleTimeout(int)),  this,SLOT(setStaleTimeout(int)));
+    connect(setting,SIGNAL(recording(bool)),    this,SLOT(setRecording(bool)));
+    connect(setting,SIGNAL(playRecording()),    this,SLOT(openPlayback()));
     connect(setting,SIGNAL(terrainStreaming(bool,double,double)),
             this,SLOT(setTerrainStreaming(bool,double,double)));
     connect(setting,SIGNAL(loadDataFlight()),   this,SLOT(openTXTFile()));
@@ -152,23 +164,18 @@ view3DArea::view3DArea():QGLViewer()
 }
 void view3DArea::slotReset()
 {
-    for(int i=0;i<trs.size();i++)
-        trs[i].clear();
+    for(auto it = trs.begin(); it != trs.end(); ++it)
+        it->clear();
 }
-void view3DArea::appendTrajectoryPoint(int index,float x,float y,float z,int r,int g,int b)
+void view3DArea::appendTrajectoryPoint(int id,float x,float y,float z,int r,int g,int b)
 {
-    if(index < 0)
-        return;
-    if(index >= trs.size())
-        trs.resize(index + 1);
-
     // общий бюджет точек на все объекты: чем больше объектов,
     // тем короче хвост у каждого (память и время отрисовки не растут)
     const int objects  = qMax(1, net.getVehicleObj()->size());
     const int maxPoints = qBound(MIN_TRAJECTORY_POINTS,
                                  TRAJECTORY_POINTS_BUDGET / objects,
                                  MAX_TRAJECTORY_POINTS);
-    TTrajectory &tr = trs[index];
+    TTrajectory &tr = trs[id];
     if(tr.size() >= maxPoints)
     {
         // удаляем сразу 10% старых точек, чтобы не сдвигать массив на каждой точке
@@ -186,6 +193,59 @@ void view3DArea::setGrid(bool value)
 void view3DArea::setSky(bool value)
 {
     sky=value;
+}
+void view3DArea::setSmoothing(bool value)
+{
+    net.smoothing = value;
+}
+void view3DArea::setStaleTimeout(int seconds)
+{
+    staleTimeoutSec = seconds;
+}
+void view3DArea::setRecording(bool value)
+{
+    if(value)
+    {
+        QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/3DWorld";
+        QDir().mkpath(dir);
+        startRecording(dir + "/session_" +
+                       QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss") + ".rec");
+    }else
+    {
+        net.stopRecording();
+        setting->setNetStatus(QString::fromUtf8("Запись остановлена"));
+    }
+}
+void view3DArea::startRecording(const QString &fileName)
+{
+    if(net.startRecording(fileName, sceneClock.elapsed()))
+        setting->setNetStatus(QString::fromUtf8("Запись: %1").arg(fileName));
+    else
+        setting->setNetStatus(QString::fromUtf8("Не удалось открыть %1").arg(fileName));
+    setting->setRecordingChecked(net.isRecording());
+}
+void view3DArea::openPlayback()
+{
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/3DWorld";
+    QString fileName = QFileDialog::getOpenFileName(this, QString::fromUtf8("Запись сеанса"),
+                                                    dir, "3DWorld session (*.rec)");
+    if(fileName.isEmpty() == false)
+        startPlayback(fileName);
+}
+void view3DArea::startPlayback(const QString &fileName)
+{
+    dataFromTXTFile = false;
+    slotReset();
+    trs.clear();
+    if(net.loadPlayback(fileName))
+    {
+        playPosMs  = 0.0;
+        playPaused = false;
+        setting->setNetStatus(QString::fromUtf8("Воспроизведение: %1 (%2 с). P - пауза, [ ] - перемотка")
+                              .arg(QFileInfo(fileName).fileName())
+                              .arg(net.playbackDuration() / 1000.0, 0, 'f', 1));
+    }else
+        setting->setNetStatus(QString::fromUtf8("Не удалось прочитать запись %1").arg(fileName));
 }
 void view3DArea::setTerrainStreaming(bool value, double lat, double lon)
 {
@@ -427,8 +487,29 @@ void view3DArea::draw()
     glDisable(GL_LIGHTING);
 
 
-    if(net.checkDatagrams()==true && dataFromTXTFile == false)
-        globalTime = net.synch_time;
+    // время сцены: реальные часы или позиция воспроизведения записи
+    qint64 nowMs;
+    if(net.isPlaying())
+    {
+        nowMs = qint64(playPosMs);
+        net.advancePlayback(nowMs);
+        if(dataFromTXTFile == false)
+            globalTime = net.synch_time;
+    }else
+    {
+        nowMs = sceneClock.elapsed();
+        if(net.checkDatagrams(nowMs)==true && dataFromTXTFile == false)
+            globalTime = net.synch_time;
+    }
+    if(dataFromTXTFile == false)
+    {
+        // плавное движение между пакетами
+        net.updateDisplay(nowMs);
+        // удаление объектов, от которых давно нет данных
+        const QList<int> removed = net.removeStale(nowMs, qint64(staleTimeoutSec) * 1000);
+        for(int id : removed)
+            trs.remove(id);
+    }
     // список объектов мог измениться - обновим объект, к которому привязана камера
     refreshCameraObject();
     // если модель передает географическую точку начала координат (рад),
@@ -647,24 +728,7 @@ void view3DArea::drawTrajectory()
 {
 
 
-    /*for(long i=0;i<trs[0].x.size();i++)
-    {
-        qglColor(QColor(trs[0].r[i],trs[0].g[i],trs[0].b[i]));
-        glVertex3f(trs[0].x[i],trs[0].y[i],trs[0].z[i]);
-        glVertex3f(trs[0].x[i],0,trs[0].z[i]);
-    }
-    glEnd();
-    if(vertLine==true)
-    {
-        //! отрисовка вертикальных линий
-        glBegin(GL_LINES);
-        for(long i=0;i<trs[0].x.size();i=i+5)
-        {
-            glVertex3f(trs[0].x[i],0.0,trs[0].z[i]);
-            glVertex3f(trs[0].x[i],trs[0].y[i],trs[0].z[i]);
-        }
-        glEnd();
-    }*/
+
 
 
     glPointSize(3.0);
@@ -740,6 +804,16 @@ void view3DArea::animate()
     frameSec = qBound(0.0, frameSec, 0.25);
     //! счетчик времени, сек
     globalTime=globalTime+frameSec*multTime;
+    // продвижение воспроизведения записи (множитель времени - скорость)
+    if(net.isPlaying() && playPaused == false)
+    {
+        playPosMs += frameSec * multTime * 1000.0;
+        if(playPosMs >= net.playbackDuration())
+        {
+            playPosMs  = net.playbackDuration();
+            playPaused = true;
+        }
+    }
     globalTimeDebug=globalTimeDebug+frameSec*multTime;
     //! если данные загружены из файла
     if(dataFromTXTFile==true && rows.size() >= 2)
@@ -823,12 +897,10 @@ void view3DArea::animate()
         {
             trajectoryTimer = 0.0;
             QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
-            int j = 0;
             for(const auto &i:*list)
             {
                 //! координаты объектов и цвет траектории
-                appendTrajectoryPoint(j,i.cg_x,i.cg_y,i.cg_z,80,223,72);
-                j++;
+                appendTrajectoryPoint(i.id,i.cg_x,i.cg_y,i.cg_z,80,223,72);
             }
         }
     }
@@ -1213,6 +1285,13 @@ void view3DArea::drawStateLine()
     if(cameraToThisObj != nullptr)
         prefix += QString(" (id %1)").arg(cameraToThisObj->id);
     prefix += QString(", objects: %1").arg(net.getVehicleObj()->size());
+    if(net.isRecording())
+        prefix += "  [REC]";
+    if(net.isPlaying())
+        prefix += QString("  [%1 %2 / %3 s]")
+                .arg(playPaused ? "||" : ">")
+                .arg(playPosMs / 1000.0, 0, 'f', 1)
+                .arg(net.playbackDuration() / 1000.0, 0, 'f', 1);
     drawText((width()/2)-20,height()-20,"Current Object="+prefix);
 
     drawText((width()/2)-20,height()-40,"Time="+QString::number(globalTime));
@@ -1446,6 +1525,33 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
     case Qt::Key_8    : {setCameraToObject(7);break;}
     case Qt::Key_9    : {setCameraToObject(8);break;}
     case Qt::Key_Insert:{cameraToBack=true;break;}
+    // управление воспроизведением записи
+    case Qt::Key_P:
+    {
+        if(net.isPlaying())
+        {
+            if(playPaused && playPosMs >= net.playbackDuration())
+                playPosMs = 0.0;
+            playPaused = !playPaused;
+        }
+        break;
+    }
+    case Qt::Key_BracketLeft:
+    case Qt::Key_BracketRight:
+    {
+        if(net.isPlaying())
+        {
+            playPosMs += (e->key() == Qt::Key_BracketRight ? 10000.0 : -10000.0);
+            playPosMs  = qBound(0.0, playPosMs, double(net.playbackDuration()));
+        }
+        break;
+    }
+    case Qt::Key_Home:
+    {
+        if(net.isPlaying())
+            playPosMs = 0.0;
+        break;
+    }
     // перебор объектов по кругу (для любого их числа)
     case Qt::Key_PageDown:
     case Qt::Key_PageUp:
@@ -1594,38 +1700,30 @@ void view3DArea::keyPressEvent(QKeyEvent *e)
 void view3DArea::setCameraToObject(int num)
 {
     cameraToBack=false;
-    if(num==-1)
-    {
-        cameraToThisObj = nullptr;
-        cameraToObjIndex=-1;
-    }
-
-    if(num>=0)
-    {
-        QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
-
-        if(num<list->size())
-        {
-            cameraToThisObj=&(*list)[num];
-            cameraToObjIndex=num;
-        }
-        else
-        {
-            cameraToThisObj = nullptr;
-            cameraToObjIndex=-1;
-        }
-    }
-
+    // камера привязывается к идентификатору объекта: номер объекта в списке
+    // меняется при удалении "замолчавших" объектов
+    QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
+    if(num >= 0 && num < list->size())
+        cameraObjId = (*list)[num].id;
+    else
+        cameraObjId = -1;
+    refreshCameraObject();
 }
 void view3DArea::refreshCameraObject()
 {
-    // указатель на элемент QVector становится недействительным при добавлении
-    // новых объектов, поэтому он каждый раз заново берется по индексу
+    // указатель на элемент QVector становится недействительным при изменении
+    // списка, поэтому он каждый раз заново ищется по идентификатору
     QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
-    if(cameraToObjIndex >= 0 && cameraToObjIndex < list->size())
-        cameraToThisObj = &(*list)[cameraToObjIndex];
-    else
-        cameraToThisObj = nullptr;
+    const int idx = cameraObjId >= 0 ? net.testFlightObjInList(cameraObjId) : -1;
+    if(idx >= 0 && idx < list->size() && (*list)[idx].id == cameraObjId)
+    {
+        cameraToObjIndex = idx;
+        cameraToThisObj  = &(*list)[idx];
+    }else
+    {
+        cameraToObjIndex = -1;
+        cameraToThisObj  = nullptr;
+    }
 }
 void view3DArea::slotFov(double value)
 {

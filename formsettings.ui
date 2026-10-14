@@ -393,6 +393,33 @@
        </layout>
       </widget>
      </item>
+     <item>
+      <widget class="QGroupBox" name="groupBoxNet">
+       <property name="title">
+        <string>Сеть</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayoutNet">
+        <item row="0" column="0" colspan="2">
+         <widget class="QCheckBox" name="checkBoxSmoothing"><property name="text"><string>сглаживание движения</string></property><property name="checked"><bool>true</bool></property></widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="labelStale"><property name="text"><string>удалять без данных, с</string></property></widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="spinBoxStaleSec"><property name="maximum"><number>3600</number></property><property name="value"><number>10</number></property><property name="toolTip"><string>0 - не удалять</string></property></widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="pushButtonRecord"><property name="text"><string>запись</string></property><property name="checkable"><bool>true</bool></property></widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="pushButtonPlay"><property name="text"><string>воспроизвести</string></property></widget>
+        </item>
+        <item row="3" column="0" colspan="2">
+         <widget class="QLabel" name="labelNetStatus"><property name="wordWrap"><bool>true</bool></property></widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>

@@ -35,9 +35,17 @@ signals:
     void loadTerrainOnline(double lat, double lon, double sizeKm);
     //! подгрузка рельефа по ходу полета: включена, широта и долгота начала координат
     void terrainStreaming(bool enabled, double lat, double lon);
+    //! сеть: сглаживание движения, удаление молчащих объектов, запись, воспроизведение
+    void smoothing(bool);
+    void staleTimeout(int seconds);
+    void recording(bool);
+    void playRecording();
 public slots:
     //! состояние загрузки рельефа
     void setTerrainStatus(const QString &text);
+    //! состояние записи/воспроизведения
+    void setNetStatus(const QString &text);
+    void setRecordingChecked(bool value);
     //! отметка подгрузки рельефа (при включении из командной строки)
     void setTerrainStreamingChecked(bool value, double lat, double lon);
 private:

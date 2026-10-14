@@ -1,11 +1,30 @@
 #include "formsettings.h"
 #include "ui_formsettings.h"
+#include <QScrollArea>
+#include <QVBoxLayout>
 
 FormSettings::FormSettings(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::FormSettings)
 {
-    ui->setupUi(this);
+    // содержимое окна - в прокручиваемой области, чтобы форма помещалась
+    // на экранах небольшой высоты
+    QWidget *inner = new QWidget;
+    ui->setupUi(inner);
+    QScrollArea *scroll = new QScrollArea(this);
+    scroll->setWidget(inner);
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->addWidget(scroll);
+    setWindowTitle(QString::fromUtf8("Настройки 3DWorld"));
+    resize(inner->sizeHint().width() + 30, qMin(inner->sizeHint().height() + 10, 760));
+
+    connect(ui->checkBoxSmoothing,SIGNAL(toggled(bool)),this,SIGNAL(smoothing(bool)));
+    connect(ui->spinBoxStaleSec,SIGNAL(valueChanged(int)),this,SIGNAL(staleTimeout(int)));
+    connect(ui->pushButtonRecord,SIGNAL(toggled(bool)),this,SIGNAL(recording(bool)));
+    connect(ui->pushButtonPlay,SIGNAL(clicked()),this,SIGNAL(playRecording()));
     ///
     connect(ui->checkBoxFog,SIGNAL(clicked(bool)),this,SIGNAL(fog(bool)));
     connect(ui->checkBoxGrid,SIGNAL(clicked(bool)),this,SIGNAL(grid(bool)));
@@ -56,6 +75,16 @@ void FormSettings::setTerrainStreamingChecked(bool value, double lat, double lon
     ui->checkBoxTerrainStreaming->setChecked(value);
     ui->checkBoxTerrainStreaming->blockSignals(false);
     ui->doubleSpinBoxAreaKm->setEnabled(!value);
+}
+void FormSettings::setNetStatus(const QString &text)
+{
+    ui->labelNetStatus->setText(text);
+}
+void FormSettings::setRecordingChecked(bool value)
+{
+    ui->pushButtonRecord->blockSignals(true);
+    ui->pushButtonRecord->setChecked(value);
+    ui->pushButtonRecord->blockSignals(false);
 }
 void FormSettings::setTerrainStatus(const QString &text)
 {
