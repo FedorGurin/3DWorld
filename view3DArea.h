@@ -65,6 +65,8 @@ typedef struct
     int code;
     //! загрузка файла с объектом
     objl::Loader file;
+    //! список отображения OpenGL с геометрией модели (0 - еще не создан)
+    GLuint displayList;
 }T3DObject;
 //! класс 3D визуализации
 class view3DArea:public QGLViewer
@@ -76,6 +78,10 @@ public:
     view3DArea();
     //! установка номера камеры
     void setCameraToObject(int index);
+    //! обновление указателя на объект камеры (после изменения списка объектов)
+    void refreshCameraObject();
+    //! добавление точки в траекторию объекта
+    void appendTrajectoryPoint(int index,float x,float y,float z,int r,int g,int b);
     //! привязать камеру к объекту
     void cameraToObject();
     //! Загрузить файл с 3D моделью
@@ -93,7 +99,7 @@ public:
     //! отрисовка состовного объекта
     void drawArrayObjects();
     //! отрисовка объекта
-    void drawObject(objl::Loader *obj,
+    void drawObject(T3DObject *obj,
                     double pos_x,
                     double pos_y,
                     double pos_z,
@@ -109,8 +115,10 @@ public:
     void drawTerra();
     //! отрисовка неба
     void drawSky();
-    //! отрисовка сетки
+    //! отрисовка ИЛС
     void drawILS();
+    //! отрисовка сетки на плоскости OXZ размером d
+    void drawGrid(double d);
     //! отрисовка прицельной сиволики
     void drawSymbol();
     //! отрисовка окружности
@@ -124,6 +132,8 @@ public:
     void drawVecLine();
     //! разбор текстового файла
     void parserTXTFile();
+    //! загрузка траектории из текстового файла
+    void loadTXTFile(const QString &fileName);
     //! статус загрузки модели из файла
     void statusLoad(bool);
     //! поиск времени на интервале
@@ -248,6 +258,10 @@ private:
 
     //! указатель на визуализатор подстилающей поверхности
     View3DTerrain *terrain;
+    //! список отображения OpenGL с рельефом
+    GLuint terrainList;
+    //! номер карты, для которой построен список отображения
+    int terrainListVersion;
     //! отрисовка света
     qglviewer::ManipulatedFrame* light1;
 

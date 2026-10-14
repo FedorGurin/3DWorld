@@ -1,5 +1,6 @@
 #include "view3DTerrain.h"
 #include <QApplication>
+#include "dataPath.h"
 View3DTerrain::View3DTerrain(QWidget *parent):QGLWidget(parent)
 {
     dialog=new QFileDialog(this);
@@ -11,6 +12,7 @@ View3DTerrain::View3DTerrain(QWidget *parent):QGLWidget(parent)
     stream  = new QTextStream(file);
     threadParser  = new ThreadParser;
     loadCompleate = false;
+    version       = 0;
     connect(dialog,SIGNAL(accepted()),this,SLOT(slotAccepted()));
     connect(threadParser,SIGNAL(finished()),this,SLOT(slotThreadFinished()));
 }
@@ -24,7 +26,13 @@ void openFileWithMapColor()
 }
 bool View3DTerrain::openTerrainMap(QString nameFile)
 {
-    dialog->selectFile(qApp->applicationDirPath()+nameFile);
+    QString path = findDataFile(nameFile);
+    if(QFileInfo::exists(path) == false)
+    {
+        qWarning("Terrain file not found: %s", qPrintable(nameFile));
+        return false;
+    }
+    dialog->selectFile(path);
     slotAccepted();
     return true;
 }
@@ -35,9 +43,14 @@ void View3DTerrain::slotAccepted()
     if(list.isEmpty() == false)
     {
         QString fileName = list[0];
+        // не начинаем новую загрузку, пока не закончилась предыдущая
+        if(threadParser->isRunning())
+            return;
 
+        file->close();
         file->setFileName(fileName);
         if (!file->open(QIODevice::ReadOnly | QIODevice::Text))   return;
+        stream->setDevice(file);
         threadParser->setParserFile(stream,mapH);
         // загружаем карту цветов
 
@@ -48,7 +61,9 @@ void View3DTerrain::slotAccepted()
 }
 void View3DTerrain::slotThreadFinished()
 {
-    loadCompleate=true;
+    file->close();
+    loadCompleate = (mapH->dataVectors.isEmpty() == false);
+    version++;
 }
 
 View3DTerrain::~View3DTerrain()
@@ -66,34 +81,54 @@ void ThreadParser::setParserFile(QTextStream *out_,TASCII_MAP *mapH_)
 }
 void ThreadParser::run()
 {
+    mapH->data.clear();
+    mapH->dataVectors.clear();
+    mapH->ncols = 0;
+    mapH->nrows = 0;
+
     QStringList list=(out->readAll()).split("\n",QString::SkipEmptyParts);
-
-    QStringList tempList;
-    tempList=list[0].split(" ",QString::SkipEmptyParts);
-    mapH->ncols=tempList[1].toDouble();
-
-    tempList=list[1].split(" ",QString::SkipEmptyParts);
-    mapH->nrows=tempList[1].toDouble();
-
-    tempList=list[2].split(" ",QString::SkipEmptyParts);
-    mapH->xllcorner=tempList[1].toDouble();
-
-    tempList=list[3].split(" ",QString::SkipEmptyParts);
-    mapH->yllcorner=tempList[1].toDouble();
-
-    tempList=list[4].split(" ",QString::SkipEmptyParts);
-    mapH->cellsize=tempList[1].toDouble();
+    // заголовок ESRI ASCII Grid: ncols, nrows, xllcorner, yllcorner, cellsize, nodata_value
+    if(list.size() < 6)
+    {
+        qWarning("Terrain file: wrong header");
+        return;
+    }
+    double header[5];
+    for(int i = 0; i < 5; i++)
+    {
+        QStringList tempList = list[i].split(" ",QString::SkipEmptyParts);
+        if(tempList.size() < 2)
+        {
+            qWarning("Terrain file: wrong header");
+            return;
+        }
+        header[i] = tempList[1].toDouble();
+    }
+    mapH->ncols     = header[0];
+    mapH->nrows     = header[1];
+    mapH->xllcorner = header[2];
+    mapH->yllcorner = header[3];
+    mapH->cellsize  = header[4];
 
     for(long i=6;i<list.size();i++)
     {
         QVector<double> vec;
-        tempList=list[i].split(" ",QString::SkipEmptyParts);
+        QStringList tempList=list[i].split(" ",QString::SkipEmptyParts);
         for(int j=0;j<tempList.size();j++)
         {
             vec.push_back(tempList[j].toDouble());
         }
         mapH->data.push_back(vec);
     }
+    // файл может быть короче, чем указано в заголовке
+    if(mapH->data.size() < mapH->ncols)
+        mapH->ncols = mapH->data.size();
+    for(long i=0;i<mapH->ncols;i++)
+    {
+        if(mapH->data[i].size() < mapH->nrows)
+            mapH->nrows = mapH->data[i].size();
+    }
+    //персчет в декартовые координаты
     for(long i=0;i<mapH->ncols;i++)
     {
         QVector<QVector3D> vec;
@@ -109,8 +144,5 @@ void ThreadParser::run()
             vec.push_back(QVector3D(5*x,mapH->data[i][j],500*z));
         }
         mapH->dataVectors.push_back(vec);
-
     }
-    //персчет в декартовые координаты
-
 }

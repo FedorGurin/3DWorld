@@ -14,6 +14,8 @@
 #include <QDataStream>
 #include <QByteArray>
 
+#include "dataPath.h"
+
 
 using namespace qglviewer;
 #define SIZE_GRID 100
@@ -25,11 +27,16 @@ using namespace qglviewer;
 
 #define USE_3DMODEL
 #define FOG_OFF 1
+//! максимальное кол-во точек в траектории одного объекта
+#define MAX_TRAJECTORY_POINTS 20000
 
 
 view3DArea::view3DArea():QGLViewer()
 {
     glFunc = 0;
+    terrainList        = 0;
+    terrainListVersion = -1;
+    curIdMan = 0;
     resize(800,600);
     cameraToThisObj = nullptr;
     cameraToObjIndex= -1;
@@ -119,14 +126,10 @@ view3DArea::view3DArea():QGLViewer()
     connect(setting,SIGNAL(offsetMapZ(double)), this,SLOT(setOffsetMapZ(double)));
     connect(setting,SIGNAL(rotateMap(double)),  this,SLOT(setRotateMap(double)));
     connect(&net,SIGNAL(resetTrajectory()),this,SLOT(slotReset()));
-
-    QVector<glm::vec3> *vecL = net.getVecObj();
-    vecL->append(glm::vec3(100,100,100));
-    vecL->append(glm::vec3(0,0,0));
 }
 void view3DArea::slotReset()
 {
-    for(int i=0;i<17;i++)
+    for(int i=0;i<trs.size();i++)
     {
         trs[i].r.clear();
         trs[i].g.clear();
@@ -136,6 +139,32 @@ void view3DArea::slotReset()
         trs[i].y.clear();
         trs[i].z.clear();
     }
+}
+void view3DArea::appendTrajectoryPoint(int index,float x,float y,float z,int r,int g,int b)
+{
+    if(index < 0)
+        return;
+    if(index >= trs.size())
+        trs.resize(index + 1);
+
+    TTrajectory &tr = trs[index];
+    // ограничиваем длину траектории, чтобы память не росла бесконечно
+    if(tr.x.size() >= MAX_TRAJECTORY_POINTS)
+    {
+        const int n = tr.x.size() - MAX_TRAJECTORY_POINTS + 1;
+        tr.x.remove(0, n);
+        tr.y.remove(0, n);
+        tr.z.remove(0, n);
+        tr.r.remove(0, n);
+        tr.g.remove(0, n);
+        tr.b.remove(0, n);
+    }
+    tr.x.push_back(x);
+    tr.y.push_back(y);
+    tr.z.push_back(z);
+    tr.r.push_back(r);
+    tr.g.push_back(g);
+    tr.b.push_back(b);
 }
 void view3DArea::setGrid(bool value)
 {
@@ -203,10 +232,14 @@ void view3DArea::parserTXTFile()
 {
     QStringList list=(stream->readAll()).split("\n",QString::SkipEmptyParts);
 
+    rows.clear();
     for(long i=0;i<list.size();i++)
     {
         TDataRow row;
-        QStringList tempList=list[i].split("\t",QString::SkipEmptyParts);
+        QStringList tempList=list[i].trimmed().split("\t",QString::SkipEmptyParts);
+        // в строке должно быть 9 столбцов: код, масштаб, время, x, y, z, psi, tan, gamma
+        if(tempList.size() < 9)
+            continue;
         //! код, б/р
         row.code=   tempList[0].toInt();
         //! масштаб, б/р
@@ -233,18 +266,37 @@ void view3DArea::slotAccepted()
 {
     QStringList list=dialog->selectedFiles();
     if(list.isEmpty() == false)
+        loadTXTFile(list[0]);
+}
+void view3DArea::loadTXTFile(const QString &fileName)
+{
+    file->close();
+    file->setFileName(fileName);
+    if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        QString fileName = list[0];
-
-        file->setFileName(fileName);
-        if (!file->open(QIODevice::ReadOnly | QIODevice::Text))   return;
-
-        globalCount     = 0;
-        dataFromTXTFile = true;
-        net.setSizeObj(1);
-        parserTXTFile();
-        globalTime=rows[0].time;
+        QMessageBox::warning(this, tr("3DWorld"),
+                             tr("Can't open file %1").arg(fileName));
+        return;
     }
+    stream->setDevice(file);
+
+    parserTXTFile();
+    file->close();
+    // для интерполяции нужно минимум две точки
+    if(rows.size() < 2)
+    {
+        QMessageBox::warning(this, tr("3DWorld"),
+                             tr("File does not contain enough data rows"));
+        dataFromTXTFile = false;
+        return;
+    }
+
+    globalCount     = 0;
+    dataFromTXTFile = true;
+    net.setSizeObj(1);
+    refreshCameraObject();
+    slotReset();
+    globalTime=rows[0].time;
 }
 void view3DArea::statusLoad(bool loadout)
 {
@@ -256,6 +308,8 @@ void view3DArea::statusLoad(bool loadout)
 void view3DArea::readAllModels()
 {
     list3DObj.resize(8);
+    for(auto &obj : list3DObj)
+        obj.displayList = 0;
     // коды известных объектов
     list3DObj[0].code=105;//конус
     list3DObj[1].code=101;//f15
@@ -270,13 +324,13 @@ void view3DArea::readAllModels()
 
 
     // Load .obj File
-    bool loadout = list3DObj[0].file.LoadFile("./libs/cone.obj");
+    bool loadout = list3DObj[0].file.LoadFile(findDataFile("libs/cone.obj").toStdString());
     statusLoad(loadout);
 
-    loadout = list3DObj[1].file.LoadFile("./libs/f15.obj");
+    loadout = list3DObj[1].file.LoadFile(findDataFile("libs/f15.obj").toStdString());
     statusLoad(loadout);
 
-    loadout = list3DObj[2].file.LoadFile("./libs/f15.obj");
+    loadout = list3DObj[2].file.LoadFile(findDataFile("libs/f15.obj").toStdString());
      statusLoad(loadout);
 
 
@@ -306,7 +360,7 @@ void view3DArea::init()
     //setAnimationPeriod(dt);
 #endif
     // открыть рельеф по умолчанию
-    terrain->openTerrainMap("./defaultTerrain.asc");
+    terrain->openTerrainMap("defaultTerrain.asc");
     this->setBackgroundColor(QColor(81,168,255));
     setSceneRadius(radiusScene);
     //установить период анимации
@@ -314,9 +368,10 @@ void view3DArea::init()
     startAnimation();
     camera()->setFieldOfView(gradToRadian(45));
     camera()->setZNearCoefficient(0.0001);
-    camera()->frame()->setTranslation(Vec(0.0, 0.0, 1.0));
-    Quaternion qPI_2( Vec(0.0, 1.0, 0.0),M_PI/2.0);
-    camera()->frame()->setRotation(qPI_2);
+    // начальное положение камеры: обзор сцены сверху-сбоку
+    camera()->setPosition(Vec(-radiusScene*0.6, radiusScene*0.4, radiusScene*0.6));
+    camera()->setUpVector(Vec(0.0, 1.0, 0.0));
+    camera()->lookAt(Vec(0.0, 0.0, 0.0));
 
 //    GLenum li=GL_LIGHT1;
 //    GLfloat pos[] = {1.0, 1.0, 0.0, 0.0};
@@ -332,8 +387,10 @@ void view3DArea::draw()
     glDisable(GL_LIGHTING);
 
 
-    if(net.checkDatagrams()==true)
+    if(net.checkDatagrams()==true && dataFromTXTFile == false)
         globalTime = net.synch_time;
+    // список объектов мог измениться - обновим объект, к которому привязана камера
+    refreshCameraObject();
 
 
     if(cameraToThisObj != nullptr)
@@ -369,24 +426,23 @@ void view3DArea::draw()
         glDisable(GL_FOG);
     }
 
-    glScalef(1.0,1.0,1.0);
-
-    glBegin(GL_POINTS);
-    //qglColor(QColor(Qt::red));
-
-    glEnd();
-
+    // сначала трехмерная сцена с проверкой глубины, затем экранная символика
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glDisable(GL_BLEND);
+    // отрисовка подстилающей поверхности
+    if(terra == true)
+        drawTerra();
+    // отрисовка сетки
+    if(grid == true)
+        drawGrid(d);
     // отрисовка траектории
     drawTrajectory();
 #ifdef USE_3DMODEL
     // отрисовка трехмерных объектов
-    //drawSolidObjects();
-    //drawTestSolidObj();
+    drawSolidObjects();
 #endif
     drawVecLine();
-    // отрисовка подстилающей поверхности
-    if(terra == true)
-        drawTerra();
     // отрисовка ИЛС
     if(ils == true)
         drawILS();
@@ -401,7 +457,6 @@ void view3DArea::draw()
     // Функция смешивания для непрозрачности
     glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 
-    //if(grid==true) drawGrid();
     drawStateLine();
     if(info == true)
     {
@@ -465,69 +520,69 @@ void view3DArea::draw()
     }
     //drawLight(GL_LIGHT0);
 
-    if(grid==true)
-    {
-        glPushMatrix();
-        //glDisable(GL_DEPTH_TEST);
-        ////////Нарисуем плоскость OXZ
-        //glScalef(radiusScene,radiusScene,radiusScene);
-        glScalef(d,d,d);
-        //glDisable(GL_LIGHTING);//Отключим свет
-        glBegin(GL_LINES);
+}
+void view3DArea::drawGrid(double d)
+{
+    glPushMatrix();
+    //glDisable(GL_DEPTH_TEST);
+    ////////Нарисуем плоскость OXZ
+    //glScalef(radiusScene,radiusScene,radiusScene);
+    glScalef(d,d,d);
+    glEnable(GL_DEPTH_TEST);
+    glColor3f(1.0f,1.0f,1.0f);
+    //glDisable(GL_LIGHTING);//Отключим свет
+    glBegin(GL_LINES);
 
-            float stepGrid=2.0/SIZE_GRID;//Шаг сетки
-            for(int i=0;i<=SIZE_GRID;i++)
-            {
-                /////////сетка при Z=0.0//////////////
-                //qglColor(QColor(170,200,160,255));
-                //qglColor(QColor(11,11,11));
-
-                double dY=1.0/MAX_Y;
+        float stepGrid=2.0/SIZE_GRID;//Шаг сетки
+        for(int i=0;i<=SIZE_GRID;i++)
+        {
+            /////////сетка при Z=0.0//////////////
+            //qglColor(QColor(170,200,160,255));
+            //qglColor(QColor(11,11,11));
 
 #ifdef VERT_GRID
-                glVertex3f(1.0-i*stepGrid,0.0,0.0);
-                glVertex3f(1.0-i*stepGrid,1.0,0.0);
-                glVertex3f(-1.0,fabs(1.0-i*stepGrid),0.0);
-                glVertex3f(1.0,fabs(1.0-i*stepGrid),0.0);
-                //////////////////////////////////////
+            glVertex3f(1.0-i*stepGrid,0.0,0.0);
+            glVertex3f(1.0-i*stepGrid,1.0,0.0);
+            glVertex3f(-1.0,fabs(1.0-i*stepGrid),0.0);
+            glVertex3f(1.0,fabs(1.0-i*stepGrid),0.0);
+            //////////////////////////////////////
 
-                ///////сетка при X=0.0///////////////
-                glVertex3f(0.0,0.0,1.0-i*stepGrid);
-                glVertex3f(0.0,1.0,1.0-i*stepGrid);
-                glVertex3f(0.0,fabs(1.0-i*stepGrid),-1.0);
-                glVertex3f(0.0,fabs(1.0-i*stepGrid),1.0);
-                ////////////////////////////////////
+            ///////сетка при X=0.0///////////////
+            glVertex3f(0.0,0.0,1.0-i*stepGrid);
+            glVertex3f(0.0,1.0,1.0-i*stepGrid);
+            glVertex3f(0.0,fabs(1.0-i*stepGrid),-1.0);
+            glVertex3f(0.0,fabs(1.0-i*stepGrid),1.0);
+            ////////////////////////////////////
 #endif
-                /////////сетка при Y=0.0///////////////
-                glVertex3f(-1.0,0.001,1.0-i*stepGrid);
-                glVertex3f(1.0,0.001,1.0-i*stepGrid);
+            /////////сетка при Y=0.0///////////////
+            glVertex3f(-1.0,0.001,1.0-i*stepGrid);
+            glVertex3f(1.0,0.001,1.0-i*stepGrid);
 
-                glVertex3f(1.0-i*stepGrid,0.001,-1.0);
-                glVertex3f(1.0-i*stepGrid,0.001,1.0);
-            }
-
-            glDisable(GL_BLEND);//Уберем прозрачность
-            glEnd();
-            //////////////////////////////////////////
-            ///            /////glEnable(GL_BLEND);
-            ///    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
-            /*    qglColor(QColor(Qt::gray));
-            ///    glBegin(GL_QUADS);
-            ///    //qglColor(QColor(229,210,175,220));
-
-
-            glVertex3f(1.0,0.0,-1.0);
-            glVertex3f(-1.0,0.0,-1.0);
-            glVertex3f(-1.0,0.0,1.0);
-            glVertex3f(1.0,0.0,1.0);
-            glEnd();*/
+            glVertex3f(1.0-i*stepGrid,0.001,-1.0);
+            glVertex3f(1.0-i*stepGrid,0.001,1.0);
+        }
 
         glDisable(GL_BLEND);//Уберем прозрачность
+        glEnd();
+        //////////////////////////////////////////
+        ///            /////glEnable(GL_BLEND);
+        ///    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_COLOR);
+        /*    qglColor(QColor(Qt::gray));
+        ///    glBegin(GL_QUADS);
+        ///    //qglColor(QColor(229,210,175,220));
 
-        glLineWidth(1.0);
-        glPointSize(4.0);
-        glPopMatrix();
-    }
+
+        glVertex3f(1.0,0.0,-1.0);
+        glVertex3f(-1.0,0.0,-1.0);
+        glVertex3f(-1.0,0.0,1.0);
+        glVertex3f(1.0,0.0,1.0);
+        glEnd();*/
+
+    glDisable(GL_BLEND);//Уберем прозрачность
+
+    glLineWidth(1.0);
+    glPointSize(4.0);
+    glPopMatrix();
 }
 void view3DArea::drawTrajectory()
 {
@@ -553,6 +608,7 @@ void view3DArea::drawTrajectory()
     }*/
 
 
+    glPointSize(3.0);
     if(dataFromTXTFile==true)
     {
         //! отрисовка точек
@@ -560,7 +616,7 @@ void view3DArea::drawTrajectory()
         //! если прочитали файл
         for(long i=0;i<rows.size();i++)
         {
-            //qglColor(QColor(80,223,72));
+            glColor3ub(rows[i].r,rows[i].g,rows[i].b);
             glVertex3f(rows[i].x_g,rows[i].y_g,rows[i].z_g);
         }
         glEnd();
@@ -583,7 +639,7 @@ void view3DArea::drawTrajectory()
         {
             for(long int j=0;j<trs[i].x.size();j++)
             {
-                //qglColor(QColor(trs[i].r[j],trs[i].g[j],trs[i].b[j]));
+                glColor3ub(trs[i].r[j],trs[i].g[j],trs[i].b[j]);
                 glVertex3f(trs[i].x[j],trs[i].y[j],trs[i].z[j]);
                 glVertex3f(trs[i].x[j],0,trs[i].z[j]);
             }
@@ -604,7 +660,7 @@ void view3DArea::drawTrajectory()
             glEnd();
         }
     }
-
+    glColor3f(1.0f,1.0f,1.0f);
 }
 
 void view3DArea::animate()
@@ -615,18 +671,20 @@ void view3DArea::animate()
     globalTime=globalTime+dt*0.001*multTime;
     globalTimeDebug=globalTimeDebug+dt*0.001*multTime;
     //! если данные загружены из файла
-    if(dataFromTXTFile==true)
+    if(dataFromTXTFile==true && rows.size() >= 2)
     {
-        if(globalTime>=(rows.back().time))
+        // по окончании данных начинаем воспроизведение сначала
+        if(globalTime>=(rows.back().time) || globalTime<rows.first().time)
         {
             globalCount=0;
-            globalTime=0.0;
-            trs[0].x.clear();
-            trs[0].y.clear();
-            trs[0].z.clear();
+            globalTime=rows.first().time;
+            slotReset();
         }
 
         int index = searchTimeInterval(globalTime);
+        // индекс правой границы интервала: [index-1; index]
+        if(index < 1)
+            index = (index == 0) ? 1 : rows.size() - 1;
         //! записываем параметры
         QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
         TSendVehicleVisSimple *solid = &((*list)[0]);
@@ -671,13 +729,13 @@ void view3DArea::animate()
                                          rows[index-1].time);
 
         //! заполнение траектории
-        trs[0].x.push_back(solid->cg_x);
-        trs[0].y.push_back(solid->cg_y);
-        trs[0].z.push_back(solid->cg_z);
-        //! цвет траектории
-        trs[0].r.push_back(rows[index].r);
-        trs[0].g.push_back(rows[index].g);
-        trs[0].b.push_back(rows[index].b);
+        appendTrajectoryPoint(0,
+                              solid->cg_x,
+                              solid->cg_y,
+                              solid->cg_z,
+                              rows[index].r,
+                              rows[index].g,
+                              rows[index].b);
     }else
     {
         if(div==DIVIDE)
@@ -685,17 +743,10 @@ void view3DArea::animate()
             div=0;
             QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
             int j = 0;
-            for(auto i:*list)
+            for(const auto &i:*list)
             {
-                //! координаты объектов
-                trs[j].x.push_back(i.cg_x);
-                trs[j].y.push_back(i.cg_y);
-                trs[j].z.push_back(i.cg_z);
-                //! цвет траектории
-                trs[j].r.push_back(80);
-                trs[j].g.push_back(223);
-                trs[j].b.push_back(72);
-
+                //! координаты объектов и цвет траектории
+                appendTrajectoryPoint(j,i.cg_x,i.cg_y,i.cg_z,80,223,72);
                 j++;
             }
         }
@@ -703,6 +754,7 @@ void view3DArea::animate()
 
     horFilter->refresh();
     verFilter->refresh();
+    refreshCameraObject();
     //! установить камеру на объект
     cameraToObject();
 
@@ -800,17 +852,20 @@ void view3DArea::drawSolidObjects()
     for(auto &i : *list)
     {
         TSendVehicleVisSimple *solidCenter = &(list->first());
-        objl::Loader *model = nullptr;
-        if(findObjByCode(i.code) != nullptr)
-            model = &(findObjByCode(i.code)->file);
-        if(model != nullptr)
+        T3DObject *model = findObjByCode(i.code);
+        if(model != nullptr && model->file.LoadedMeshes.empty() == false)
         {
-            convertSphereToDekart(solidCenter->lam0_geo,
-                                  solidCenter->fi0_geo,
-                                  i.lam_geo,
-                                  i.fi_geo,
-                                  i.cg_x,
-                                  i.cg_z);
+            // если переданы географические координаты - пересчитываем их
+            // в декартовые относительно первого объекта
+            if(i.lam_geo != 0.0 || i.fi_geo != 0.0)
+            {
+                convertSphereToDekart(solidCenter->lam0_geo,
+                                      solidCenter->fi0_geo,
+                                      i.lam_geo,
+                                      i.fi_geo,
+                                      i.cg_x,
+                                      i.cg_z);
+            }
             drawObject(model,
                        i.cg_x,
                        i.cg_y,
@@ -823,7 +878,7 @@ void view3DArea::drawSolidObjects()
 
 }
 
-void view3DArea::drawObject(objl::Loader *obj,
+void view3DArea::drawObject(T3DObject *obj,
                             double pos_x,
                             double pos_y,
                             double pos_z,
@@ -839,11 +894,10 @@ void view3DArea::drawObject(objl::Loader *obj,
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    //GLenum li=GL_LIGHT1;
-   GLfloat pos[] = {1.0f, 1.0f, 1.0f, 0.0f};
-   GLfloat ambLight[]  = {0.2f, 0.2f, 0.2f, 0.0f};
-   GLfloat difLight[]  = {0.8f, 0.8f, 0.8f, 0.0f};
-   GLfloat specLight[] = {1.0f, 1.0f, 1.0f, 0.0f};
+    GLfloat pos[] = {1.0f, 1.0f, 1.0f, 0.0f};
+    GLfloat ambLight[]  = {0.2f, 0.2f, 0.2f, 0.0f};
+    GLfloat difLight[]  = {0.8f, 0.8f, 0.8f, 0.0f};
+    GLfloat specLight[] = {1.0f, 1.0f, 1.0f, 0.0f};
 
     glLightfv(GL_LIGHT0, GL_POSITION, pos);
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambLight);
@@ -854,6 +908,8 @@ void view3DArea::drawObject(objl::Loader *obj,
                  pos_y,
                  pos_z);
     glScalef(10,10,10);
+    // при масштабировании нормали нужно нормировать заново
+    glEnable(GL_NORMALIZE);
 
     glRotated(radToGrad * psi_rad,0.0,1.0,0.0);
     glRotated(radToGrad * tan_rad,0.0,0.0,1.0);
@@ -861,91 +917,39 @@ void view3DArea::drawObject(objl::Loader *obj,
 
     glColor4f(1.0f,1.0f,1.0f,1.0f);
 
-
-
-//      glBegin(GL_POINTS);
-//    for(auto i: list3DObj[0].file.LoadedVertices)
-//    {
-//        glVertex3f(i.Position.x*100,i.Position.y*100,i.Position.z*100);
-//        //std::cout<<"x="<<i.Position.x<<"y="<<i.Position.y<<"z"<<i.Position.z;
-
-
-//    }
-//    glEnd();
-
-    for(auto i: obj->LoadedMeshes)
+    // геометрия модели не меняется - формируем список отображения один раз
+    if(obj->displayList == 0)
     {
-        // Copy one of the loaded meshes to be our current mesh
-        objl::Mesh curMesh = i;
-
-        //glNormal3fv(i.Normal);
-        //for (auto j : i.Vertices)
-
-        glMaterialfv(GL_FRONT, GL_AMBIENT, (GLfloat *)&curMesh.MeshMaterial.Ka);
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat *)&curMesh.MeshMaterial.Kd);
-        glMaterialfv(GL_FRONT, GL_SPECULAR, (GLfloat *)&curMesh.MeshMaterial.Ks);
-
-        //glMaterialf(GL_FRONT, GL_SHININESS, 60);
-        for (int j = 0; j < curMesh.Indices.size(); j += 3)
+        obj->displayList = glGenLists(1);
+        glNewList(obj->displayList, GL_COMPILE);
+        for(const objl::Mesh &curMesh : obj->file.LoadedMeshes)
         {
+            // glMaterialfv ожидает 4 компоненты цвета (RGBA)
+            const objl::Material &mat = curMesh.MeshMaterial;
+            const GLfloat ka[] = {mat.Ka.x, mat.Ka.y, mat.Ka.z, 1.0f};
+            const GLfloat kd[] = {mat.Kd.x, mat.Kd.y, mat.Kd.z, 1.0f};
+            const GLfloat ks[] = {mat.Ks.x, mat.Ks.y, mat.Ks.z, 1.0f};
+            glMaterialfv(GL_FRONT, GL_AMBIENT,  ka);
+            glMaterialfv(GL_FRONT, GL_DIFFUSE,  kd);
+            glMaterialfv(GL_FRONT, GL_SPECULAR, ks);
 
             glBegin(GL_TRIANGLES);
-
-            GLfloat *mF = (GLfloat*)&(curMesh.Vertices[curMesh.Indices[j]].Normal);
-            glNormal3fv((GLfloat*)&(curMesh.Vertices[curMesh.Indices[j]].Normal));
-            glVertex3fv((GLfloat*)&(curMesh.Vertices[curMesh.Indices[j]].Position));
-
-            glNormal3fv((GLfloat*)&(curMesh.Vertices[curMesh.Indices[j+1]].Normal));
-            glVertex3fv((GLfloat*)&(curMesh.Vertices[curMesh.Indices[j+1]].Position));
-
-            glNormal3fv((GLfloat*)&(curMesh.Vertices[curMesh.Indices[j+2]].Normal));
-            glVertex3fv((GLfloat*)&(curMesh.Vertices[curMesh.Indices[j+2]].Position));
+            for (size_t j = 0; j + 2 < curMesh.Indices.size(); j += 3)
+            {
+                for(size_t k = 0; k < 3; k++)
+                {
+                    const objl::Vertex &v = curMesh.Vertices[curMesh.Indices[j + k]];
+                    glNormal3f(v.Normal.x, v.Normal.y, v.Normal.z);
+                    glVertex3f(v.Position.x, v.Position.y, v.Position.z);
+                }
+            }
             glEnd();
         }
-
+        glEndList();
     }
-//    for(auto i : obj->LoadedMaterials)
-//    {
-//        objl::Material material = i;
-//        glBegin(GL_TRIANGLES);
-//        glMaterialfv(GL_FRONT, GL_AMBIENT, (GLfloat*)&material.Ka);//
-//        glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat*)&material.Kd);
-//        glMaterialfv(GL_FRONT, GL_SPECULAR, (GLfloat*)&material.Ks);
-//        glEnd();
-//        ////                    //  glMaterialfv(GL_FRONT, GL_SPECULAR, mat->specular);
+    glCallList(obj->displayList);
 
-//        ////                    s = pow(2, 10.0*mat->shininess);
-//        ////                    if (s>128.0)
-//        ////                        s=128.0;
-//        ////                    glMaterialf(GL_FRONT, GL_SHININESS, s);
-//    }
-
-//        for(auto i: list3DObj[0].file.LoadedMeshes)
-//        {
-//            // Copy one of the loaded meshes to be our current mesh
-//            objl::Mesh curMesh = i;
-
-
-//                  glBegin(GL_POINTS);
-//                for(auto j: curMesh.Vertices)
-//                {
-//                    glVertex3f(j.Position.x,j.Position.y,j.Position.z);
-//                    float x =j.Position.x;
-//                    float y = j.Position.y;
-//                    float z = j.Position.z;
-//                    //std::cout<<"x="<<(float)j.Position.x<<" y="<<(float)j.Position.y<<" z="<<(float)j.Position.z<<std::endl;
-
-
-//                }
-//                glEnd();
-
-//        }
-//    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
-
-    //glBufferData(GL_ARRAY_BUFFER,list3DObj[0].file.LoadedVertices.size() * sizeof(objl::Vertex), &(list3DObj[0].file.LoadedVertices[0]), GL_STATIC_DRAW);
-//    for (Lib3dsNode* p=obj->nodes; p!=0; p=p->next)
-//        renderNode(obj,p);
-
+    glDisable(GL_NORMALIZE);
     glDisable(GL_LIGHTING);
     glPopMatrix();
 
@@ -969,7 +973,8 @@ void view3DArea::drawILS()
     glDisable(GL_TEXTURE_2D);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    //gluOrtho2D(0, width(), height(), 0);
+    // экранные координаты в пикселях, начало - левый верхний угол
+    glOrtho(0, width(), height(), 0, -1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     /////////////////////////////////////////
@@ -978,7 +983,7 @@ void view3DArea::drawILS()
     glLineWidth(5.0);
     glDisable(GL_BLEND);//Уберем прозрачность
     glTranslatef(width()/2.0,height()/2.0,0);
-    glRotated(-cameraToThisObj->gamma,0.0,0.0,1.0);
+    glRotated(-radToGrad * cameraToThisObj->gamma,0.0,0.0,1.0);
 
     for(int i=-10;i<10;i++)
     {
@@ -990,8 +995,17 @@ void view3DArea::drawILS()
         double hILS=(cameraToThisObj->tan+gradToRadian(10*i))*(height()/camera()->fieldOfView());
 
 
-        drawText((width()/2.0)-((width()/5.0)),height()/2.0+hILS,QString::number(-i*10));
-        drawText((width()/2.0)+((width()/5.0)),height()/2.0+hILS,QString::number(-i*10));
+        // подписи поворачиваются вместе с линиями шкалы
+        const double rollILS = -cameraToThisObj->gamma;
+        const double xLabel  = width()/5.0 + 10.0;
+        for(int side = -1; side <= 1; side += 2)
+        {
+            double xl = side * xLabel;
+            int xText = width()/2.0  + xl*cos(rollILS) - hILS*sin(rollILS);
+            int yText = height()/2.0 + xl*sin(rollILS) + hILS*cos(rollILS);
+            drawText(side < 0 ? xText - 20 : xText, yText + 5, QString::number(-i*10));
+        }
+        glColor3f(0.0f,1.0f,0.0f);
 
         glBegin(GL_LINES);
 
@@ -1174,96 +1188,52 @@ void view3DArea::drawCircle(TAngle *angle,int radius_,int width_)
 // отрисовка земли
 void view3DArea::drawTerra()
 {
-    if(terrain->loadCompleate==true)
+    if(terrain->loadCompleate==false)
+        return;
+
+    glPushMatrix();
+    glRotated(rotMap,0.0,1.0,0.0);
+    glTranslatef(offsetMapX,0.0,offsetMapZ);
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
+
+    // рельеф не меняется между кадрами - формируем список отображения
+    // заново только после загрузки новой карты
+    if(terrainList == 0 || terrainListVersion != terrain->version)
     {
-        int step=1;
+        if(terrainList == 0)
+            terrainList = glGenLists(1);
+        terrainListVersion = terrain->version;
 
-        /*glPushMatrix();
-        //glEnable(GL_BLEND);
-        //glEnable(GL_AUTO_NORMAL);
-        //glEnable(GL_NORMALIZE);
-        GLfloat pos[4]={0.0,5000.0,0.0,1.0};
-        Lib3dsRgba a={0.2, 0.2, 0.2, 1.0};
-        Lib3dsRgba d={0.8, 0.8, 0.8, 1.0};
-        Lib3dsRgba s={1.0, 1.0, 1.0, 1.0};
-        glLightfv (GL_LIGHT0, GL_AMBIENT, a);
-        glLightfv (GL_LIGHT0, GL_DIFFUSE, d);
-        glLightfv (GL_LIGHT0, GL_SPECULAR, s);
-
-        glRotated (90.0, 3500.0,0.0, 0.0);
-        glLightfv (GL_LIGHT0, GL_POSITION, pos);
-
-        glEnable(GL_LIGHTING);
-
-        glPopMatrix();*/
-
-        glPushMatrix();
-        glRotated(rotMap,0.0,1.0,0.0);
-        glShadeModel(GL_SMOOTH);
-        glClearDepth(1.0f);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
-        glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
+        const int step = 1;
+        glNewList(terrainList, GL_COMPILE);
         glBegin(GL_QUADS);
-
-//        if(camera()->position().y>25000.0)
-//            step=10;
-
-//        else if(camera()->position().y<7000)
-//            step=1;
-//        else
-//            step=limitMinMax(((int)floor(linearInterpolation(camera()->position().y,10,1,25000,7000))),1,10);
-
         for(int i=0;i<terrain->mapH->nrows-step;i+=step)
         {
             for(int j=0;j<terrain->mapH->ncols-step;j+=step)
             {
-
-
-                QVector3D vec=terrain->mapH->value(j,i);
-                QVector3D vec1=terrain->mapH->value(j,i+step);
-                QVector3D vec1N=vec-vec1;
-
-                QVector3D vec2=terrain->mapH->value(j+step,i);
-                QVector3D vec2N=vec2-vec;
-                QVector3D norm;norm.normal(vec2N,vec1N);
-
-                if(vec.y()<100)
-                     glColor3f(0.0f,0.0f,vec.y()/100);
-                else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
-                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
-
-                vec=terrain->mapH->value(j,i+step);
-
-                if(vec.y()<100)
-                    glColor3f(0.0f,0.0f,vec.y()/100);
-                else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
-
-                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
-
-                vec=terrain->mapH->value(j+step,i+step);
-                if(vec.y()<100)
-                      glColor3f(0.0f,0.0f,vec.y()/100);
-                else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
-
-                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
-
-                vec=terrain->mapH->value(j+step,i);
-                if(vec.y()<100)
-                     glColor3f(0.0f,0.0f,vec.y()/100);
-                else
-                    glColor3f(0.0f,vec.y()/1500.0,0.0);
-
-                glVertex3f(vec.x()+offsetMapX,vec.y(),vec.z()+offsetMapZ);
-
+                const QVector3D quad[4] = {terrain->mapH->value(j,i),
+                                           terrain->mapH->value(j,i+step),
+                                           terrain->mapH->value(j+step,i+step),
+                                           terrain->mapH->value(j+step,i)};
+                for(const QVector3D &vec : quad)
+                {
+                    // цвет по высоте: ниже 100 м - вода, выше - суша
+                    if(vec.y()<100)
+                        glColor3f(0.0f,0.0f,vec.y()/100);
+                    else
+                        glColor3f(0.0f,vec.y()/1500.0,0.0);
+                    glVertex3f(vec.x(),vec.y(),vec.z());
+                }
             }
         }
         glEnd();
-        glPopMatrix();
+        glEndList();
     }
+    glCallList(terrainList);
+    glPopMatrix();
 }
 //! отрисовка неба
 void view3DArea::drawSky()
@@ -1476,6 +1446,16 @@ void view3DArea::setCameraToObject(int num)
         }
     }
 
+}
+void view3DArea::refreshCameraObject()
+{
+    // указатель на элемент QVector становится недействительным при добавлении
+    // новых объектов, поэтому он каждый раз заново берется по индексу
+    QVector<TSendVehicleVisSimple> *list = net.getVehicleObj();
+    if(cameraToObjIndex >= 0 && cameraToObjIndex < list->size())
+        cameraToThisObj = &(*list)[cameraToObjIndex];
+    else
+        cameraToThisObj = nullptr;
 }
 void view3DArea::slotFov(double value)
 {

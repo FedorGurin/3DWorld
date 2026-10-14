@@ -92,8 +92,8 @@ public:
     //! отправить данные другому сервису
     void sendData(TTypeHead type,char *buffer, int size);
     //! проверка наличия объекта в списке
-    int testFlightObjInList(unsigned uid);
-    int testArrayObjInList(unsigned uid);
+    int testFlightObjInList(int uid);
+    int testArrayObjInList(int uid);
     void addToFlightObjList(TSendVehicleVisSimple body);
     void addToArrayObjList(TSendArrayVisSimple body);
     //! проверка datagram

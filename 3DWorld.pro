@@ -12,30 +12,16 @@ CONFIG += qt opengl thread rtti console
 QT += xml opengl widgets gui network
 
 
-ROOT_DIRECTORY = ./..
+# Каталог с библиотеками для Windows (QGLViewer2.lib/QGLViewerd2.lib)
+LIB_DIR = $$PWD/libs
 
-LIB_DIR_ABSOLUTE_PATH = $${ROOT_DIRECTORY}/libs
-INCLUDE_DIR = $${ROOT_DIRECTORY}
-LIB_DIR = D:\MyProg\3DWorld\libs
-
-INCLUDEPATH *= $${INCLUDE_DIR}
-DEPENDPATH  *= $${INCLUDE_DIR}
-#LIBS *= -L/home/fedor/MyProg/libQGLViewer-2.7.2/QGLViewer -lQGLViewer-qt5
+INCLUDEPATH *= $$PWD
+DEPENDPATH  *= $$PWD
 
 unix {
-        # The absolute path where the library or framework was found
-        LIB_DIR_ABSOLUTE_PATH = $$dirname(PWD)/libs
-
-        LIB_NAME = QGLViewer-qt5
-
-       isEmpty(QMAKE_LFLAGS_RPATH) {
-                            !plugin:QMAKE_LFLAGS += -Wl,-rpath,$${LIB_DIR_ABSOLUTE_PATH}
-                        }else {
-                            !plugin:QMAKE_RPATHDIR *= $${LIB_DIR_ABSOLUTE_PATH}
-                        }
-                        LIBS *= -L$${LIB_DIR} -l$${LIB_NAME}
-
-
+        # В Linux используется системная библиотека libQGLViewer
+        # (пакет libqglviewer-dev-qt5 в Debian/Ubuntu)
+        LIBS *= -lQGLViewer-qt5
 }
 win32 {
         # Seems to be needed for Visual Studio with Intel compiler
@@ -82,7 +68,7 @@ HEADERS  += \
 OBJ_Loader.h \
     view3DTerrain.h \
     visudp.h \
-    Vector3D_D.h \
+    dataPath.h \
     formsettings.h \
     globalData.h \
     TemplateNASP.hpp \

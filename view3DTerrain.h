@@ -69,6 +69,8 @@ public:
     //! процесс загрузки карты высот в реальном времени
     void processLoading();
     bool loadCompleate;
+    //! номер загруженной карты (увеличивается после каждой загрузки)
+    int version;
     ~View3DTerrain();
     TASCII_MAP *mapH;
 private:

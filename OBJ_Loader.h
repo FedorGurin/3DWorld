@@ -19,7 +19,7 @@
 #include "math_func.h"
 #include <glm/gtx/projection.hpp>
 // Print progress to console while loading (large models)
-#define OBJL_CONSOLE_OUTPUT
+//#define OBJL_CONSOLE_OUTPUT
 
 // Namespace: OBJL
 //
